@@ -9,9 +9,11 @@
         <h2 class="card-title text-xl font-semibold mb-4">Edit Profile</h2>
 
         <% if devise_mapping.confirmable? && resource.pending_reconfirmation? %>
-          <div class="alert alert-info shadow-xs text-sm py-2 max-w-md flex items-center justify-between mb-4">
-            <span>Currently waiting confirmation for: <strong><%= resource.unconfirmed_email %></strong></span>
-            <%= button_to "Cancel", cancel_email_change_path, method: :delete, class: "btn btn-xs btn-error btn-outline", data: { turbo_confirm: "Cancel the pending email change?" } %>
+          <div class="flex items-center gap-3 max-w-md mb-4">
+            <div class="alert alert-info shadow-xs text-sm py-2 flex-1">
+              <span>Currently waiting confirmation for: <strong><%= resource.unconfirmed_email %></strong></span>
+            </div>
+            <%= button_to "Cancel", cancel_email_change_path, method: :delete, class: "btn btn-xs btn-error btn-outline shrink-0" %>
           </div>
         <% end %>
 
@@ -61,7 +63,7 @@
           </div>
 
           <div class="form-control max-w-md mt-6">
-            <%= f.submit "Save Changes", class: "btn btn-primary w-full md:w-auto md:px-8" %>
+            <%= f.submit "Save Changes", class: "btn btn-outline btn-primary w-full md:w-auto md:px-8" %>
           </div>
         <% end %>
       </div>
