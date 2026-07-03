@@ -1,7 +1,7 @@
 <section class="mx-auto w-full max-w-md">
   <div class="card bg-base-200 shadow-sm">
     <div class="card-body">
-      <h1 class="card-title text-2xl font-bold">Log in</h1>
+      <h1 class="card-title text-2xl font-bold">Sign in</h1>
 
       <%= form_for(resource, as: resource_name, url: user_session_path, html: { class: "mt-4 space-y-4" }) do |f| %>
         <div class="form-control">
@@ -28,7 +28,7 @@
         <% end %>
 
         <div class="form-control mt-2">
-          <%= f.submit "Log in", class: "btn btn-primary w-full" %>
+          <%= f.submit "Sign in", class: "btn btn-primary w-full" %>
         </div>
       <% end %>
 

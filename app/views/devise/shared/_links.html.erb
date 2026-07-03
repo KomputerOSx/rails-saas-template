@@ -1,6 +1,6 @@
 <div class="mt-4 flex flex-col gap-2 text-sm">
 <%- if controller_name != 'sessions' %>
-  <%= link_to "Log in", new_user_session_path, class: "link link-primary" %>
+  <%= link_to "Sign in", new_user_session_path, class: "link link-primary" %>
 <% end %>
 
 <%- if devise_mapping.registerable? && controller_name != 'registrations' %>

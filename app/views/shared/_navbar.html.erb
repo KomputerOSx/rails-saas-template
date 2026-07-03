@@ -1,11 +1,7 @@
 <nav class="navbar min-h-16 px-4 lg:px-6">
   <div class="flex-none lg:hidden">
     <label for="app-sidebar" aria-label="Open sidebar" class="btn btn-square btn-ghost text-base-content">
-      <svg xmlns="http://www.w3.org/2000/svg" class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="4" y1="6" x2="20" y2="6"></line>
-        <line x1="4" y1="12" x2="20" y2="12"></line>
-        <line x1="4" y1="18" x2="20" y2="18"></line>
-      </svg>
+      <span class="material-symbols-outlined !text-[20px]">menu</span>
     </label>
   </div>
 
@@ -19,9 +15,9 @@
         <span class="block text-xs font-medium text-base-content/50">Signed in as</span>
         <span class="block max-w-[180px] truncate text-sm font-semibold text-base-content/80"><%= current_user.email %></span>
       </div>
-      <%= button_to "Log out", destroy_user_session_path, method: :delete, class: "btn btn-error btn-sm" %>
+      <%= button_to "Sign out", destroy_user_session_path, method: :delete, class: "btn btn-error btn-sm" %>
     <% else %>
-      <%= link_to "Log in", new_user_session_path, class: "btn btn-sm border-base-300 bg-base-200 text-base-content hover:border-base-content/20 hover:bg-base-300" %>
+      <%= link_to "Sign in", new_user_session_path, class: "btn btn-sm border-base-300 bg-base-200 text-base-content hover:border-base-content/20 hover:bg-base-300" %>
       <%= link_to "Sign up", new_user_registration_path, class: "btn btn-primary btn-sm" %>
     <% end %>
   </div>

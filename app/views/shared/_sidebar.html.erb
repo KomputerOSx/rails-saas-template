@@ -19,21 +19,18 @@
           <!-- Top Section -->
           <div class="flex flex-col items-center gap-4 w-full">
             <button class="btn btn-ghost btn-square btn-sm hover:bg-base-300 text-base-content/70" data-action="click->sidebar#open">
-              <svg xmlns="http://www.w3.org/2000/svg" class="size-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                <rect width="18" height="18" x="3" y="3" rx="2" />
-                <path d="M9 3v18M16 15l3-3-3-3" />
-              </svg>
+              <span class="material-symbols-outlined !text-[20px]">right_panel_close</span>
             </button>
 
             <div class="flex flex-col items-center gap-2 w-full">
               <%= link_to root_path, class: "btn btn-ghost btn-square btn-sm #{current_page?(root_path) ? 'btn-active bg-base-300' : 'text-base-content/70'}", title: "Home" do %>
-                <svg xmlns="http://www.w3.org/2000/svg" class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5" /><path d="M5 10.5V20h14v-9.5" /></svg>
+                <span class="material-symbols-outlined !text-[20px]">home</span>
               <% end %>
               <a href="#" class="btn btn-ghost btn-square btn-sm text-base-content/40" title="Dashboard">
-                <svg xmlns="http://www.w3.org/2000/svg" class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2" /><path d="M8 9h8M8 13h5" /></svg>
+                <span class="material-symbols-outlined !text-[20px]">dashboard</span>
               </a>
               <a href="#" class="btn btn-ghost btn-square btn-sm text-base-content/40" title="Projects">
-                <svg xmlns="http://www.w3.org/2000/svg" class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5V6a2 2 0 0 1 2-2h12v15.5" /><path d="M6 18h14" /></svg>
+                <span class="material-symbols-outlined !text-[20px]">folder</span>
               </a>
             </div>
           </div>
@@ -42,11 +39,7 @@
           <div class="w-full flex flex-col items-center gap-2">
             <% if user_signed_in? %>
               <%= link_to edit_user_registration_path, class: "btn btn-ghost btn-square btn-sm text-base-content/70", title: "Profile" do %>
-                <svg xmlns="http://www.w3.org/2000/svg" class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4" /><path d="M5 20a7 7 0 0 1 14 0" /></svg>
-              <% end %>
-            <% else %>
-              <%= link_to new_user_session_path, class: "btn btn-ghost btn-square btn-sm text-base-content/70", title: "Log in" do %>
-                <svg xmlns="http://www.w3.org/2000/svg" class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3" /></svg>
+                <span class="material-symbols-outlined !text-[20px]">person</span>
               <% end %>
             <% end %>
           </div>
@@ -60,10 +53,7 @@
             <div class="flex items-center justify-between p-3 border-b border-base-300/50">
               <span class="font-bold uppercase tracking-wider px-2">Wind Tunnel</span>
               <button class="btn btn-ghost btn-square btn-xs hover:bg-base-300 text-base-content/70" data-action="click->sidebar#close">
-                <svg xmlns="http://www.w3.org/2000/svg" class="size-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                  <rect width="18" height="18" x="3" y="3" rx="2" />
-                  <path d="M9 3v18M14 9l-3 3 3 3" />
-                </svg>
+                <span class="material-symbols-outlined !text-[16px]">left_panel_close</span>
               </button>
             </div>
 
@@ -71,19 +61,19 @@
               <li class="menu-title text-base-content/45">Workspace</li>
               <li>
                 <%= link_to root_path, class: current_page?(root_path) ? "active" : "" do %>
-                  <svg xmlns="http://www.w3.org/2000/svg" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5" /><path d="M5 10.5V20h14v-9.5" /></svg>
+                  <span class="material-symbols-outlined !text-[16px]">home</span>
                   Home
                 <% end %>
               </li>
               <li>
                 <a class="opacity-40">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2" /><path d="M8 9h8M8 13h5" /></svg>
+                  <span class="material-symbols-outlined !text-[16px]">dashboard</span>
                   Dashboard
                 </a>
               </li>
               <li>
                 <a class="opacity-40">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5V6a2 2 0 0 1 2-2h12v15.5" /><path d="M6 18h14" /></svg>
+                  <span class="material-symbols-outlined !text-[16px]">folder</span>
                   Projects
                 </a>
               </li>
@@ -92,15 +82,8 @@
               <% if user_signed_in? %>
                 <li>
                   <%= link_to edit_user_registration_path do %>
-                    <svg xmlns="http://www.w3.org/2000/svg" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4" /><path d="M5 20a7 7 0 0 1 14 0" /></svg>
+                    <span class="material-symbols-outlined !text-[16px]">person</span>
                     Profile
-                  <% end %>
-                </li>
-              <% else %>
-                <li>
-                  <%= link_to new_user_session_path do %>
-                    <svg xmlns="http://www.w3.org/2000/svg" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3" /></svg>
-                    Log in
                   <% end %>
                 </li>
               <% end %>
@@ -108,17 +91,11 @@
           </div>
 
           <!-- Bottom Actions Panel -->
-          <div class="p-4 border-t border-base-300 w-full bg-base-200">
-            <% if user_signed_in? %>
-              <div class="mb-3 truncate text-xs text-base-content/55 px-1"><%= current_user.email %></div>
-              <%= button_to "Log out", destroy_user_session_path, method: :delete, class: "btn btn-error btn-sm btn-block" %>
-            <% else %>
-              <div class="flex flex-col gap-2">
-                <%= link_to "Log in", new_user_session_path, class: "btn btn-sm btn-outline btn-block" %>
-                <%= link_to "Sign up", new_user_registration_path, class: "btn btn-primary btn-sm btn-block" %>
-              </div>
-            <% end %>
-          </div>
+          <% if user_signed_in? %>
+            <div class="p-4 border-t border-base-300 w-full bg-base-200">
+              <div class="truncate text-xs text-base-content/55 px-1"><%= current_user.email %></div>
+            </div>
+          <% end %>
         </div>
 
       </details>
