@@ -8,17 +8,16 @@
       </p>
 
       <%= form_for(resource, as: resource_name, url: user_password_path, html: { method: :post, class: "mt-4 space-y-4" }) do |f| %>
-        <%= render "devise/shared/error_messages", resource: resource %>
-
         <div class="form-control">
           <%= f.label :email, class: "label" do %>
             <span class="label-text">Email</span>
           <% end %>
-          <%= f.email_field :email, autofocus: true, autocomplete: "email", class: "input input-bordered w-full" %>
+          <%= f.email_field :email, autofocus: true, autocomplete: "email", class: error_class_for(resource, :email, "input input-bordered w-full") %>
+          <%= field_errors(resource, :email) %>
         </div>
 
         <div class="form-control mt-2">
-          <%= f.submit "Send me password reset instructions", class: "btn btn-primary w-full" %>
+          <%= f.submit "Send me reset instructions", class: "btn btn-primary w-full" %>
         </div>
       <% end %>
 

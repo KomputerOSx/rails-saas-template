@@ -4,14 +4,14 @@
       <h1 class="card-title text-2xl font-bold">Change your password</h1>
 
       <%= form_for(resource, as: resource_name, url: user_password_path, html: { method: :put, class: "mt-4 space-y-4" }) do |f| %>
-        <%= render "devise/shared/error_messages", resource: resource %>
         <%= f.hidden_field :reset_password_token %>
 
         <div class="form-control">
           <%= f.label :password, class: "label" do %>
             <span class="label-text">New password</span>
           <% end %>
-          <%= f.password_field :password, autofocus: true, autocomplete: "new-password", class: "input input-bordered w-full" %>
+          <%= f.password_field :password, autofocus: true, autocomplete: "new-password", class: error_class_for(resource, :password, "input input-bordered w-full") %>
+          <%= field_errors(resource, :password) %>
           <% if @minimum_password_length %>
             <div class="px-1 pt-1">
               <span class="text-xs text-base-content text-opacity-60">(<%= @minimum_password_length %> characters minimum)</span>
@@ -23,7 +23,8 @@
           <%= f.label :password_confirmation, class: "label" do %>
             <span class="label-text">Confirm new password</span>
           <% end %>
-          <%= f.password_field :password_confirmation, autocomplete: "new-password", class: "input input-bordered w-full" %>
+          <%= f.password_field :password_confirmation, autocomplete: "new-password", class: error_class_for(resource, :password_confirmation, "input input-bordered w-full") %>
+          <%= field_errors(resource, :password_confirmation) %>
         </div>
 
         <div class="form-control mt-2">
