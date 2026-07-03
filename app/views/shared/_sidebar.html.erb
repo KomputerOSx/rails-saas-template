@@ -1,0 +1,127 @@
+<div class="flex h-screen w-full flex-col relative" data-controller="sidebar" data-sidebar-storage-key-value="basicSidebar">
+  <!-- Mobile Sidebar Overlay -->
+  <div class="absolute inset-0 z-50 md:hidden hidden" data-sidebar-target="mobileSidebar">
+    <!-- Backdrop -->
+    <div class="absolute inset-0 bg-black/50 transition-opacity duration-300" data-sidebar-target="mobileBackdrop" data-action="click->sidebar#closeMobile"></div>
+
+    <!-- Sidebar Panel -->
+    <div class="absolute inset-y-0 left-0 w-64 bg-base-200 shadow-xl border-r border-base-300 transition-transform duration-300 ease-out" data-sidebar-target="mobilePanel">
+      <div data-sidebar-target="sharedContent"></div>
+    </div>
+  </div>
+
+  <div class="relative z-0 flex h-full w-full">
+    <div class="relative flex h-full flex-row">
+      <details class="w-16 open:w-72 group/sidebar relative z-20 h-full shrink-0 overflow-hidden border-r border-base-300 bg-base-200 max-md:hidden motion-safe:transition-all motion-safe:duration-300" data-sidebar-target="desktopSidebar" open>
+
+        <!-- ================= CLOSED STATE (TINY VIEW) ================= -->
+        <summary class="group-open/sidebar:hidden flex h-screen cursor-e-resize list-none flex-col items-center justify-between p-3 select-none">
+          <!-- Top Section -->
+          <div class="flex flex-col items-center gap-4 w-full">
+            <button class="btn btn-ghost btn-square btn-sm hover:bg-base-300 text-base-content/70" data-action="click->sidebar#open">
+              <svg xmlns="http://www.w3.org/2000/svg" class="size-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                <rect width="18" height="18" x="3" y="3" rx="2" />
+                <path d="M9 3v18M16 15l3-3-3-3" />
+              </svg>
+            </button>
+
+            <div class="flex flex-col items-center gap-2 w-full">
+              <%= link_to root_path, class: "btn btn-ghost btn-square btn-sm #{current_page?(root_path) ? 'btn-active bg-base-300' : 'text-base-content/70'}", title: "Home" do %>
+                <svg xmlns="http://www.w3.org/2000/svg" class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5" /><path d="M5 10.5V20h14v-9.5" /></svg>
+              <% end %>
+              <a href="#" class="btn btn-ghost btn-square btn-sm text-base-content/40" title="Dashboard">
+                <svg xmlns="http://www.w3.org/2000/svg" class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2" /><path d="M8 9h8M8 13h5" /></svg>
+              </a>
+              <a href="#" class="btn btn-ghost btn-square btn-sm text-base-content/40" title="Projects">
+                <svg xmlns="http://www.w3.org/2000/svg" class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5V6a2 2 0 0 1 2-2h12v15.5" /><path d="M6 18h14" /></svg>
+              </a>
+            </div>
+          </div>
+
+          <!-- Bottom Section -->
+          <div class="w-full flex flex-col items-center gap-2">
+            <% if user_signed_in? %>
+              <%= link_to edit_user_registration_path, class: "btn btn-ghost btn-square btn-sm text-base-content/70", title: "Profile" do %>
+                <svg xmlns="http://www.w3.org/2000/svg" class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4" /><path d="M5 20a7 7 0 0 1 14 0" /></svg>
+              <% end %>
+            <% else %>
+              <%= link_to new_user_session_path, class: "btn btn-ghost btn-square btn-sm text-base-content/70", title: "Log in" do %>
+                <svg xmlns="http://www.w3.org/2000/svg" class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3" /></svg>
+              <% end %>
+            <% end %>
+          </div>
+        </summary>
+
+        <!-- ================= OPEN STATE (EXPANDED VIEW) ================= -->
+        <div class="hidden group-open/sidebar:flex flex-col justify-between h-screen w-full select-none">
+          <!-- Top Links -->
+          <div class="w-full">
+            <!-- Header Toggle Panel -->
+            <div class="flex items-center justify-between p-3 border-b border-base-300/50">
+              <span class="font-bold uppercase tracking-wider px-2">Wind Tunnel</span>
+              <button class="btn btn-ghost btn-square btn-xs hover:bg-base-300 text-base-content/70" data-action="click->sidebar#close">
+                <svg xmlns="http://www.w3.org/2000/svg" class="size-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                  <rect width="18" height="18" x="3" y="3" rx="2" />
+                  <path d="M9 3v18M14 9l-3 3 3 3" />
+                </svg>
+              </button>
+            </div>
+
+            <ul class="menu w-full gap-1 p-3 text-sm">
+              <li class="menu-title text-base-content/45">Workspace</li>
+              <li>
+                <%= link_to root_path, class: current_page?(root_path) ? "active" : "" do %>
+                  <svg xmlns="http://www.w3.org/2000/svg" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5" /><path d="M5 10.5V20h14v-9.5" /></svg>
+                  Home
+                <% end %>
+              </li>
+              <li>
+                <a class="opacity-40">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2" /><path d="M8 9h8M8 13h5" /></svg>
+                  Dashboard
+                </a>
+              </li>
+              <li>
+                <a class="opacity-40">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5V6a2 2 0 0 1 2-2h12v15.5" /><path d="M6 18h14" /></svg>
+                  Projects
+                </a>
+              </li>
+
+              <li class="menu-title mt-4 text-base-content/45">Account</li>
+              <% if user_signed_in? %>
+                <li>
+                  <%= link_to edit_user_registration_path do %>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4" /><path d="M5 20a7 7 0 0 1 14 0" /></svg>
+                    Profile
+                  <% end %>
+                </li>
+              <% else %>
+                <li>
+                  <%= link_to new_user_session_path do %>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3" /></svg>
+                    Log in
+                  <% end %>
+                </li>
+              <% end %>
+            </ul>
+          </div>
+
+          <!-- Bottom Actions Panel -->
+          <div class="p-4 border-t border-base-300 w-full bg-base-200">
+            <% if user_signed_in? %>
+              <div class="mb-3 truncate text-xs text-base-content/55 px-1"><%= current_user.email %></div>
+              <%= button_to "Log out", destroy_user_session_path, method: :delete, class: "btn btn-error btn-sm btn-block" %>
+            <% else %>
+              <div class="flex flex-col gap-2">
+                <%= link_to "Log in", new_user_session_path, class: "btn btn-sm btn-outline btn-block" %>
+                <%= link_to "Sign up", new_user_registration_path, class: "btn btn-primary btn-sm btn-block" %>
+              </div>
+            <% end %>
+          </div>
+        </div>
+
+      </details>
+    </div>
+  </div>
+</div>

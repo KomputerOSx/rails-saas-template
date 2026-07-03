@@ -1,0 +1,32 @@
+<section class="mx-auto w-full max-w-md">
+  <div class="card bg-base-200 shadow-sm">
+    <div class="card-body">
+      <h1 class="card-title text-2xl font-bold">Forgot your password?</h1>
+
+      <p class="text-sm text-base-content text-opacity-70 mt-1">
+        Enter your email address below and we'll send you instructions to reset your password.
+      </p>
+
+      <%= form_for(resource, as: resource_name, url: user_password_path, html: { method: :post, class: "mt-4 space-y-4" }) do |f| %>
+        <%= render "devise/shared/error_messages", resource: resource %>
+
+        <div class="form-control">
+          <%= f.label :email, class: "label" do %>
+            <span class="label-text">Email</span>
+          <% end %>
+          <%= f.email_field :email, autofocus: true, autocomplete: "email", class: "input input-bordered w-full" %>
+        </div>
+
+        <div class="form-control mt-2">
+          <%= f.submit "Send me password reset instructions", class: "btn btn-primary w-full" %>
+        </div>
+      <% end %>
+
+      <div class="divider"></div>
+
+      <div class="text-sm text-center">
+        <%= render "devise/shared/links" %>
+      </div>
+    </div>
+  </div>
+</section>

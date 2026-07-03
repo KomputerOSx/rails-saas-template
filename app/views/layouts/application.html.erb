@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html data-theme="dark">
   <head>
     <title><%= content_for(:title) || "Windtunnel" %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -21,11 +21,51 @@
     <%# Includes all stylesheet files in app/assets/stylesheets %>
     <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
+
+    <!-- Shoelace for Rails Blocks -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/components/color-picker/color-picker.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/themes/light.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.1/cdn/themes/dark.css"
+    />
+
+    <!-- Tom Select -->
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.6.1/dist/css/tom-select.css" rel="stylesheet">
+
+    <!-- Air Datepicker -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/air-datepicker@3.6.0/air-datepicker.min.css">
+
+    <!-- Photoswipe -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/photoswipe/dist/photoswipe.css">
+
+
+
   </head>
 
-  <body>
-    <main class="container mx-auto mt-28 px-5 flex">
-      <%= yield %>
-    </main>
+  <body class="min-h-screen bg-base-100 text-base-content antialiased">
+    <div class="drawer lg:drawer-open">
+      <input id="app-sidebar" type="checkbox" class="drawer-toggle">
+
+      <div class="drawer-content flex min-h-screen flex-col">
+        <header class="sticky top-0 z-50 border-b border-base-300 bg-base-100/95 backdrop-blur">
+          <%= render "shared/navbar" %>
+        </header>
+
+        <main class="w-full max-w-7xl px-4 py-8 lg:px-8">
+          <%= render "shared/toast_container" %>
+          <%= render "shared/flash" %>
+          <%= yield %>
+        </main>
+      </div>
+
+      <div class="drawer-side z-40">
+        <label for="app-sidebar" aria-label="Close sidebar" class="drawer-overlay"></label>
+        <%= render "shared/sidebar" %>
+      </div>
+    </div>
   </body>
 </html>

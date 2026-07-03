@@ -1,0 +1,28 @@
+<% if flash[:toast].present? %>
+  <% toast_data = flash[:toast].is_a?(Hash) ? flash[:toast].with_indifferent_access : { message: flash[:toast] } %>
+  <script>
+    document.addEventListener("turbo:load", function() {
+      toast("<%= j toast_data[:message].to_s %>", {
+        type: "<%= j(toast_data[:type] || "default") %>",
+        description: "<%= j toast_data[:description].to_s %>",
+        position: "bottom-right"
+      });
+    }, { once: true });
+  </script>
+<% end %>
+
+<% if notice.present? %>
+  <script>
+    document.addEventListener("turbo:load", function() {
+      toast("<%= j notice %>", { type: "success", position: "bottom-right" });
+    }, { once: true });
+  </script>
+<% end %>
+
+<% if alert.present? %>
+  <script>
+    document.addEventListener("turbo:load", function() {
+      toast("<%= j alert %>", { type: "error", position: "bottom-right" });
+    }, { once: true });
+  </script>
+<% end %>
