@@ -1,5 +1,12 @@
 Rails.application.routes.draw do
-  devise_for :users
+  devise_for :users, controllers: {
+    sessions: "users/sessions",
+    registrations: "users/registrations"
+  }
+
+  devise_scope :user do
+    delete "users/cancel_email_change", to: "users/registrations#cancel_email_change", as: :cancel_email_change
+  end
   root "home#index"
   get "dashboard" => "dashboard#index"
 

@@ -10,6 +10,9 @@
   </div>
 
   <div class="flex items-center gap-2">
+    <button data-controller="theme" data-action="click->theme#toggle" class="btn btn-ghost btn-square btn-sm" aria-label="Toggle theme">
+      <span class="material-symbols-outlined !text-[20px]" data-theme-target="icon">light_mode</span>
+    </button>
     <% if user_signed_in? %>
       <div class="hidden text-right sm:block">
         <span class="block text-xs font-medium text-base-content/50">Signed in as</span>

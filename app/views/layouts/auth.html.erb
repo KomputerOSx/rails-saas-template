@@ -8,6 +8,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
+    <script>document.documentElement.setAttribute("data-theme", localStorage.getItem("theme") || "dark")</script>
 
     <%= yield :head %>
 
@@ -44,6 +45,11 @@
   </head>
 
   <body class="min-h-screen bg-base-100 text-base-content antialiased">
+    <div class="fixed top-4 right-4 z-50">
+      <button data-controller="theme" data-action="click->theme#toggle" class="btn btn-ghost btn-square btn-sm" aria-label="Toggle theme">
+        <span class="material-symbols-outlined !text-[20px]" data-theme-target="icon">light_mode</span>
+      </button>
+    </div>
     <div class="min-h-screen flex flex-col justify-center items-center bg-base-100">
       <main class="w-full max-w-md px-4 py-8">
         <%= render "shared/toast_container" %>

@@ -10,19 +10,3 @@
     }, { once: true });
   </script>
 <% end %>
-
-<% if notice.present? %>
-  <script>
-    document.addEventListener("turbo:load", function() {
-      toast("<%= j notice %>", { type: "success", position: "bottom-right" });
-    }, { once: true });
-  </script>
-<% end %>
-
-<% if alert.present? %>
-  <script>
-    document.addEventListener("turbo:load", function() {
-      toast("<%= j alert %>", { type: "error", position: "bottom-right" });
-    }, { once: true });
-  </script>
-<% end %>

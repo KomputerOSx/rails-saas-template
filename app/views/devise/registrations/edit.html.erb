@@ -8,6 +8,13 @@
       <div class="card-body">
         <h2 class="card-title text-xl font-semibold mb-4">Edit Profile</h2>
 
+        <% if devise_mapping.confirmable? && resource.pending_reconfirmation? %>
+          <div class="alert alert-info shadow-xs text-sm py-2 max-w-md flex items-center justify-between mb-4">
+            <span>Currently waiting confirmation for: <strong><%= resource.unconfirmed_email %></strong></span>
+            <%= button_to "Cancel", cancel_email_change_path, method: :delete, class: "btn btn-xs btn-error btn-outline", data: { turbo_confirm: "Cancel the pending email change?" } %>
+          </div>
+        <% end %>
+
         <%= form_for(resource, as: resource_name, url: user_registration_path, html: { method: :put, class: "space-y-6" }) do |f| %>
 
           <div class="form-control max-w-md">
@@ -17,12 +24,6 @@
             <%= f.email_field :email, autofocus: true, autocomplete: "email", class: error_class_for(resource, :email, "input input-bordered w-full") %>
             <%= field_errors(resource, :email) %>
           </div>
-
-          <% if devise_mapping.confirmable? && resource.pending_reconfirmation? %>
-            <div class="alert alert-info shadow-xs text-sm py-2 max-w-md">
-              <span>Currently waiting confirmation for: <strong><%= resource.unconfirmed_email %></strong></span>
-            </div>
-          <% end %>
 
           <div class="divider max-w-md"></div>
 

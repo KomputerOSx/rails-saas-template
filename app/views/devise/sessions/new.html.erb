@@ -3,14 +3,10 @@
     <div class="card-body">
       <h1 class="card-title text-2xl font-bold">Sign in</h1>
 
-      <% if alert.present? %>
-        <div class="alert alert-error mt-2" role="alert">
-          <span class="material-symbols-outlined !text-[20px]">cancel</span>
-          <span><%= alert %></span>
-        </div>
-      <% end %>
+      <% resource.errors.add(:base, alert) if alert.present? %>
 
       <%= form_for(resource, as: resource_name, url: user_session_path, html: { class: "mt-4 space-y-4" }) do |f| %>
+        <%= field_errors(resource, :base) %>
         <div class="form-control">
           <%= f.label :email, class: "label" do %>
             <span class="label-text">Email</span>
