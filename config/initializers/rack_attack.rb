@@ -39,6 +39,21 @@ class Rack::Attack
     req.ip if req.path.start_with?("/profile/email_change/confirm") && req.post?
   end
 
+  # 2FA: the challenge is already locked out after 5 wrong attempts (see SessionsController),
+  # but this bounds brute-forcing across MULTIPLE challenges from the same IP too.
+  throttle("two_factor_verify/ip", limit: 10, period: 10.minutes) do |req|
+    req.ip if req.path == "/login/two_factor" && req.post?
+  end
+
+  # Resend/fallback both send an email — throttle to stop email-bombing an account.
+  throttle("two_factor_resend/ip", limit: 5, period: 10.minutes) do |req|
+    req.ip if req.path == "/login/two_factor/resend" && req.post?
+  end
+
+  throttle("two_factor_email_fallback/ip", limit: 5, period: 10.minutes) do |req|
+    req.ip if req.path == "/login/two_factor/email_fallback" && req.post?
+  end
+
   self.throttled_responder = lambda do |req|
     match_data = req.env["rack.attack.match_data"]
     now = match_data[:epoch_time]
