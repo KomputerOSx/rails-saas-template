@@ -47,7 +47,7 @@ class ProfileController < ApplicationController
       return
     end
 
-    unless current_user.valid_totp_code?(params[:code], @totp_secret)
+    unless current_user.valid_totp_code?(otp_code_param, @totp_secret)
       build_totp_qr
       flash.now[:alert] = "Authenticator code is invalid. Please try again."
       render :new_totp, status: :unprocessable_entity

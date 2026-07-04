@@ -81,7 +81,7 @@ class SessionsController < ApplicationController
       return
     end
 
-    if valid_two_factor_code?(params[:code], challenge)
+    if valid_two_factor_code?(otp_code_param, challenge)
       challenge.update!(used_at: Time.current)
       trust_two_factor_device_for(user) if params[:remember_device] == "1"
       clear_two_factor_challenge(delete_record: false)

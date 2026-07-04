@@ -18,7 +18,7 @@ class EmailChangesController < ApplicationController
   end
 
   def confirm_old
-    result = current_user.confirm_email_change_old!(params[:code])
+    result = current_user.confirm_email_change_old!(otp_code_param)
 
     case result
     when :expired, :locked
@@ -38,7 +38,7 @@ class EmailChangesController < ApplicationController
   end
 
   def confirm_new
-    result = current_user.confirm_email_change_new!(params[:code])
+    result = current_user.confirm_email_change_new!(otp_code_param)
 
     case result
     when :expired, :locked

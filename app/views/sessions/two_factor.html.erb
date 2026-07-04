@@ -11,23 +11,24 @@
         <% end %>
       </p>
 
-      <%= form_with url: verify_two_factor_login_path, method: :post, html: { class: "mt-4 space-y-4" } do %>
-        <div class="form-control">
-          <label class="label" for="code"><span class="label-text">6-digit code</span></label>
-          <input type="text" name="code" id="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" autofocus class="input input-bordered w-full tracking-widest text-center text-lg">
-        </div>
+      <div data-controller="two-factor" data-two-factor-autosubmit-value="true">
+        <%= form_with url: verify_two_factor_login_path, method: :post, html: { class: "mt-4 space-y-4", data: { two_factor_target: "form" } } do %>
+          <div class="form-control">
+            <%= render "shared/otp_digits" %>
+          </div>
 
-        <div class="form-control">
-          <label class="label cursor-pointer justify-start gap-3">
-            <input type="checkbox" name="remember_device" value="1" class="checkbox checkbox-primary checkbox-sm">
-            <span class="label-text">Trust this device for 24 hours</span>
-          </label>
-        </div>
+          <div class="form-control">
+            <label class="label cursor-pointer justify-start gap-3">
+              <input type="checkbox" name="remember_device" value="1" class="checkbox checkbox-primary checkbox-sm">
+              <span class="label-text">Trust this device for 24 hours</span>
+            </label>
+          </div>
 
-        <div class="form-control mt-2">
-          <%= submit_tag "Verify", class: "btn btn-primary w-full" %>
-        </div>
-      <% end %>
+          <div class="form-control mt-2">
+            <%= submit_tag "Verify", class: "btn btn-primary w-full", data: { two_factor_target: "submitButton" } %>
+          </div>
+        <% end %>
+      </div>
 
       <div class="divider"></div>
 

@@ -22,7 +22,7 @@ class ConfirmationsController < ApplicationController
       return
     end
 
-    unless pending.verify_code(params[:code])
+    unless pending.verify_code(otp_code_param)
       @email = email
       @code_error = "Incorrect code. Please try again."
       render :new, status: :unprocessable_entity

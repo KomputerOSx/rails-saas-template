@@ -1,0 +1,16 @@
+<div class="flex justify-center gap-2">
+  <% 6.times do |i| %>
+    <input
+      data-two-factor-target="digit"
+      data-action="input->two-factor#handleInput keydown->two-factor#handleKeydown paste->two-factor#handlePaste"
+      type="text"
+      name="code[]"
+      inputmode="numeric"
+      maxlength="1"
+      autocomplete="<%= i.zero? ? "one-time-code" : "off" %>"
+      <%= "autofocus" if i.zero? && local_assigns[:autofocus] != false %>
+      required
+      class="input input-bordered w-10 h-12 sm:w-12 sm:h-14 text-center text-lg font-semibold<%= " input-error" if local_assigns[:error] %>"
+    >
+  <% end %>
+</div>

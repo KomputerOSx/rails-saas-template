@@ -7,19 +7,20 @@
         Enter the 6-digit code we sent to <strong><%= @email %></strong>.
       </p>
 
-      <%= form_with url: confirmations_path, method: :post, html: { class: "mt-4 space-y-4" } do %>
-        <div class="form-control">
-          <label class="label" for="code"><span class="label-text">6-digit code</span></label>
-          <input type="text" name="code" id="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" autofocus class="input input-bordered w-full tracking-widest text-center text-lg<%= ' input-error' if @code_error.present? %>">
-          <% if @code_error.present? %>
-            <p class="text-error text-xs mt-1 font-medium"><%= @code_error %></p>
-          <% end %>
-        </div>
+      <div data-controller="two-factor" data-two-factor-autosubmit-value="true">
+        <%= form_with url: confirmations_path, method: :post, html: { class: "mt-4 space-y-4", data: { two_factor_target: "form" } } do %>
+          <div class="form-control">
+            <%= render "shared/otp_digits", error: @code_error.present? %>
+            <% if @code_error.present? %>
+              <p class="text-error text-xs mt-1 font-medium text-center"><%= @code_error %></p>
+            <% end %>
+          </div>
 
-        <div class="form-control mt-2">
-          <%= submit_tag "Confirm", class: "btn btn-primary w-full" %>
-        </div>
-      <% end %>
+          <div class="form-control mt-2">
+            <%= submit_tag "Confirm", class: "btn btn-primary w-full", data: { two_factor_target: "submitButton" } %>
+          </div>
+        <% end %>
+      </div>
 
       <div class="divider"></div>
 

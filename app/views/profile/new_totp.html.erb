@@ -17,21 +17,23 @@
         <code class="block mt-2 break-all"><%= @totp_secret %></code>
       </details>
 
-      <%= form_with url: profile_totp_path, method: :post, html: { class: "mt-4 space-y-4" } do %>
-        <div class="form-control">
-          <label class="label" for="current_password"><span class="label-text">Current password</span></label>
-          <input type="password" name="current_password" id="current_password" autocomplete="current-password" class="input input-bordered w-full">
-        </div>
+      <div data-controller="two-factor" data-two-factor-autosubmit-value="true">
+        <%= form_with url: profile_totp_path, method: :post, html: { class: "mt-4 space-y-4", data: { two_factor_target: "form" } } do %>
+          <div class="form-control">
+            <label class="label" for="current_password"><span class="label-text">Current password</span></label>
+            <input type="password" name="current_password" id="current_password" autocomplete="current-password" autofocus class="input input-bordered w-full">
+          </div>
 
-        <div class="form-control">
-          <label class="label" for="code"><span class="label-text">6-digit code</span></label>
-          <input type="text" name="code" id="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" class="input input-bordered w-full tracking-widest text-center text-lg">
-        </div>
+          <div class="form-control">
+            <label class="label"><span class="label-text">6-digit code</span></label>
+            <%= render "shared/otp_digits", autofocus: false %>
+          </div>
 
-        <div class="form-control mt-2">
-          <%= submit_tag "Enable", class: "btn btn-primary w-full" %>
-        </div>
-      <% end %>
+          <div class="form-control mt-2">
+            <%= submit_tag "Enable", class: "btn btn-primary w-full", data: { two_factor_target: "submitButton" } %>
+          </div>
+        <% end %>
+      </div>
 
       <div class="divider"></div>
 

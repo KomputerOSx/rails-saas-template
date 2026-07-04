@@ -12,4 +12,13 @@ class ApplicationController < ActionController::Base
   stale_when_importmap_changes
 
   layout "application"
+
+  private
+
+  # The boxed OTP inputs (two-factor Stimulus controller) submit one digit per
+  # `code[]` field — this joins them back into the single code string the rest
+  # of the app's verification methods expect.
+  def otp_code_param
+    Array(params[:code]).join
+  end
 end
