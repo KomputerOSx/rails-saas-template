@@ -1,0 +1,9 @@
+<p>Welcome, <%= @email %>!</p>
+
+<p>Your confirmation code is:</p>
+
+<p style="font-size:28px;font-weight:bold;letter-spacing:4px"><%= @code %></p>
+
+<p>Enter this code to confirm your email address. It will expire in <%= @expires_in_minutes %> minutes.</p>
+
+<p>If you didn't create this account, you can safely ignore this email.</p>

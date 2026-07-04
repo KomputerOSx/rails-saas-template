@@ -1,0 +1,46 @@
+<section class="mx-auto w-full max-w-md">
+  <div class="card bg-base-200 shadow-sm">
+    <div class="card-body">
+      <h1 class="card-title text-2xl font-bold">Sign up</h1>
+
+      <%= form_with model: @user, url: registration_path, html: { class: "mt-4 space-y-4" } do |f| %>
+        <div class="form-control">
+          <%= f.label :email, class: "label" do %>
+            <span class="label-text">Email</span>
+          <% end %>
+          <%= f.email_field :email, autofocus: true, autocomplete: "email", class: error_class_for(@user, :email, "input input-bordered w-full") %>
+          <%= field_errors(@user, :email) %>
+        </div>
+
+        <div class="form-control">
+          <%= f.label :password, class: "label" do %>
+            <span class="label-text">Password</span>
+          <% end %>
+          <div class="px-1 pb-1">
+            <span class="text-xs text-base-content text-opacity-60"><%= User::MIN_PASSWORD_LENGTH %> characters minimum</span>
+          </div>
+          <%= f.password_field :password, autocomplete: "new-password", class: error_class_for(@user, :password, "input input-bordered w-full") %>
+          <%= field_errors(@user, :password) %>
+        </div>
+
+        <div class="form-control">
+          <%= f.label :password_confirmation, class: "label" do %>
+            <span class="label-text">Confirm Password</span>
+          <% end %>
+          <%= f.password_field :password_confirmation, autocomplete: "new-password", class: error_class_for(@user, :password_confirmation, "input input-bordered w-full") %>
+          <%= field_errors(@user, :password_confirmation) %>
+        </div>
+
+        <div class="form-control mt-2">
+          <%= f.submit "Sign up", class: "btn btn-primary w-full" %>
+        </div>
+      <% end %>
+
+      <div class="divider"></div>
+
+      <div class="text-sm text-center">
+        <%= link_to "Sign in", login_path, class: "link link-primary" %>
+      </div>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,14 @@
+<p>Hello, <%= @user.email %>!</p>
+
+<p>Your security code is:</p>
+
+<p style="font-size:28px;font-weight:bold;letter-spacing:4px"><%= @code %></p>
+
+<p>This code will expire in <%= @expires_in_minutes %> minutes.</p>
+
+<p style="color:#666;font-size:12px">
+  Requested at <%= @requested_at.utc.strftime("%Y-%m-%d %H:%M UTC") %>
+  from IP <%= @request_details[:ip_address] %>
+  (<%= @request_details[:user_agent] %>)
+  — if this wasn't you, change your password immediately.
+</p>

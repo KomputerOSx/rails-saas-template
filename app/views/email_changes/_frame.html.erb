@@ -1,0 +1,7 @@
+<% if !current_user.email_change_pending? %>
+  <%= render "email_changes/new_email_form" %>
+<% elsif !current_user.email_change_old_confirmed? %>
+  <%= render "email_changes/verify_old_form" %>
+<% else %>
+  <%= render "email_changes/verify_new_form" %>
+<% end %>

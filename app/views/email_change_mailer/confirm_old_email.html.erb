@@ -1,0 +1,14 @@
+<p>Hello, <%= @user.email %>!</p>
+
+<p>Someone requested to change the email address on this account from
+<strong><%= @user.email %></strong> to <strong><%= @user.unconfirmed_email %></strong>.</p>
+
+<p>Your confirmation code is:</p>
+
+<p style="font-size:28px;font-weight:bold;letter-spacing:4px"><%= @code %></p>
+
+<p>Enter this code to approve the change. It expires in <%= @expires_in_minutes %> minutes.
+<strong>Both</strong> the old and new email addresses must confirm before the change takes effect.</p>
+
+<p>If you didn't request this, you can safely ignore this email — no change will be made unless
+both addresses confirm.</p>

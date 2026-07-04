@@ -1,0 +1,43 @@
+<section class="mx-auto w-full max-w-md">
+  <div class="card bg-base-200 shadow-sm">
+    <div class="card-body">
+      <h1 class="card-title text-2xl font-bold">Verify it's you</h1>
+
+      <p class="text-sm text-base-content/70 mt-1">
+        <% if @two_factor_delivery_method == "totp" %>
+          Enter the code from your authenticator app.
+        <% else %>
+          Enter the code sent to <strong><%= @two_factor_email %></strong>.
+        <% end %>
+      </p>
+
+      <%= form_with url: verify_two_factor_login_path, method: :post, html: { class: "mt-4 space-y-4" } do %>
+        <div class="form-control">
+          <label class="label" for="code"><span class="label-text">6-digit code</span></label>
+          <input type="text" name="code" id="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" autofocus class="input input-bordered w-full tracking-widest text-center text-lg">
+        </div>
+
+        <div class="form-control">
+          <label class="label cursor-pointer justify-start gap-3">
+            <input type="checkbox" name="remember_device" value="1" class="checkbox checkbox-primary checkbox-sm">
+            <span class="label-text">Trust this device for 24 hours</span>
+          </label>
+        </div>
+
+        <div class="form-control mt-2">
+          <%= submit_tag "Verify", class: "btn btn-primary w-full" %>
+        </div>
+      <% end %>
+
+      <div class="divider"></div>
+
+      <div class="text-sm text-center">
+        <% if @two_factor_delivery_method == "totp" %>
+          <%= button_to "Email me a code instead", email_two_factor_fallback_login_path, class: "link link-primary bg-transparent border-0 p-0" %>
+        <% else %>
+          <%= button_to "Send a new code", resend_two_factor_login_path, class: "link link-primary bg-transparent border-0 p-0" %>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</section>

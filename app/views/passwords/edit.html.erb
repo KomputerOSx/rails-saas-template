@@ -1,0 +1,33 @@
+<section class="mx-auto w-full max-w-md">
+  <div class="card bg-base-200 shadow-sm">
+    <div class="card-body">
+      <h1 class="card-title text-2xl font-bold">Change your password</h1>
+
+      <%= form_with url: password_path, method: :patch, html: { class: "mt-4 space-y-4" } do %>
+        <div class="form-control">
+          <label class="label" for="current_password"><span class="label-text">Current password</span></label>
+          <input type="password" name="current_password" id="current_password" autocomplete="current-password" class="input input-bordered w-full">
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="form-control">
+          <label class="label" for="password"><span class="label-text">New password</span></label>
+          <input type="password" name="password" id="password" autocomplete="new-password" class="input input-bordered w-full">
+          <div class="px-1 pt-1">
+            <span class="text-xs text-base-content text-opacity-60">(<%= User::MIN_PASSWORD_LENGTH %> characters minimum)</span>
+          </div>
+        </div>
+
+        <div class="form-control">
+          <label class="label" for="password_confirmation"><span class="label-text">Confirm new password</span></label>
+          <input type="password" name="password_confirmation" id="password_confirmation" autocomplete="new-password" class="input input-bordered w-full">
+        </div>
+
+        <div class="form-control mt-2">
+          <%= submit_tag "Change my password", class: "btn btn-primary w-full" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</section>

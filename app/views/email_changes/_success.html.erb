@@ -1,0 +1,7 @@
+<turbo-frame id="email_change_frame">
+  <div class="text-center py-4">
+    <p class="text-lg font-semibold mb-2">Email updated!</p>
+    <p class="text-sm text-base-content/70 mb-4">Your email address has been changed successfully.</p>
+    <%= link_to "Done", profile_path, data: { turbo_frame: "_top" }, class: "btn btn-primary w-full" %>
+  </div>
+</turbo-frame>

@@ -1,0 +1,20 @@
+<turbo-frame id="email_change_frame">
+  <h3 class="font-bold text-lg mb-2">Change email address</h3>
+  <p class="text-sm text-base-content/70 mb-4">
+    We'll send a confirmation code to your current email (<%= current_user.email %>), then to the new address.
+  </p>
+
+  <%= field_errors(current_user, :base) %>
+
+  <%= form_with url: profile_email_change_path, method: :post, html: { class: "space-y-4" } do %>
+    <div class="form-control">
+      <label class="label" for="new_email"><span class="label-text">New email address</span></label>
+      <input type="email" name="email" id="new_email" autocomplete="email" class="<%= error_class_for(current_user, :email, "input input-bordered w-full") %>" required>
+      <%= field_errors(current_user, :email) %>
+    </div>
+
+    <div class="form-control mt-2">
+      <%= submit_tag "Send code", class: "btn btn-primary w-full" %>
+    </div>
+  <% end %>
+</turbo-frame>

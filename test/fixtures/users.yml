@@ -1,8 +1,11 @@
 one:
   email: one@example.com
-  encrypted_password: <%= Devise::Encryptor.digest(User, "password123") %>
+  password_digest: <%= BCrypt::Password.create("password123") %>
+  role: user
+  confirmed_at: <%= Time.current %>
 
 two:
   email: two@example.com
-  encrypted_password: <%= Devise::Encryptor.digest(User, "password123") %>
-# column: value
+  password_digest: <%= BCrypt::Password.create("password123") %>
+  role: user
+  confirmed_at: <%= Time.current %>

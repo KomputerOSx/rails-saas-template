@@ -37,8 +37,8 @@
 
           <!-- Bottom Section -->
           <div class="w-full flex flex-col items-center gap-2">
-            <% if user_signed_in? %>
-              <%= link_to edit_user_registration_path, class: "btn btn-ghost btn-square btn-sm text-base-content/70", title: "Profile" do %>
+            <% if authenticated? %>
+              <%= link_to profile_path, class: "btn btn-ghost btn-square btn-sm text-base-content/70", title: "Profile" do %>
                 <span class="material-symbols-outlined !text-[20px]">person</span>
               <% end %>
             <% end %>
@@ -79,9 +79,9 @@
               </li>
 
               <li class="menu-title mt-4 text-base-content/45">Account</li>
-              <% if user_signed_in? %>
+              <% if authenticated? %>
                 <li>
-                  <%= link_to edit_user_registration_path do %>
+                  <%= link_to profile_path do %>
                     <span class="material-symbols-outlined !text-[16px]">person</span>
                     Profile
                   <% end %>
@@ -91,7 +91,7 @@
           </div>
 
           <!-- Bottom Actions Panel -->
-          <% if user_signed_in? %>
+          <% if authenticated? %>
             <div class="p-4 border-t border-base-300 w-full bg-base-200">
               <div class="truncate text-xs text-base-content/55 px-1"><%= current_user.email %></div>
             </div>

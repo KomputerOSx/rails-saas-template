@@ -13,15 +13,15 @@
     <button data-controller="theme" data-action="click->theme#toggle" class="btn btn-ghost btn-square btn-sm" aria-label="Toggle theme">
       <span class="material-symbols-outlined !text-[20px]" data-theme-target="icon">light_mode</span>
     </button>
-    <% if user_signed_in? %>
+    <% if authenticated? %>
       <div class="hidden text-right sm:block">
         <span class="block text-xs font-medium text-base-content/50">Signed in as</span>
         <span class="block max-w-[180px] truncate text-sm font-semibold text-base-content/80"><%= current_user.email %></span>
       </div>
-      <%= button_to "Sign out", destroy_user_session_path, method: :delete, class: "btn btn-error btn-sm" %>
+      <%= button_to "Sign out", session_path, method: :delete, class: "btn btn-error btn-sm" %>
     <% else %>
-      <%= link_to "Sign in", new_user_session_path, class: "btn btn-sm border-base-300 bg-base-200 text-base-content hover:border-base-content/20 hover:bg-base-300" %>
-      <%= link_to "Sign up", new_user_registration_path, class: "btn btn-primary btn-sm" %>
+      <%= link_to "Sign in", login_path, class: "btn btn-sm border-base-300 bg-base-200 text-base-content hover:border-base-content/20 hover:bg-base-300" %>
+      <%= link_to "Sign up", new_registration_path, class: "btn btn-primary btn-sm" %>
     <% end %>
   </div>
 </nav>

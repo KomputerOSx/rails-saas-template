@@ -1,0 +1,18 @@
+<turbo-frame id="email_change_frame">
+  <h3 class="font-bold text-lg mb-2">Confirm your new email</h3>
+  <p class="text-sm text-base-content/70 mb-4">
+    Enter the 6-digit code sent to <strong><%= current_user.unconfirmed_email %></strong>.
+  </p>
+
+  <%= form_with url: confirm_new_profile_email_change_path, method: :post, html: { class: "space-y-4" } do %>
+    <div class="form-control">
+      <label class="label" for="new_code"><span class="label-text">6-digit code</span></label>
+      <input type="text" name="code" id="new_code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" autofocus class="<%= error_class_for(current_user, :code, "input input-bordered w-full tracking-widest text-center text-lg") %>">
+      <%= field_errors(current_user, :code) %>
+    </div>
+
+    <div class="form-control mt-2">
+      <%= submit_tag "Confirm", class: "btn btn-primary w-full" %>
+    </div>
+  <% end %>
+</turbo-frame>

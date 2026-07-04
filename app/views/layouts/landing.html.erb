@@ -8,7 +8,9 @@
     <meta name="mobile-web-app-capable" content="yes">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
-    <script>document.documentElement.setAttribute("data-theme", localStorage.getItem("theme") || "dark")</script>
+    <%= javascript_tag nonce: true do %>
+      document.documentElement.setAttribute("data-theme", localStorage.getItem("theme") || "dark");
+    <% end %>
 
     <%= yield :head %>
 

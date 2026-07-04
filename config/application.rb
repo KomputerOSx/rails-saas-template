@@ -6,6 +6,10 @@ require "rails/all"
 # you've limited to :test, :development, or :production.
 Bundler.require(*Rails.groups)
 
+# Rails autoloading doesn't reliably pick these up otherwise.
+require "rotp"
+require "rqrcode"
+
 module Windtunnel
   class Application < Rails::Application
     # Initialize configuration defaults for originally generated Rails version.
@@ -23,5 +27,14 @@ module Windtunnel
     #
     # config.time_zone = "Central Time (US & Canada)"
     # config.eager_load_paths << Rails.root.join("extras")
+
+    config.middleware.use Rack::Attack
+
+    config.action_dispatch.default_headers = config.action_dispatch.default_headers.merge(
+      "Cross-Origin-Opener-Policy" => "same-origin",
+      "Cross-Origin-Resource-Policy" => "same-origin",
+      "X-Content-Type-Options" => "nosniff",
+      "X-Frame-Options" => "DENY"
+    )
   end
 end
