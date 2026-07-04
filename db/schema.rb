@@ -10,7 +10,24 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_03_220400) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_04_000000) do
+  create_table "audit_logs", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "event_type", null: false
+    t.string "ip_address"
+    t.text "metadata"
+    t.bigint "resource_id"
+    t.string "resource_type"
+    t.datetime "updated_at", null: false
+    t.string "user_agent"
+    t.integer "user_id"
+    t.index ["created_at"], name: "index_audit_logs_on_created_at"
+    t.index ["event_type"], name: "index_audit_logs_on_event_type"
+    t.index ["resource_type", "resource_id"], name: "index_audit_logs_on_resource"
+    t.index ["user_id", "event_type"], name: "index_audit_logs_on_user_id_and_event_type"
+    t.index ["user_id"], name: "index_audit_logs_on_user_id"
+  end
+
   create_table "users", force: :cascade do |t|
     t.datetime "confirmation_sent_at"
     t.string "confirmation_token"
@@ -32,4 +49,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_03_220400) do
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
+
+  add_foreign_key "audit_logs", "users"
 end
