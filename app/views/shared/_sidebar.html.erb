@@ -1,111 +1,81 @@
-<div class="flex h-screen w-full flex-col relative" data-controller="sidebar" data-sidebar-storage-key-value="basicSidebar">
+<div class="flex h-screen flex-col relative shrink-0">
   <!-- Mobile Sidebar Overlay -->
-  <div class="absolute inset-0 z-50 md:hidden hidden" data-sidebar-target="mobileSidebar">
+  <div class="fixed inset-0 z-[60] md:hidden hidden" data-sidebar-target="mobileSidebar">
     <!-- Backdrop -->
     <div class="absolute inset-0 bg-black/50 transition-opacity duration-300" data-sidebar-target="mobileBackdrop" data-action="click->sidebar#closeMobile"></div>
 
     <!-- Sidebar Panel -->
-    <div class="absolute inset-y-0 left-0 w-64 bg-base-200 shadow-xl border-r border-base-300 transition-transform duration-300 ease-out" data-sidebar-target="mobilePanel">
-      <div data-sidebar-target="sharedContent"></div>
+    <div class="absolute inset-y-0 left-0 w-64  shadow-xl border-r border-base-300 transition-transform duration-300 ease-out" data-sidebar-target="mobilePanel">
+      <div class="h-full" data-sidebar-target="sharedContent"></div>
     </div>
   </div>
 
   <div class="relative z-0 flex h-full w-full">
     <div class="relative flex h-full flex-row">
-      <details class="w-25 open:w-72 group/sidebar relative z-20 h-full shrink-0 overflow-hidden border-r border-base-300 bg-base-200 max-md:hidden motion-safe:transition-all motion-safe:duration-300" data-sidebar-target="desktopSidebar" open>
+      <details class="w-16 open:w-64 group/sidebar relative z-20 h-full shrink-0 overflow-hidden border-r border-base-300  max-md:hidden motion-safe:transition-all motion-safe:duration-300" data-sidebar-target="desktopSidebar" open>
 
         <!-- ================= CLOSED STATE (TINY VIEW) ================= -->
         <summary class="group-open/sidebar:hidden flex h-screen cursor-e-resize list-none flex-col items-center justify-between p-3 select-none">
           <!-- Top Section -->
           <div class="flex flex-col items-center gap-4 w-full">
-            <button class="btn btn-ghost btn-square btn-sm hover:bg-base-300 text-base-content/70" data-action="click->sidebar#open">
-              <span class="material-symbols-outlined !text-[25px]">right_panel_close</span>
+            <button class="btn btn-ghost btn-square btn-sm text-base-content/70" data-action="click->sidebar#open" aria-label="Expand sidebar">
+              <span class="material-symbols-outlined !text-[22px]">right_panel_close</span>
             </button>
 
             <div class="flex flex-col items-center gap-2 w-full">
-              <%= link_to root_path, class: "btn btn-ghost btn-square btn-sm #{current_page?(root_path) ? 'btn-active bg-base-300' : 'text-base-content/70'}", title: "Home" do %>
-                <span class="material-symbols-outlined !text-[25px]">home</span>
+              <%= link_to root_path, class: "btn btn-ghost btn-square btn-sm #{current_page?(root_path) ? 'btn-active ' : 'text-base-content/70'}", data: { controller: "tooltip", tooltip_content: "Home", tooltip_placement_value: "right", tooltip_arrow: "true", tooltip_animation_value: "fade origin", tooltip_size_value: "small" } do %>
+                <span class="material-symbols-outlined !text-[22px]">home</span>
               <% end %>
-              <a href="#" class="btn btn-ghost btn-square btn-sm text-base-content/40" title="Dashboard">
-                <span class="material-symbols-outlined !text-[25px]">dashboard</span>
-              </a>
-              <a href="#" class="btn btn-ghost btn-square btn-sm text-base-content/40" title="Projects">
-                <span class="material-symbols-outlined !text-[25px]">folder</span>
-              </a>
+              <span class="btn btn-ghost btn-square btn-sm text-base-content/40" data-controller="tooltip" data-tooltip-content="Dashboard" data-tooltip-placement-value="right" data-tooltip-arrow="true" data-tooltip-animation-value="fade origin" data-tooltip-size-value="small">
+                <span class="material-symbols-outlined !text-[22px]">dashboard</span>
+              </span>
+              <span class="btn btn-ghost btn-square btn-sm text-base-content/40" data-controller="tooltip" data-tooltip-content="Projects" data-tooltip-placement-value="right" data-tooltip-arrow="true" data-tooltip-animation-value="fade origin" data-tooltip-size-value="small">
+                <span class="material-symbols-outlined !text-[22px]">folder</span>
+              </span>
+
+              <% if Current.organization && current_membership&.roles&.any? %>
+                <%= link_to org_members_path, class: "btn btn-ghost btn-square btn-sm #{current_page?(org_members_path) ? 'btn-active ' : 'text-base-content/70'}", data: { controller: "tooltip", tooltip_content: "Settings", tooltip_placement_value: "right", tooltip_arrow: "true", tooltip_animation_value: "fade origin", tooltip_size_value: "small" } do %>
+                  <span class="material-symbols-outlined !text-[22px]">hub</span>
+                <% end %>
+              <% end %>
             </div>
           </div>
 
           <!-- Bottom Section -->
           <div class="w-full flex flex-col items-center gap-2">
             <% if authenticated? %>
-              <%= link_to profile_path, class: "btn btn-ghost btn-square btn-sm text-base-content/70", title: "Profile" do %>
-                <span class="material-symbols-outlined !text-[25px]">person</span>
+              <%= link_to profile_path, class: "btn btn-ghost btn-square btn-sm text-base-content/70", data: { controller: "tooltip", tooltip_content: "Profile", tooltip_placement_value: "right", tooltip_arrow: "true", tooltip_animation_value: "fade origin", tooltip_size_value: "small" } do %>
+                <span class="material-symbols-outlined !text-[22px]">person</span>
               <% end %>
             <% end %>
           </div>
         </summary>
 
         <!-- ================= OPEN STATE (EXPANDED VIEW) ================= -->
-        <div class="hidden group-open/sidebar:flex flex-col justify-between h-screen w-full select-none">
-          <!-- Top Links -->
-          <div class="w-full">
-            <!-- Header Toggle Panel -->
-            <div class="flex items-center justify-between p-4 border-b border-base-300/50">
-              <span class="font-bold uppercase tracking-wider px-2">WindTunnel</span>
-              <button class="btn btn-ghost btn-square btn-xs hover:bg-base-300 text-base-content/70" data-action="click->sidebar#close">
-                <span class="material-symbols-outlined !text-[25px]">left_panel_close</span>
-              </button>
-            </div>
+        <div class="hidden group-open/sidebar:flex h-screen w-full" data-sidebar-target="desktopContent">
+          <!-- Shared Sidebar Content Template (cloned here and into the mobile panel) -->
+          <template data-sidebar-target="contentTemplate">
+            <nav class="flex h-full w-full flex-col select-none">
+              <!-- Header Toggle Panel -->
+              <div class="flex items-center justify-between p-4 border-b border-base-300/50">
+                <span class="font-bold uppercase tracking-wider px-2">WindTunnel</span>
+                <button class="btn btn-ghost btn-square btn-xs text-base-content/70" data-action="click->sidebar#close" aria-label="Collapse sidebar">
+                  <span class="material-symbols-outlined !text-[20px]">left_panel_close</span>
+                </button>
+              </div>
 
-            <ul class="menu w-full gap-1 p-3 text-sm">
-              <li class="menu-title text-base-content/45">Workspace</li>
-              <li>
-                <%= link_to root_path, class: current_page?(root_path) ? "active" : "" do %>
-                  <span class="material-symbols-outlined !text-[25px]">home</span>
-                  Home
-                <% end %>
-              </li>
-              <li>
-                <a class="opacity-40">
-                  <span class="material-symbols-outlined !text-[25px]">dashboard</span>
-                  Dashboard
-                </a>
-              </li>
-              <li>
-                <a class="opacity-40">
-                  <span class="material-symbols-outlined !text-[25px]">folder</span>
-                  Projects
-                </a>
-              </li>
+              <%= render "shared/sidebar_nav" %>
 
-              <% if Current.organization && current_membership&.roles&.any? %>
-                <li class="menu-title mt-4 text-base-content/45">Organization</li>
-                <li>
-                  <%= link_to org_members_path, class: current_page?(org_members_path) ? "active" : "" do %>
-                    <span class="material-symbols-outlined !text-[25px]">hub</span>
-                    Settings
-                  <% end %>
-                </li>
-              <% end %>
+              <div class="grow"></div>
 
-              <li class="menu-title mt-4 text-base-content/45">Account</li>
+              <!-- Bottom Actions Panel -->
               <% if authenticated? %>
-                <li>
-                  <%= link_to profile_path do %>
-                    <span class="material-symbols-outlined !text-[25px]">person</span>
-                    Profile
-                  <% end %>
-                </li>
+                <div class="p-4 border-t border-base-300 w-full ">
+                  <div class="truncate text-xs text-base-content/55 px-1"><%= current_user.email %></div>
+                </div>
               <% end %>
-            </ul>
-          </div>
-
-          <!-- Bottom Actions Panel -->
-          <% if authenticated? %>
-            <div class="p-4 border-t border-base-300 w-full bg-base-200">
-              <div class="truncate text-xs text-base-content/55 px-1"><%= current_user.email %></div>
-            </div>
-          <% end %>
+            </nav>
+          </template>
         </div>
 
       </details>

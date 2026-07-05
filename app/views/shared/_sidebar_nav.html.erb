@@ -1,0 +1,41 @@
+<ul class="menu w-full gap-1 p-3 text-sm">
+  <li class="menu-title text-base-content/45">Workspace</li>
+  <li>
+    <%= link_to root_path, class: current_page?(root_path) ? "active" : "" do %>
+      <span class="material-symbols-outlined !text-[25px]">home</span>
+      Home
+    <% end %>
+  </li>
+  <li>
+    <a class="opacity-40">
+      <span class="material-symbols-outlined !text-[25px]">dashboard</span>
+      Dashboard
+    </a>
+  </li>
+  <li>
+    <a class="opacity-40">
+      <span class="material-symbols-outlined !text-[25px]">folder</span>
+      Projects
+    </a>
+  </li>
+
+  <% if Current.organization && current_membership&.roles&.any? %>
+    <li class="menu-title mt-4 text-base-content/45">Organization</li>
+    <li>
+      <%= link_to org_members_path, class: current_page?(org_members_path) ? "active" : "" do %>
+        <span class="material-symbols-outlined !text-[25px]">hub</span>
+        Settings
+      <% end %>
+    </li>
+  <% end %>
+
+  <li class="menu-title mt-4 text-base-content/45">Account</li>
+  <% if authenticated? %>
+    <li>
+      <%= link_to profile_path do %>
+        <span class="material-symbols-outlined !text-[25px]">person</span>
+        Profile
+      <% end %>
+    </li>
+  <% end %>
+</ul>

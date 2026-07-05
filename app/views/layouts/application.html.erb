@@ -51,10 +51,10 @@
   </head>
 
   <body class="min-h-screen bg-base-100 text-base-content antialiased">
-    <div class="drawer lg:drawer-open">
-      <input id="app-sidebar" type="checkbox" class="drawer-toggle">
+    <div class="flex h-screen w-full" data-controller="sidebar" data-sidebar-storage-key-value="basicSidebar">
+      <%= render "shared/sidebar" %>
 
-      <div class="drawer-content flex min-h-screen flex-col">
+      <div class="flex min-h-screen flex-1 flex-col overflow-y-auto">
         <header class="sticky top-0 z-50 border-b border-base-300 bg-base-100/95 backdrop-blur">
           <%= render "shared/navbar" %>
         </header>
@@ -64,11 +64,6 @@
           <%= render "shared/flash" %>
           <%= yield %>
         </main>
-      </div>
-
-      <div class="drawer-side z-40">
-        <label for="app-sidebar" aria-label="Close sidebar" class="drawer-overlay"></label>
-        <%= render "shared/sidebar" %>
       </div>
     </div>
   </body>

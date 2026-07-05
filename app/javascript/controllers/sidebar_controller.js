@@ -19,36 +19,24 @@ export default class extends Controller {
     // Bind the handler once so we can properly remove it later
     this.boundHandleToggle = this.handleToggle.bind(this);
 
-    // Clone the sidebar content for both mobile and desktop
+    // Clone the shared sidebar content into both the desktop expanded panel and the mobile panel
     if (this.hasContentTemplateTarget) {
-      // Clone content for desktop (only if not already cloned)
-      // Check if nav element exists (the actual cloned content)
       if (this.hasDesktopContentTarget && !this.desktopContentTarget.querySelector("nav")) {
-        const desktopClone = this.contentTemplateTarget.content.cloneNode(true);
-        this.desktopContentTarget.appendChild(desktopClone);
+        this.desktopContentTarget.appendChild(this.contentTemplateTarget.content.cloneNode(true));
       }
 
-      // Clone content for mobile (only if not already cloned)
       if (this.hasSharedContentTarget && !this.sharedContentTarget.querySelector("nav")) {
-        const mobileClone = this.contentTemplateTarget.content.cloneNode(true);
-        this.sharedContentTarget.appendChild(mobileClone);
+        this.sharedContentTarget.appendChild(this.contentTemplateTarget.content.cloneNode(true));
 
-        // Update the close button in mobile view to show X icon and have mobile close action
+        // In the mobile clone, the header button should close the mobile overlay (not collapse the desktop rail)
         const mobileNav = this.sharedContentTarget.querySelector("nav");
-        if (mobileNav) {
-          const closeButton = mobileNav.querySelector('[data-action*="sidebar#close"]');
-          if (closeButton) {
-            closeButton.setAttribute("data-action", "click->sidebar#closeMobile");
-            closeButton.classList.remove("cursor-w-resize");
-            closeButton.setAttribute("aria-label", "Close sidebar");
+        const closeButton = mobileNav?.querySelector('[data-action*="sidebar#close"]');
+        if (closeButton) {
+          closeButton.setAttribute("data-action", "click->sidebar#closeMobile");
+          closeButton.setAttribute("aria-label", "Close sidebar");
 
-            // Replace the collapse icon with an X icon
-            const svg = closeButton.querySelector("svg");
-            if (svg) {
-              svg.innerHTML =
-                '<g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" stroke="currentColor"><line x1="13.25" y1="4.75" x2="4.75" y2="13.25"></line><line x1="13.25" y1="13.25" x2="4.75" y2="4.75"></line></g>';
-            }
-          }
+          const icon = closeButton.querySelector(".material-symbols-outlined");
+          if (icon) icon.textContent = "close";
         }
       }
     }
