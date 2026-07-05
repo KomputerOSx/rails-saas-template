@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_05_225235) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_05_233357) do
   create_table "audit_logs", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "event_type", null: false
@@ -212,6 +212,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_05_225235) do
     t.datetime "account_deletion_code_sent_at"
     t.datetime "confirmed_at"
     t.datetime "created_at", null: false
+    t.datetime "disabled_at"
     t.string "email", null: false
     t.integer "email_change_attempts", default: 0, null: false
     t.string "email_change_new_code_digest"
@@ -232,6 +233,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_05_225235) do
     t.string "totp_secret"
     t.string "unconfirmed_email"
     t.datetime "updated_at", null: false
+    t.index ["disabled_at"], name: "index_users_on_disabled_at"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["locked_until"], name: "index_users_on_locked_until"
   end

@@ -84,7 +84,7 @@ class PasswordResetsController < ApplicationController
   end
 
   def resettable_user?(user)
-    user.present? && user.confirmed? && !user.locked?
+    user.present? && user.confirmed? && !user.locked? && !user.disabled?
   end
 
   def usable_token_for(raw_token)

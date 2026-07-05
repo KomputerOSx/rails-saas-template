@@ -17,8 +17,8 @@ class OmniauthCallbacksController < ApplicationController
       return
     end
 
-    if user.locked?
-      log_audit(:login_failure, user: user, metadata: { provider: auth.provider, reason: "account_locked" })
+    if user.locked? || user.disabled?
+      log_audit(:login_failure, user: user, metadata: { provider: auth.provider, reason: user.disabled? ? "account_disabled" : "account_locked" })
       redirect_to login_path, alert: "This account is locked. Please try again later or reset your password."
       return
     end

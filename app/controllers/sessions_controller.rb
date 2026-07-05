@@ -19,8 +19,8 @@ class SessionsController < ApplicationController
     email = normalized_login_email
     user = email.present? ? User.find_by(email: email) : nil
 
-    if user&.locked?
-      log_audit(:login_failure, user: user, metadata: { email: email, reason: "account_locked" })
+    if user&.locked? || user&.disabled?
+      log_audit(:login_failure, user: user, metadata: { email: email, reason: user.disabled? ? "account_disabled" : "account_locked" })
       consume_password_timing(params[:password])
       render_invalid_login
       return

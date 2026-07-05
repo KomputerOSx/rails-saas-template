@@ -77,6 +77,21 @@ class User < ApplicationRecord
     AuditLog.create!(user: self, event_type: :account_unlocked, ip_address: Current.ip_address, user_agent: Current.user_agent)
   end
 
+  # --- Disable (admin-initiated, permanent until re-enabled) ---
+
+  def disabled?
+    disabled_at.present?
+  end
+
+  def disable!
+    update!(disabled_at: Time.current)
+    sessions.destroy_all
+  end
+
+  def enable!
+    update!(disabled_at: nil)
+  end
+
   # --- RBAC ---
 
   def has_role?(name, scope: nil)

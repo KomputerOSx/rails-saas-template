@@ -46,7 +46,10 @@ class AuditLog < ApplicationRecord
     notification_withdrawn: "notification_withdrawn",
     maintenance_mode_enabled: "maintenance_mode_enabled",
     maintenance_mode_disabled: "maintenance_mode_disabled",
-    sessions_force_logged_out: "sessions_force_logged_out"
+    sessions_force_logged_out: "sessions_force_logged_out",
+    user_disabled: "user_disabled",
+    user_enabled: "user_enabled",
+    user_updated: "user_updated"
   }
 
   validates :event_type, presence: true

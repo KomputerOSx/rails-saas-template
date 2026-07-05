@@ -40,7 +40,7 @@
                 <td>
                   <div class="flex flex-wrap gap-1">
                     <% user.roles.each do |role| %>
-                      <span class="badge badge-outline"><%= role.name %></span>
+                      <span><%= role.name %> (<%= role.scope %>) </span>
                     <% end %>
                   </div>
                 </td>
