@@ -41,11 +41,11 @@
     <p class="mt-0.5 text-sm text-base-content/60">People with access to this organization.</p>
 
     <div class="mt-4 overflow-x-auto">
-      <table class="table table-sm">
+      <table class="table table-sm border border-base-300">
         <thead class="bg-base-200 text-base-content/70 text-xs uppercase tracking-wide">
           <tr>
-            <th>Member</th>
-            <th>Role</th>
+            <th><%= sort_link "Member", "email", current_sort: @sort, current_dir: @direction %></th>
+            <th><%= sort_link "Role",   "role",  current_sort: @sort, current_dir: @direction %></th>
             <th class="text-right">Actions</th>
           </tr>
         </thead>
@@ -108,7 +108,7 @@
 
     <% if @pending_invitations.any? %>
       <div class="mt-4 overflow-x-auto">
-        <table class="table table-sm">
+        <table class="table table-sm border border-base-300">
           <thead class="bg-base-200 text-base-content/70 text-xs uppercase tracking-wide">
             <tr>
               <th>Email</th>
