@@ -7,10 +7,12 @@
 
   <div class="flex-1">
     <% if authenticated? && current_user.organizations.any? %>
+      <% selected_name = Current.organization&.name || current_user.organizations.first&.name.to_s %>
       <%= form_with url: org_switch_path, method: :post, data: { controller: "org-switch" } do %>
         <%= select_tag :organization_id,
               options_for_select(current_user.organizations.map { |o| [ o.name, o.id ] }, Current.organization&.id),
               class: "select select-ghost text-lg",
+              style: "width: #{selected_name.length + 5}ch;",
               data: { org_switch_target: "select", action: "change->org-switch#change" } %>
       <% end %>
     <% else %>
