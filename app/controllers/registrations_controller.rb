@@ -13,7 +13,6 @@ class RegistrationsController < ApplicationController
     redirect_to dashboard_path and return if authenticated?
 
     @user = User.new(registration_params)
-    @user.role = "user"
 
     # Validate only — no `users` row is created until the confirmation code is entered,
     # so an abandoned signup never blocks the email from being used again.

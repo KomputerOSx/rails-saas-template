@@ -29,6 +29,15 @@ Rails.application.routes.draw do
   root "home#index"
   get "dashboard" => "dashboard#index"
 
+  namespace :admin do
+    root to: "dashboard#index"
+    resources :users, only: [ :index, :show ] do
+      resource :user_role, only: [ :create, :destroy ], controller: "user_roles"
+    end
+    resources :roles, only: [ :index, :show ]
+    resources :audit_logs, only: [ :index, :show ]
+  end
+
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
   # Can be used by load balancers and uptime monitors to verify that the app is live.
   get "up" => "rails/health#show", as: :rails_health_check

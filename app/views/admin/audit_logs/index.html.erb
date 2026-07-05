@@ -1,0 +1,31 @@
+<section class="w-full max-w-5xl">
+  <p class="text-sm font-medium text-base-content/60">Admin</p>
+  <h1 class="mt-3 text-4xl font-semibold tracking-normal">Audit Logs</h1>
+
+  <div class="mt-8 card bg-base-200 border border-base-300/30 shadow-sm">
+    <div class="card-body">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Event</th>
+            <th>User</th>
+            <th>IP</th>
+            <th>When</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @audit_logs.each do |log| %>
+            <tr>
+              <td><%= log.event_type.humanize %></td>
+              <td><%= log.user&.email || "—" %></td>
+              <td><%= log.ip_address %></td>
+              <td><%= time_ago_in_words(log.created_at) %> ago</td>
+              <td><%= link_to "View", admin_audit_log_path(log), class: "link link-primary" %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>

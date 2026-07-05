@@ -29,7 +29,7 @@ class ConfirmationsController < ApplicationController
       return
     end
 
-    user = User.new(email: pending.email, role: "user", confirmed_at: Time.current)
+    user = User.new(email: pending.email, confirmed_at: Time.current)
     user.password_digest = pending.password_digest
 
     begin

@@ -30,7 +30,10 @@ class AuditLog < ApplicationRecord
     password_reset_completed: "password_reset_completed",
     password_reset_failed: "password_reset_failed",
     user_deleted: "user_deleted",
-    rate_limit_triggered: "rate_limit_triggered"
+    rate_limit_triggered: "rate_limit_triggered",
+    role_granted: "role_granted",
+    role_revoked: "role_revoked",
+    authorization_denied: "authorization_denied"
   }
 
   validates :event_type, presence: true
@@ -38,5 +41,5 @@ class AuditLog < ApplicationRecord
   scope :recent, -> { order(created_at: :desc) }
   scope :for_user, ->(user) { where(user: user) }
   scope :for_resource, ->(type, id) { where(resource_type: type, resource_id: id) }
-  scope :security_events, -> { where(event_type: %w[login_failure account_locked rate_limit_triggered password_reset_requested password_reset_failed]) }
+  scope :security_events, -> { where(event_type: %w[login_failure account_locked rate_limit_triggered password_reset_requested password_reset_failed authorization_denied]) }
 end

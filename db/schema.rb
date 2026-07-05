@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_04_030000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_05_010500) do
   create_table "audit_logs", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "event_type", null: false
@@ -52,6 +52,34 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_04_030000) do
     t.index ["user_id"], name: "index_password_reset_tokens_on_user_id"
   end
 
+  create_table "permissions", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "description"
+    t.string "key", null: false
+    t.datetime "updated_at", null: false
+    t.index ["key"], name: "index_permissions_on_key", unique: true
+  end
+
+  create_table "role_permissions", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "permission_id", null: false
+    t.integer "role_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["permission_id"], name: "index_role_permissions_on_permission_id"
+    t.index ["role_id", "permission_id"], name: "index_role_permissions_on_role_id_and_permission_id", unique: true
+    t.index ["role_id"], name: "index_role_permissions_on_role_id"
+  end
+
+  create_table "roles", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "description"
+    t.string "name", null: false
+    t.boolean "permanent", default: false, null: false
+    t.string "scope", default: "app", null: false
+    t.datetime "updated_at", null: false
+    t.index ["scope", "name"], name: "index_roles_on_scope_and_name", unique: true
+  end
+
   create_table "sessions", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.datetime "expires_at", null: false
@@ -83,6 +111,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_04_030000) do
     t.index ["user_id"], name: "index_two_factor_challenges_on_user_id"
   end
 
+  create_table "user_roles", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "granted_by_id"
+    t.integer "role_id", null: false
+    t.datetime "updated_at", null: false
+    t.integer "user_id", null: false
+    t.index ["granted_by_id"], name: "index_user_roles_on_granted_by_id"
+    t.index ["role_id"], name: "index_user_roles_on_role_id"
+    t.index ["user_id", "role_id"], name: "index_user_roles_on_user_id_and_role_id", unique: true
+    t.index ["user_id"], name: "index_user_roles_on_user_id"
+  end
+
   create_table "users", force: :cascade do |t|
     t.integer "confirmation_attempts", default: 0, null: false
     t.string "confirmation_code_digest"
@@ -102,7 +142,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_04_030000) do
     t.datetime "last_sign_in_at"
     t.datetime "locked_until"
     t.string "password_digest", default: "", null: false
-    t.string "role", default: "user", null: false
     t.datetime "totp_enabled_at"
     t.integer "totp_last_used_at"
     t.string "totp_secret"
@@ -110,12 +149,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_04_030000) do
     t.datetime "updated_at", null: false
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["locked_until"], name: "index_users_on_locked_until"
-    t.index ["role"], name: "index_users_on_role"
   end
 
   add_foreign_key "audit_logs", "users"
   add_foreign_key "password_histories", "users"
   add_foreign_key "password_reset_tokens", "users"
+  add_foreign_key "role_permissions", "permissions"
+  add_foreign_key "role_permissions", "roles"
   add_foreign_key "sessions", "users"
   add_foreign_key "two_factor_challenges", "users"
+  add_foreign_key "user_roles", "roles"
+  add_foreign_key "user_roles", "users"
+  add_foreign_key "user_roles", "users", column: "granted_by_id"
 end

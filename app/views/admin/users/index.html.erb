@@ -1,0 +1,31 @@
+<section class="w-full max-w-4xl">
+  <p class="text-sm font-medium text-base-content/60">Admin</p>
+  <h1 class="mt-3 text-4xl font-semibold tracking-normal">Users</h1>
+
+  <div class="mt-8 card bg-base-200 border border-base-300/30 shadow-sm">
+    <div class="card-body">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Email</th>
+            <th>Roles</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @users.each do |user| %>
+            <tr>
+              <td><%= user.email %></td>
+              <td class="flex flex-wrap gap-1">
+                <% user.roles.each do |role| %>
+                  <span class="badge badge-outline"><%= role.name %></span>
+                <% end %>
+              </td>
+              <td><%= link_to "Manage", admin_user_path(user), class: "link link-primary" %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>

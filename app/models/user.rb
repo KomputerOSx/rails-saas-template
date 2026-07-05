@@ -6,8 +6,8 @@ class User < ApplicationRecord
   has_many :password_reset_tokens, dependent: :destroy
   has_many :two_factor_challenges, dependent: :destroy
   has_many :audit_logs, dependent: :nullify
-
-  ROLES = %w[user admin].freeze
+  has_many :user_roles, dependent: :destroy
+  has_many :roles, through: :user_roles
 
   MIN_PASSWORD_LENGTH = 8
   PASSWORD_HISTORY_LIMIT = 10
@@ -22,7 +22,6 @@ class User < ApplicationRecord
 
   validates :email, presence: true, uniqueness: true,
     format: { with: URI::MailTo::EMAIL_REGEXP }
-  validates :role, inclusion: { in: ROLES }
 
   validates :password,
     length: { minimum: MIN_PASSWORD_LENGTH, message: "must be at least #{MIN_PASSWORD_LENGTH} characters" },
@@ -69,8 +68,25 @@ class User < ApplicationRecord
 
   # --- RBAC ---
 
-  def admin?
-    role == "admin"
+  def has_role?(name, scope: nil)
+    scoped = scope ? roles.where(scope: scope.to_s) : roles
+    scoped.exists?(name: name.to_s)
+  end
+
+  def has_permission?(key)
+    roles.joins(:permissions).exists?(permissions: { key: key.to_s })
+  end
+
+  def system_admin?
+    has_role?(Role::SYSTEM_ADMIN, scope: :system)
+  end
+
+  def grant_role!(role, granted_by: nil)
+    user_roles.find_or_create_by!(role: role) { |user_role| user_role.granted_by = granted_by }
+  end
+
+  def revoke_role!(role)
+    user_roles.find_by(role: role)&.destroy
   end
 
   # --- Email confirmation (6-digit code, not a link) ---

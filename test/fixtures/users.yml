@@ -1,11 +1,9 @@
 one:
   email: one@example.com
   password_digest: <%= BCrypt::Password.create("password123") %>
-  role: user
   confirmed_at: <%= Time.current %>
 
 two:
   email: two@example.com
   password_digest: <%= BCrypt::Password.create("password123") %>
-  role: user
   confirmed_at: <%= Time.current %>

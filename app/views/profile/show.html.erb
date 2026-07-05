@@ -77,8 +77,16 @@
           </div>
 
           <div class="py-3">
-            <dt class="text-xs text-base-content/60">Role</dt>
-            <dd class="mt-1"><span class="badge badge-outline"><%= current_user.role %></span></dd>
+            <dt class="text-xs text-base-content/60">Roles</dt>
+            <dd class="mt-1 flex flex-wrap gap-1">
+              <% if current_user.roles.any? %>
+                <% current_user.roles.each do |role| %>
+                  <span class="badge badge-outline"><%= role.name %></span>
+                <% end %>
+              <% else %>
+                <span class="text-base-content/50">—</span>
+              <% end %>
+            </dd>
           </div>
 
           <div class="py-3">
