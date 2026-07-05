@@ -31,12 +31,12 @@
   --color-warning-content: oklch(26% 0.079 36.259);
   --color-error: oklch(64% 0.246 16.439);
   --color-error-content: oklch(0% 0 0);
-  --radius-selector: 0.5rem;
-  --radius-field: 0.5rem;
-  --radius-box: 0.5rem;
+  --radius-selector: 2rem;
+  --radius-field: 0.25rem;
+  --radius-box: 0.25rem;
   --size-selector: 0.25rem;
   --size-field: 0.25rem;
-  --border: 2px;
+  --border: 1px;
   --depth: 0;
   --noise: 0;
 }
@@ -68,14 +68,14 @@
   --color-warning-content: oklch(26% 0.079 36.259);
   --color-error: oklch(64% 0.246 16.439);
   --color-error-content: oklch(0% 0 0);
-  --radius-selector: 0.5rem;
-  --radius-field: 0.5rem;
-  --radius-box: 0.5rem;
+  --radius-selector: 2rem;
+  --radius-field: 0.25rem;
+  --radius-box: 0.25rem;
   --size-selector: 0.25rem;
   --size-field: 0.25rem;
-  --border: 2px;
+  --border: 1px;
   --depth: 0;
-  --noise: 0;
+  --noise: 0;side
 }
 
 

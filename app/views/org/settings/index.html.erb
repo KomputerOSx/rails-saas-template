@@ -40,10 +40,12 @@
     <h2 class="text-lg font-semibold">Members</h2>
     <p class="mt-0.5 text-sm text-base-content/60">People with access to this organization.</p>
 
-    <div class="mt-4 overflow-x-auto">
-      <table class="table table-sm border border-base-300">
-        <thead class="bg-base-200 text-base-content/70 text-xs uppercase tracking-wide">
-          <tr>
+    <div class="card mt-4 border border-base-300">
+      <div class="card-body p-0">
+      <div class="overflow-x-auto">
+      <table class="table table-sm">
+        <thead class="text-base-content/60 text-xs uppercase tracking-wide">
+          <tr class="border-b border-base-300">
             <th><%= sort_link "Member", "email", current_sort: @sort, current_dir: @direction %></th>
             <th><%= sort_link "Role",   "role",  current_sort: @sort, current_dir: @direction %></th>
             <th class="text-right">Actions</th>
@@ -79,14 +81,22 @@
                 <div class="flex justify-end gap-1">
                   <% if membership.user == current_user %>
                     <%= button_to leave_org_members_path, method: :delete,
-                          data: { turbo_confirm: "Leave #{Current.organization.name}?" },
+                          data: {
+                            controller: "confirm-modal",
+                            action: "click->confirm-modal#confirm",
+                            confirm_modal_message_value: "Leave #{Current.organization.name}?"
+                          },
                           class: "btn btn-ghost btn-xs btn-square text-error",
                           title: "Leave organization" do %>
                       <span class="material-symbols-outlined" style="font-size:18px">logout</span>
                     <% end %>
                   <% elsif !membership.has_role?(Role::APP_OWNER, scope: :app) %>
                     <%= button_to org_member_path(membership), method: :delete,
-                          data: { turbo_confirm: "Remove #{membership.user.email} from #{Current.organization.name}?" },
+                          data: {
+                            controller: "confirm-modal",
+                            action: "click->confirm-modal#confirm",
+                            confirm_modal_message_value: "Remove #{membership.user.email} from #{Current.organization.name}?"
+                          },
                           class: "btn btn-ghost btn-xs btn-square text-error",
                           title: "Remove member" do %>
                       <span class="material-symbols-outlined" style="font-size:18px">person_remove</span>
@@ -98,6 +108,8 @@
           <% end %>
         </tbody>
       </table>
+      </div>
+      </div>
     </div>
   </div>
 
@@ -107,10 +119,12 @@
     <p class="mt-0.5 text-sm text-base-content/60">Invites waiting to be accepted.</p>
 
     <% if @pending_invitations.any? %>
-      <div class="mt-4 overflow-x-auto">
-        <table class="table table-sm border border-base-300">
-          <thead class="bg-base-200 text-base-content/70 text-xs uppercase tracking-wide">
-            <tr>
+      <div class="card mt-4 border border-base-300">
+        <div class="card-body p-0">
+        <div class="overflow-x-auto">
+        <table class="table table-sm">
+          <thead class="text-base-content/60 text-xs uppercase tracking-wide">
+            <tr class="border-b border-base-300">
               <th>Email</th>
               <th>Invited by</th>
               <th class="text-right">Actions</th>
@@ -124,7 +138,11 @@
                 <td>
                   <div class="flex justify-end">
                     <%= button_to org_invitation_path(invitation), method: :delete,
-                          data: { turbo_confirm: "Revoke invite for #{invitation.email}?" },
+                          data: {
+                            controller: "confirm-modal",
+                            action: "click->confirm-modal#confirm",
+                            confirm_modal_message_value: "Revoke invite for #{invitation.email}?"
+                          },
                           class: "btn btn-ghost btn-xs btn-square text-error",
                           title: "Revoke invitation" do %>
                       <span class="material-symbols-outlined" style="font-size:18px">cancel</span>
@@ -135,6 +153,8 @@
             <% end %>
           </tbody>
         </table>
+        </div>
+        </div>
       </div>
     <% else %>
       <p class="mt-4 text-sm text-base-content/60">No pending invitations.</p>

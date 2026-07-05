@@ -122,56 +122,78 @@ Standard table pattern. Reference: `app/views/org/settings/index.html.erb` (Memb
 
 **Structure:**
 ```erb
-<%# Title + subheader live ABOVE the table, not inside a card %>
+<%# Title + subheader live ABOVE the table %>
 <div class="mt-10">
   <h2 class="text-lg font-semibold">Section title</h2>
   <p class="mt-0.5 text-sm text-base-content/60">One-line description.</p>
 
-  <div class="mt-4 overflow-x-auto">
-    <table class="table table-sm">
-      <thead class="bg-base-200 text-base-content/70 text-xs uppercase tracking-wide">
-        <tr>
-          <th>Primary column</th>
-          <th>Secondary column</th>
-          <th class="text-right">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% collection.each do |item| %>
-          <tr class="hover">
-            <td class="font-medium"><%= item.primary_field %></td>
-            <td class="text-base-content/60"><%= item.secondary_field %></td>
-            <td>
-              <div class="flex justify-end gap-1">
-                <%# icon-only action buttons %>
-                <%= button_to path, method: :delete, class: "btn btn-ghost btn-xs btn-square text-error", title: "Remove" do %>
-                  <span class="material-symbols-outlined" style="font-size:18px">delete</span>
-                <% end %>
-              </div>
-            </td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
+  <div class="card mt-4 border border-base-300">
+    <div class="card-body p-0">
+      <div class="overflow-x-auto">
+        <table class="table table-sm">
+          <thead class="text-base-content/60 text-xs uppercase tracking-wide">
+            <tr class="border-b border-base-300">
+              <th>Primary column</th>
+              <th>Secondary column</th>
+              <th class="text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% collection.each do |item| %>
+              <tr class="hover">
+                <td class="font-medium"><%= item.primary_field %></td>
+                <td class="text-base-content/60"><%= item.secondary_field %></td>
+                <td>
+                  <div class="flex justify-end gap-1">
+                    <%= button_to path, method: :delete,
+                          class: "btn btn-ghost btn-xs btn-square text-error",
+                          title: "Remove",
+                          data: { controller: "confirm-modal", action: "click->confirm-modal#confirm",
+                                  confirm_modal_message_value: "Remove this item?" } do %>
+                      <span class="material-symbols-outlined" style="font-size:18px">delete</span>
+                    <% end %>
+                  </div>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
   </div>
 </div>
 ```
 
 **Rules:**
-- **No card wrapper** around tables — tables stand alone
-- **Title + subheader** sit above the table div, never inside it
-- `overflow-x-auto` wraps the `<table>` directly (not the whole section)
-- Use `table table-sm` — `table-sm` is default density
-- `<thead>` always has `bg-base-200 text-base-content/70 text-xs uppercase tracking-wide` for visual separation from body
-- `hover` on each `<tr>` for hover state
-- Primary identifier cell: `font-medium`
-- Muted/secondary data: `text-base-content/60`
-- Never put `flex` directly on `<td>` — wrap in `<div>`
-- Actions column header: `text-right`; actions cell: `<div class="flex justify-end gap-1">`
-- **Action buttons are icon-only**: `btn btn-ghost btn-xs btn-square` + `title` attr for tooltip
-  - Destructive: add `text-error`
-  - Icons: `person_remove` (remove member), `logout` (leave), `cancel` (revoke), `delete` (generic delete)
-- **Inline role/status changes** use a DaisyUI `dropdown` — display current value as clickable text with `unfold_more` chevron; dropdown lists all valid transitions as `button_to` forms
+
+**Wrapper:**
+- Use `card border border-base-300` — `card` provides border-radius and `overflow: hidden` natively, solving the corner-clipping problem without hacks
+- `card-body p-0` removes card padding so the table sits flush to the edges
+- `overflow-x-auto` goes inside `card-body`, wrapping `<table>` directly
+
+**Why `card` and not a plain `div` with `rounded-* overflow-hidden`:**
+DaisyUI tables use `border-collapse: collapse`, which causes `overflow: hidden` on plain divs to not clip cell backgrounds at the corners in Chrome/WebKit. `card` handles this correctly. Also avoid `rounded-box` — dark theme sets `--radius-box: 0.25rem` (invisible).
+
+**Header row:**
+- No `bg-*` on `<thead>` — a filled thead background causes corner-bleed issues with `border-collapse: collapse`
+- Header distinction via: `text-base-content/60 text-xs uppercase tracking-wide` on `<thead>` + `border-b border-base-300` on the `<tr>`
+
+**Rows & cells:**
+- `hover` on each `<tr>`
+- Primary identifier: `font-medium`
+- Secondary/muted data: `text-base-content/60`
+- Never put `flex` directly on `<td>` — wrap contents in `<div>`
+- Actions column: header `text-right`, cell content `<div class="flex justify-end gap-1">`
+
+**Action buttons:**
+- Icon-only: `btn btn-ghost btn-xs btn-square` + `title` attr for tooltip
+- Destructive actions: add `text-error`
+- Confirmation: wire via `confirm-modal` Stimulus controller (not `data-turbo-confirm`)
+- Icons: `person_remove` (remove), `logout` (leave), `cancel` (revoke), `delete` (generic)
+
+**Sortable headers:** use the `sort_link` helper — `sort_link "Label", "column", current_sort: @sort, current_dir: @direction`
+
+**Inline role/status:** DaisyUI `dropdown` — current value as clickable text + `unfold_more` chevron; each option is a `button_to` form
 
 **Empty state:** render `<p class="mt-4 text-sm text-base-content/60">No items.</p>` in place of the table.
 
