@@ -1,10 +1,15 @@
 class Role < ApplicationRecord
   SYSTEM_ADMIN = "system_admin"
+  APP_OWNER = "owner"
+  APP_ADMIN = "admin"
+  APP_USER = "user"
 
   has_many :role_permissions, dependent: :destroy
   has_many :permissions, through: :role_permissions
   has_many :user_roles, dependent: :destroy
   has_many :users, through: :user_roles
+  has_many :membership_roles, dependent: :destroy
+  has_many :memberships, through: :membership_roles
 
   enum :scope, { app: "app", system: "system" }, default: "app"
 

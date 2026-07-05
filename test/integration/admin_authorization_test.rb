@@ -13,7 +13,7 @@ class AdminAuthorizationTest < ActionDispatch::IntegrationTest
   end
 
   test "system_admin can access the admin namespace" do
-    role = Role.create!(scope: :system, name: "system_admin", permanent: true)
+    role = Role.find_or_create_by!(scope: :system, name: Role::SYSTEM_ADMIN) { |r| r.permanent = true }
     users(:one).grant_role!(role)
 
     post login_path, params: { email: users(:one).email, password: "password123" }
@@ -24,9 +24,9 @@ class AdminAuthorizationTest < ActionDispatch::IntegrationTest
   end
 
   test "granting and revoking a role via the admin UI is audited" do
-    admin_role = Role.create!(scope: :system, name: "system_admin", permanent: true)
+    admin_role = Role.find_or_create_by!(scope: :system, name: Role::SYSTEM_ADMIN) { |r| r.permanent = true }
     users(:one).grant_role!(admin_role)
-    target_role = Role.create!(scope: :app, name: "beta_tester")
+    target_role = Role.create!(scope: :system, name: "beta_tester")
 
     post login_path, params: { email: users(:one).email, password: "password123" }
 

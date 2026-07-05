@@ -6,7 +6,7 @@ class RegistrationsController < ApplicationController
   def new
     redirect_to dashboard_path and return if authenticated?
 
-    @user = User.new
+    @user = User.new(email: params[:email])
   end
 
   def create

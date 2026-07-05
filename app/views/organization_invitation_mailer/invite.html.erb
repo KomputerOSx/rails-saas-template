@@ -1,0 +1,10 @@
+<p>Hello!</p>
+
+<p><%= @invitation.invited_by&.email || "Someone" %> invited you to join
+<strong><%= @invitation.organization.name %></strong>.</p>
+
+<p><%= link_to "Accept invitation", invitation_url(@raw_token) %></p>
+
+<p>This invitation will expire in <%= @expires_in_days %> days.</p>
+
+<p>If you weren't expecting this, you can safely ignore this email.</p>

@@ -1,0 +1,10 @@
+<section class="w-full max-w-md">
+  <h1 class="text-2xl font-semibold">You've been invited</h1>
+
+  <p class="mt-4 text-base-content/80">
+    <%= @invitation.invited_by&.email || "Someone" %> invited you to join
+    <strong><%= @invitation.organization.name %></strong> as a <%= @invitation.role.name %>.
+  </p>
+
+  <%= button_to "Accept invitation", accept_invitation_path(params[:token]), method: :post, class: "btn btn-primary mt-6" %>
+</section>

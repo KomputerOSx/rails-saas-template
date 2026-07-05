@@ -8,6 +8,8 @@ class User < ApplicationRecord
   has_many :audit_logs, dependent: :nullify
   has_many :user_roles, dependent: :destroy
   has_many :roles, through: :user_roles
+  has_many :memberships, dependent: :destroy
+  has_many :organizations, through: :memberships
 
   MIN_PASSWORD_LENGTH = 8
   PASSWORD_HISTORY_LIMIT = 10
@@ -73,8 +75,12 @@ class User < ApplicationRecord
     scoped.exists?(name: name.to_s)
   end
 
-  def has_permission?(key)
-    roles.joins(:permissions).exists?(permissions: { key: key.to_s })
+  def has_permission?(key, organization: nil)
+    if organization
+      memberships.find_by(organization: organization)&.has_permission?(key) || false
+    else
+      roles.joins(:permissions).exists?(permissions: { key: key.to_s })
+    end
   end
 
   def system_admin?

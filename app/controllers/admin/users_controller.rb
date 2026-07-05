@@ -6,7 +6,9 @@ module Admin
 
     def show
       @user = User.find(params[:id])
-      @roles = Role.order(:scope, :name)
+      # UserRole only accepts system-scoped roles now (app-scoped roles attach to a
+      # Membership instead) — this grant UI only ever offers system-scope roles.
+      @roles = Role.system.order(:name)
     end
   end
 end

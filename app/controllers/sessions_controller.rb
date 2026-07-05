@@ -1,4 +1,6 @@
 class SessionsController < ApplicationController
+  include InvitationResumption
+
   layout "auth"
 
   allow_unauthenticated_access only: [ :new, :create, :two_factor, :verify_two_factor, :resend_two_factor, :email_two_factor_fallback ]
@@ -149,8 +151,10 @@ class SessionsController < ApplicationController
     code = delivery_method == "email" ? format("%06d", SecureRandom.random_number(1_000_000)) : nil
     challenge_id = SecureRandom.urlsafe_base64(24)
 
+    pending_invitation_token = session[:pending_invitation_token]
     clear_two_factor_challenge
     reset_session # regenerate session id — defends against session fixation
+    session[:pending_invitation_token] = pending_invitation_token if pending_invitation_token
     session[:two_factor_challenge_id] = challenge_id
 
     TwoFactorChallenge.create!(
@@ -179,7 +183,9 @@ class SessionsController < ApplicationController
     log_audit(:two_factor_success, user: user) unless skipped_two_factor
     log_audit(:login_success, user: user, metadata: { skipped_two_factor: skipped_two_factor })
 
-    redirect_to dashboard_path, notice: "Signed in successfully."
+    invitation = resume_pending_invitation_for(user)
+    notice = invitation ? "Signed in successfully. You've joined #{invitation.organization.name}." : "Signed in successfully."
+    redirect_to dashboard_path, notice: notice
   end
 
   def valid_two_factor_code?(code, challenge)

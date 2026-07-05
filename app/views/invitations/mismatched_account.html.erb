@@ -1,0 +1,10 @@
+<section class="w-full max-w-md">
+  <h1 class="text-2xl font-semibold">Wrong account</h1>
+
+  <p class="mt-4 text-base-content/80">
+    This invitation was sent to <strong><%= @invitation.email %></strong>, but you're signed in
+    as <%= current_user.email %>.
+  </p>
+
+  <%= button_to "Sign out", session_path, method: :delete, class: "btn btn-outline mt-6" %>
+</section>

@@ -33,7 +33,15 @@ class AuditLog < ApplicationRecord
     rate_limit_triggered: "rate_limit_triggered",
     role_granted: "role_granted",
     role_revoked: "role_revoked",
-    authorization_denied: "authorization_denied"
+    authorization_denied: "authorization_denied",
+    organization_created: "organization_created",
+    membership_created: "membership_created",
+    membership_destroyed: "membership_destroyed",
+    organization_invitation_sent: "organization_invitation_sent",
+    organization_invitation_accepted: "organization_invitation_accepted",
+    organization_invitation_revoked: "organization_invitation_revoked",
+    owner_removal_blocked: "owner_removal_blocked",
+    organization_updated: "organization_updated"
   }
 
   validates :event_type, presence: true
@@ -41,5 +49,5 @@ class AuditLog < ApplicationRecord
   scope :recent, -> { order(created_at: :desc) }
   scope :for_user, ->(user) { where(user: user) }
   scope :for_resource, ->(type, id) { where(resource_type: type, resource_id: id) }
-  scope :security_events, -> { where(event_type: %w[login_failure account_locked rate_limit_triggered password_reset_requested password_reset_failed authorization_denied]) }
+  scope :security_events, -> { where(event_type: %w[login_failure account_locked rate_limit_triggered password_reset_requested password_reset_failed authorization_denied owner_removal_blocked]) }
 end

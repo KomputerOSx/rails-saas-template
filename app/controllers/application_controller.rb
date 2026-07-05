@@ -2,6 +2,7 @@ class ApplicationController < ActionController::Base
   include Authentication
   include Authorization
   include AuditLogging
+  include CurrentOrganization
 
   protect_from_forgery with: :exception
 

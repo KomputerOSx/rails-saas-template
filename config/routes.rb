@@ -38,6 +38,22 @@ Rails.application.routes.draw do
     resources :audit_logs, only: [ :index, :show ]
   end
 
+  # --- Organization invitations (public acceptance endpoint) ---
+  get  "invitations/:token",        to: "invitations#show",   as: :invitation
+  post "invitations/:token/accept", to: "invitations#accept", as: :accept_invitation
+
+  # --- Org-facing members/invitations management (distinct from the system-scope Admin:: namespace) ---
+  namespace :org do
+    resource :organization, only: [ :update ], controller: "organizations"
+    resources :members, only: [ :index, :destroy ] do
+      member do
+        patch :promote
+        patch :demote
+      end
+    end
+    resources :invitations, only: [ :create, :destroy ]
+  end
+
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
   # Can be used by load balancers and uptime monitors to verify that the app is live.
   get "up" => "rails/health#show", as: :rails_health_check

@@ -1,4 +1,6 @@
 class ConfirmationsController < ApplicationController
+  include InvitationResumption
+
   layout "auth"
 
   allow_unauthenticated_access
@@ -33,7 +35,11 @@ class ConfirmationsController < ApplicationController
     user.password_digest = pending.password_digest
 
     begin
-      user.save!(validate: false)
+      organization = nil
+      ActiveRecord::Base.transaction do
+        user.save!(validate: false)
+        organization = Organization.create_personal_for!(user)
+      end
     rescue ActiveRecord::RecordNotUnique
       # Someone else claimed this email while this signup was pending confirmation.
       PendingRegistration.destroy(email)
@@ -43,16 +49,26 @@ class ConfirmationsController < ApplicationController
       return
     end
 
+    pending_invitation_token = session[:pending_invitation_token]
+
     PendingRegistration.destroy(email)
     reset_session # regenerate session id — defends against session fixation
 
     log_audit(:user_registered, user: user, metadata: { email: user.email })
     log_audit(:account_confirmed, user: user, metadata: { email: user.email })
+    log_audit(:organization_created, user: user, resource: organization, metadata: { name: organization.name, slug: organization.slug })
+    log_audit(:membership_created, user: user, resource: organization)
+    log_audit(:role_granted, user: user, resource: organization, metadata: { role: Role::APP_OWNER, scope: "app", organization_id: organization.id })
 
     start_new_session_for(user)
     log_audit(:login_success, user: user, metadata: { auto_login_after_confirmation: true })
 
-    flash[:toast] = { message: "Email confirmed! Welcome aboard.", type: "success" }
+    invitation = resume_pending_invitation_for(user, token: pending_invitation_token)
+    flash[:toast] = if invitation
+      { message: "Email confirmed! You've joined #{invitation.organization.name}.", type: "success" }
+    else
+      { message: "Email confirmed! Welcome aboard.", type: "success" }
+    end
     redirect_to dashboard_path
   end
 end
