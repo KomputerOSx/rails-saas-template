@@ -7,11 +7,15 @@ class User < ApplicationRecord
   has_many :two_factor_challenges, dependent: :destroy
   has_many :audit_logs, dependent: :nullify
   has_many :user_roles, dependent: :destroy
+  has_many :granted_user_roles, class_name: "UserRole", foreign_key: :granted_by_id, dependent: :nullify
   has_many :roles, through: :user_roles
   has_many :memberships, dependent: :destroy
   has_many :organizations, through: :memberships
+  has_many :granted_membership_roles, class_name: "MembershipRole", foreign_key: :granted_by_id, dependent: :nullify
   has_many :notification_recipients, dependent: :destroy
   has_many :notifications, through: :notification_recipients
+  has_many :created_notifications, class_name: "Notification", foreign_key: :created_by_id, dependent: :nullify
+  has_many :sent_invitations, class_name: "OrganizationInvitation", foreign_key: :invited_by_id, dependent: :nullify
   has_many :identities, dependent: :destroy
 
   MIN_PASSWORD_LENGTH = 8

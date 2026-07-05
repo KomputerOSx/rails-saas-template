@@ -19,7 +19,7 @@ class ProfileController < ApplicationController
 
   def destroy
     typed = params[:typed_confirmation].to_s.strip.downcase
-    code  = params[:deletion_code].to_s.strip
+    code  = Array(params[:code]).join.strip
 
     unless typed == current_user.email.downcase
       flash[:toast] = { message: "Email address did not match. Account not deleted.", type: "error" }
@@ -42,7 +42,14 @@ class ProfileController < ApplicationController
           .joins(:role, :membership)
           .where(roles: { scope: "app", name: Role::APP_OWNER })
           .where.not(memberships: { user_id: current_user.id })
-        org.destroy! if other_owners.none?
+        next if other_owners.exists?
+
+        # Bypass the last-owner guard (which fires per-record during cascade) by
+        # deleting all membership_roles for this org via SQL before destroying it.
+        MembershipRole.joins(:membership)
+                      .where(memberships: { organization_id: org.id })
+                      .delete_all
+        org.destroy!
       end
 
       current_user.destroy!

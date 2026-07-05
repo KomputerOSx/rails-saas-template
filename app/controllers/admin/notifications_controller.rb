@@ -1,7 +1,13 @@
 module Admin
   class NotificationsController < BaseController
     def index
+      @q      = params[:q].to_s.strip
+      @status = params[:status].to_s.strip
+
       @notifications = Notification.recent.includes(:created_by, :notification_recipients)
+      @notifications = @notifications.where("title LIKE ?", "%#{Notification.sanitize_sql_like(@q)}%") if @q.present?
+      @notifications = @notifications.active    if @status == "active"
+      @notifications = @notifications.withdrawn if @status == "withdrawn"
     end
 
     def new

@@ -1,7 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = ["emailInput", "codeInput", "submitButton", "sendButton", "codeSentMessage"]
+  static targets = ["emailInput", "submitButton", "sendButton", "codeSentMessage"]
   static values  = { sendUrl: String, expectedEmail: String }
 
   sendCode(event) {
@@ -35,7 +35,13 @@ export default class extends Controller {
 
   validate() {
     const emailOk = this.emailInputTarget.value.trim().toLowerCase() === this.expectedEmailValue.toLowerCase()
-    const codeOk  = /^\d{6}$/.test(this.codeInputTarget.value.trim())
+    const codeOk  = this._codeValue().length === 6
     this.submitButtonTarget.disabled = !(emailOk && codeOk)
+  }
+
+  _codeValue() {
+    return Array.from(this.element.querySelectorAll('[name="code[]"]'))
+      .map(i => i.value)
+      .join("")
   }
 }

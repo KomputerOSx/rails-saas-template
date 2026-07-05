@@ -177,11 +177,11 @@
                         Send code to my email
                       </button>
                     </div>
-                    <input type="text" name="deletion_code" inputmode="numeric" maxlength="6"
-                           placeholder="000000" autocomplete="off"
-                           data-deletion-confirm-target="codeInput"
-                           data-action="input->deletion-confirm#validate"
-                           class="input input-bordered w-full text-center font-mono tracking-widest text-lg">
+                    <div data-controller="two-factor"
+                         data-two-factor-autosubmit-value="false"
+                         data-action="input->deletion-confirm#validate paste->deletion-confirm#validate">
+                      <%= render "shared/otp_digits", autofocus: false %>
+                    </div>
                     <p data-deletion-confirm-target="codeSentMessage"
                        class="hidden mt-1.5 text-xs text-success">
                       Code sent. Check your inbox.

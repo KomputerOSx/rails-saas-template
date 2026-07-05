@@ -1,31 +1,140 @@
 <section class="w-full max-w-3xl">
-  <p class="text-sm font-medium text-base-content/60">Admin</p>
-  <h1 class="mt-3 text-4xl font-semibold tracking-normal"><%= @audit_log.event_type&.humanize || "Unknown" %></h1>
+  <div class="flex items-start justify-between">
+    <div>
+      <p class="text-sm font-medium text-base-content/60">
+        <%= link_to "Audit Logs", admin_audit_logs_path, class: "hover:text-base-content" %>
+        <span class="mx-1">/</span>
+        <span>#<%= @audit_log.id %></span>
+      </p>
+      <h1 class="mt-3 text-4xl font-semibold tracking-normal">Audit Log</h1>
+      <p class="mt-1 text-base-content/60"><%= @audit_log.event_type&.humanize || "Unknown" %></p>
+    </div>
+    <%= link_to "Back", admin_audit_logs_path, class: "btn btn-outline shrink-0" %>
+  </div>
 
-  <div class="mt-8 card bg-base-200 border border-base-300/30 shadow-sm">
+  <%# ── Event Details ── %>
+  <div class="mt-8 card border border-base-300">
     <div class="card-body">
-      <dl class="grid grid-cols-1 divide-y divide-base-300/30 max-w-md">
-        <div class="py-3">
-          <dt class="text-xs text-base-content/60">User</dt>
-          <dd class="mt-1"><%= @audit_log.user&.email || "—" %></dd>
+      <h2 class="text-lg font-semibold">Event Details</h2>
+
+      <dl class="mt-2 divide-y divide-base-300">
+        <div class="flex items-center justify-between py-3">
+          <dt class="text-xs text-base-content/60 uppercase tracking-wide">Log ID</dt>
+          <dd class="font-medium">#<%= @audit_log.id %></dd>
+        </div>
+        <div class="flex items-center justify-between py-3">
+          <dt class="text-xs text-base-content/60 uppercase tracking-wide">Event Type</dt>
+          <dd class="font-medium"><%= @audit_log.event_type&.humanize || "Unknown" %></dd>
+        </div>
+        <div class="flex items-center justify-between py-3">
+          <dt class="text-xs text-base-content/60 uppercase tracking-wide">Timestamp</dt>
+          <dd class="font-medium">
+            <%= @audit_log.created_at.strftime("%B %d, %Y at %H:%M:%S %Z") %>
+            <span class="text-base-content/60">(<%= time_ago_in_words(@audit_log.created_at) %> ago)</span>
+          </dd>
+        </div>
+        <div class="flex items-center justify-between py-3">
+          <dt class="text-xs text-base-content/60 uppercase tracking-wide">User</dt>
+          <dd class="font-medium">
+            <% if @audit_log.user %>
+              <%= link_to admin_user_path(@audit_log.user), class: "link link-primary" do %>
+                <%= @audit_log.user.email %> <span class="text-base-content/60">(#<%= @audit_log.user.id %>)</span>
+              <% end %>
+            <% else %>
+              <span class="text-base-content/50">—</span>
+            <% end %>
+          </dd>
+        </div>
+        <div class="flex items-center justify-between py-3">
+          <dt class="text-xs text-base-content/60 uppercase tracking-wide">Organisation</dt>
+          <dd class="font-medium text-base-content/50">—</dd>
+        </div>
+        <div class="flex items-center justify-between py-3">
+          <dt class="text-xs text-base-content/60 uppercase tracking-wide">Resource</dt>
+          <dd class="font-medium">
+            <% if @audit_log.resource_type %>
+              <%= @audit_log.resource_type %> #<%= @audit_log.resource_id %>
+            <% else %>
+              <span class="text-base-content/50">—</span>
+            <% end %>
+          </dd>
+        </div>
+        <div class="flex items-center justify-between py-3">
+          <dt class="text-xs text-base-content/60 uppercase tracking-wide">IP Address</dt>
+          <dd class="font-medium"><%= @audit_log.ip_address.presence || "—" %></dd>
         </div>
         <div class="py-3">
-          <dt class="text-xs text-base-content/60">IP address</dt>
-          <dd class="mt-1"><%= @audit_log.ip_address || "—" %></dd>
-        </div>
-        <div class="py-3">
-          <dt class="text-xs text-base-content/60">User agent</dt>
-          <dd class="mt-1 break-all"><%= @audit_log.user_agent || "—" %></dd>
-        </div>
-        <div class="py-3">
-          <dt class="text-xs text-base-content/60">When</dt>
-          <dd class="mt-1"><%= @audit_log.created_at %></dd>
-        </div>
-        <div class="py-3">
-          <dt class="text-xs text-base-content/60">Metadata</dt>
-          <dd class="mt-1"><pre class="text-xs whitespace-pre-wrap"><%= JSON.pretty_generate(@audit_log.metadata || {}) %></pre></dd>
+          <dt class="text-xs text-base-content/60 uppercase tracking-wide">User Agent</dt>
+          <dd class="mt-1 break-all text-base-content/80"><%= @audit_log.user_agent.presence || "—" %></dd>
         </div>
       </dl>
     </div>
   </div>
+
+  <%# ── Metadata ── %>
+  <div class="mt-8 card border border-base-300">
+    <div class="card-body">
+      <h2 class="text-lg font-semibold">Metadata</h2>
+
+      <% metadata = @audit_log.metadata || {} %>
+      <% if metadata.any? %>
+        <dl class="mt-2 divide-y divide-base-300">
+          <% metadata.each do |key, value| %>
+            <div class="flex items-start justify-between gap-4 py-3">
+              <dt class="text-xs text-base-content/60 uppercase tracking-wide shrink-0"><%= key %></dt>
+              <dd class="font-mono text-sm text-right break-all"><%= value.is_a?(String) ? value : value.inspect %></dd>
+            </div>
+          <% end %>
+        </dl>
+      <% else %>
+        <p class="mt-2 text-sm text-base-content/60">No metadata recorded.</p>
+      <% end %>
+
+      <details class="mt-4">
+        <summary class="cursor-pointer text-sm link link-primary select-none">Raw JSON</summary>
+        <pre class="mt-2 rounded-box bg-base-200 p-4 text-xs whitespace-pre-wrap break-all"><%= JSON.pretty_generate(metadata) %></pre>
+      </details>
+    </div>
+  </div>
+
+  <%# ── More Events for This User ── %>
+  <% if @audit_log.user %>
+    <div class="mt-10">
+      <h2 class="text-lg font-semibold">More Events for This User</h2>
+      <p class="mt-0.5 text-sm text-base-content/60">Other recent activity from <%= @audit_log.user.email %>.</p>
+
+      <% if @related_logs.any? %>
+        <div class="card mt-4 border border-base-300">
+          <div class="card-body p-0">
+            <div class="overflow-x-auto">
+              <table class="table table-sm">
+                <thead class="text-base-content/60 text-xs uppercase tracking-wide">
+                  <tr class="border-b border-base-300">
+                    <th>Event</th>
+                    <th>When</th>
+                    <th class="text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @related_logs.each do |log| %>
+                    <tr class="hover">
+                      <td class="font-medium"><%= log.event_type&.humanize || "Unknown" %></td>
+                      <td class="text-base-content/60"><%= time_ago_in_words(log.created_at) %> ago</td>
+                      <td>
+                        <div class="flex justify-end">
+                          <%= link_to "View", admin_audit_log_path(log), class: "link link-primary" %>
+                        </div>
+                      </td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      <% else %>
+        <p class="mt-4 text-sm text-base-content/60">No other events for this user.</p>
+      <% end %>
+    </div>
+  <% end %>
 </section>

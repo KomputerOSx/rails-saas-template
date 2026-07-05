@@ -24,6 +24,17 @@
     ] }
   end
 
+  if authenticated? && current_user.system_admin?
+    sections << { title: "Admin", items: [
+      { icon: "space_dashboard", label: "Dashboard",      path: admin_root_path },
+      { icon: "group",           label: "Users",          path: admin_users_path },
+      { icon: "shield_person",   label: "Roles",          path: admin_roles_path },
+      { icon: "history",         label: "Audit Logs",     path: admin_audit_logs_path },
+      { icon: "campaign",        label: "Notifications",  path: admin_notifications_path },
+      { icon: "engineering",     label: "Maintenance", path: edit_admin_maintenance_mode_path }
+    ] }
+  end
+
   row_classes = "flex h-10 items-center gap-3 rounded-lg px-2"
 %>
 <nav class="flex w-full flex-col p-3 text-sm select-none">

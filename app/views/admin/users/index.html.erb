@@ -2,30 +2,61 @@
   <p class="text-sm font-medium text-base-content/60">Admin</p>
   <h1 class="mt-3 text-4xl font-semibold tracking-normal">Users</h1>
 
-  <div class="mt-8 card bg-base-200 border border-base-300/30 shadow-sm">
-    <div class="card-body">
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Email</th>
-            <th>Roles</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          <% @users.each do |user| %>
-            <tr>
-              <td><%= user.email %></td>
-              <td class="flex flex-wrap gap-1">
-                <% user.roles.each do |role| %>
-                  <span class="badge badge-outline"><%= role.name %></span>
-                <% end %>
-              </td>
-              <td><%= link_to "Manage", admin_user_path(user), class: "link link-primary" %></td>
+  <%= form_with url: admin_users_path, method: :get, html: { class: "mt-6 flex flex-wrap items-end gap-2" } do %>
+    <div class="form-control">
+      <label class="label"><span class="label-text text-xs">Search</span></label>
+      <input type="text" name="q" value="<%= @q %>" placeholder="Email" class="input input-bordered input-sm w-56">
+    </div>
+    <div class="form-control">
+      <label class="label"><span class="label-text text-xs">Role</span></label>
+      <select name="role" class="select select-bordered select-sm">
+        <option value="">All roles</option>
+        <% @roles.each do |role| %>
+          <option value="<%= role.name %>" <%= "selected" if @role == role.name %>><%= role.name %></option>
+        <% end %>
+      </select>
+    </div>
+    <%= submit_tag "Filter", class: "btn btn-sm btn-primary" %>
+    <% if @q.present? || @role.present? %>
+      <%= link_to "Clear", admin_users_path, class: "btn btn-sm btn-ghost" %>
+    <% end %>
+  <% end %>
+
+  <div class="card mt-4 border border-base-300">
+    <div class="card-body p-0">
+      <div class="overflow-x-auto">
+        <table class="table table-sm">
+          <thead class="text-base-content/60 text-xs uppercase tracking-wide">
+            <tr class="border-b border-base-300">
+              <th>Email</th>
+              <th>Roles</th>
+              <th class="text-right">Actions</th>
             </tr>
-          <% end %>
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            <% @users.each do |user| %>
+              <tr class="hover">
+                <td class="font-medium"><%= user.email %></td>
+                <td>
+                  <div class="flex flex-wrap gap-1">
+                    <% user.roles.each do |role| %>
+                      <span class="badge badge-outline"><%= role.name %></span>
+                    <% end %>
+                  </div>
+                </td>
+                <td>
+                  <div class="flex justify-end">
+                    <%= link_to "Manage", admin_user_path(user), class: "link link-primary" %>
+                  </div>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+        <% if @users.none? %>
+          <p class="px-8 py-6 text-sm text-base-content/60">No users match your search.</p>
+        <% end %>
+      </div>
     </div>
   </div>
 </section>
