@@ -6,7 +6,24 @@
   </div>
 
   <div class="flex-1">
-    <%= link_to "Windtunnel", root_path, class: "btn btn-ghost text-lg font-bold normal-case text-base-content" %>
+    <% if authenticated? && current_user.organizations.any? %>
+      <div class="dropdown">
+        <div tabindex="0" role="button" class="btn btn-ghost text-lg font-bold normal-case text-base-content gap-1">
+          <%= Current.organization&.name || "Select organization" %>
+          <span class="material-symbols-outlined !text-[18px]">expand_more</span>
+        </div>
+        <ul tabindex="0" class="dropdown-content menu z-10 mt-2 w-56 rounded-box bg-base-200 p-2 shadow">
+          <% current_user.organizations.each do |organization| %>
+            <li>
+              <%= button_to organization.name, org_switch_path(organization_id: organization.id), method: :post,
+                    class: "btn btn-ghost btn-sm w-full justify-start normal-case #{"btn-active" if organization == Current.organization}" %>
+            </li>
+          <% end %>
+        </ul>
+      </div>
+    <% else %>
+      <%= link_to "Windtunnel", root_path, class: "btn btn-ghost text-lg font-bold normal-case text-base-content" %>
+    <% end %>
   </div>
 
   <div class="flex items-center gap-2">

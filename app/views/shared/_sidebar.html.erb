@@ -78,12 +78,12 @@
                 </a>
               </li>
 
-              <% if Current.organization %>
+              <% if Current.organization && current_membership&.roles&.any? %>
                 <li class="menu-title mt-4 text-base-content/45">Organization</li>
                 <li>
                   <%= link_to org_members_path, class: current_page?(org_members_path) ? "active" : "" do %>
-                    <span class="material-symbols-outlined !text-[16px]">group</span>
-                    Members
+                    <span class="material-symbols-outlined !text-[16px]">hub</span>
+                    Settings
                   <% end %>
                 </li>
               <% end %>
