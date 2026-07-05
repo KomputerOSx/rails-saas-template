@@ -22,6 +22,7 @@ class User < ApplicationRecord
   EMAIL_CHANGE_EXPIRY = 30.minutes
   MAX_EMAIL_CHANGE_ATTEMPTS = 5
   TOTP_ISSUER = Rails.application.class.module_parent_name
+  ACCOUNT_DELETION_CODE_EXPIRY = 30.minutes
 
   normalizes :email, with: ->(email) { email.strip.downcase }
 
@@ -233,6 +234,26 @@ class User < ApplicationRecord
       email_change_old_confirmed_at: nil,
       email_change_new_confirmed_at: nil,
       email_change_attempts: 0
+    )
+  end
+
+  # --- Account deletion confirmation ---
+
+  def request_account_deletion_code!
+    code = self.class.generate_code
+    update_columns(
+      account_deletion_code_digest: self.class.digest_code(code),
+      account_deletion_code_sent_at: Time.current
+    )
+    code
+  end
+
+  def verify_account_deletion_code!(code)
+    return false if account_deletion_code_sent_at.nil?
+    return false if account_deletion_code_sent_at < ACCOUNT_DELETION_CODE_EXPIRY.ago
+    ActiveSupport::SecurityUtils.secure_compare(
+      self.class.digest_code(code.to_s),
+      account_deletion_code_digest.to_s
     )
   end
 

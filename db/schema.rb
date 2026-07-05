@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_05_160000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_05_225235) do
   create_table "audit_logs", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "event_type", null: false
@@ -208,6 +208,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_05_160000) do
   end
 
   create_table "users", force: :cascade do |t|
+    t.string "account_deletion_code_digest"
+    t.datetime "account_deletion_code_sent_at"
     t.datetime "confirmed_at"
     t.datetime "created_at", null: false
     t.string "email", null: false

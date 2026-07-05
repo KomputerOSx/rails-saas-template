@@ -1,0 +1,44 @@
+<section class="w-full max-w-3xl">
+  <p class="text-sm font-medium text-base-content/60">Account Settings</p>
+  <h1 class="mt-3 text-4xl font-semibold tracking-normal">Billing</h1>
+
+  <div class="mt-8 grid grid-cols-1 gap-8">
+
+    <%# ── Current Plan ── %>
+    <div class="card border border-base-300">
+      <div class="card-body p-0">
+        <div class="flex items-center justify-between px-8 py-4">
+          <div>
+            <dt class="text-xs text-base-content/60 uppercase tracking-wide">Current Plan</dt>
+            <dd class="mt-1 font-medium">Free</dd>
+          </div>
+          <button class="btn btn-primary btn-sm" disabled>Upgrade</button>
+        </div>
+      </div>
+    </div>
+
+    <%# ── Payment Method ── %>
+    <div class="card border border-base-300">
+      <div class="card-body p-0">
+        <div class="flex items-center justify-between px-8 py-4">
+          <div>
+            <dt class="text-xs text-base-content/60 uppercase tracking-wide">Payment Method</dt>
+            <dd class="mt-1 text-base-content/50">No payment method on file</dd>
+          </div>
+          <button class="btn btn-ghost btn-sm" disabled>Add</button>
+        </div>
+      </div>
+    </div>
+
+    <%# ── Billing History ── %>
+    <div class="card border border-base-300">
+      <div class="card-body p-0">
+        <div class="px-8 py-4">
+          <dt class="text-xs text-base-content/60 uppercase tracking-wide">Billing History</dt>
+          <dd class="mt-2 text-base-content/50">No invoices yet</dd>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>

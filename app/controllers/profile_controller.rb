@@ -11,12 +11,52 @@ class ProfileController < ApplicationController
     end
   end
 
+  def send_deletion_code
+    code = current_user.request_account_deletion_code!
+    AccountDeletionMailer.confirm_deletion(current_user, code).deliver_later
+    render json: { sent: true }
+  end
+
   def destroy
-    log_audit(:user_deleted, metadata: { email: current_user.email })
-    terminate_session
-    current_user.destroy
+    typed = params[:typed_confirmation].to_s.strip.downcase
+    code  = params[:deletion_code].to_s.strip
+
+    unless typed == current_user.email.downcase
+      flash[:toast] = { message: "Email address did not match. Account not deleted.", type: "error" }
+      redirect_to profile_path and return
+    end
+
+    unless current_user.verify_account_deletion_code!(code)
+      flash[:toast] = { message: "Invalid or expired confirmation code. Account not deleted.", type: "error" }
+      redirect_to profile_path and return
+    end
+
+    saved_email = current_user.email
+
+    ActiveRecord::Base.transaction do
+      # Destroy orgs where this user is the sole owner — the last-owner guard would
+      # otherwise abort the cascade when memberships are deleted.
+      # Orgs with other owners are left intact; the membership cascade handles removal.
+      current_user.organizations.each do |org|
+        other_owners = org.membership_roles
+          .joins(:role, :membership)
+          .where(roles: { scope: "app", name: Role::APP_OWNER })
+          .where.not(memberships: { user_id: current_user.id })
+        org.destroy! if other_owners.none?
+      end
+
+      current_user.destroy!
+    end
+
+    # Sessions are cascade-deleted with the user; just clear the cookie.
+    cookies.delete(:session_id)
+    log_audit(:user_deleted, user: nil, metadata: { email: saved_email })
     flash[:toast] = { message: "Your account has been deleted.", type: "success" }
     redirect_to root_path
+  rescue ActiveRecord::RecordNotDestroyed, ActiveRecord::RecordInvalid => e
+    Rails.logger.error "[AccountDeletion] #{e.class}: #{e.message} user=#{current_user.id}"
+    flash[:toast] = { message: "Could not delete account. Please contact support.", type: "error" }
+    redirect_to profile_path
   end
 
   def new_totp

@@ -18,7 +18,10 @@
   end
 
   if authenticated?
-    sections << { title: "Account", items: [{ icon: "person", label: "Profile", path: profile_path }] }
+    sections << { title: "Account", items: [
+      { icon: "person", label: "Profile", path: profile_path },
+      { icon: "credit_card", label: "Billing", path: billing_path }
+    ] }
   end
 
   row_classes = "flex h-10 items-center gap-3 rounded-lg px-2"
@@ -47,7 +50,7 @@
         <li>
           <% if item[:path] %>
             <%= link_to item[:path],
-                  class: "#{row_classes} #{current_page?(item[:path]) ? "bg-base-300 text-base-content" : "text-base-content/80 hover:bg-base-200 hover:text-base-content"}",
+                  class: "#{row_classes} #{current_page?(item[:path]) ? "bg-base-300 text-base-content" : "text-base-content/80 hover:bg-base-300 hover:text-base-content"}",
                   data: tooltip_data do %>
               <span class="flex w-6 shrink-0 items-center justify-center">
                 <span class="material-symbols-outlined !text-[22px]"><%= item[:icon] %></span>
