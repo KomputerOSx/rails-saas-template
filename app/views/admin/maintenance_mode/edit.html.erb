@@ -1,0 +1,35 @@
+<section class="w-full max-w-3xl">
+  <p class="text-sm font-medium text-base-content/60">Admin</p>
+  <h1 class="mt-3 text-4xl font-semibold tracking-normal">Maintenance Mode</h1>
+
+  <div class="mt-8 card bg-base-200 border border-base-300/30 shadow-sm">
+    <div class="card-body">
+      <%= form_with url: admin_maintenance_mode_path, method: :patch, html: { class: "space-y-4" } do %>
+        <div class="form-control">
+          <label class="label cursor-pointer justify-start gap-2">
+            <%= check_box_tag "maintenance_mode[enabled]", "1", @status[:enabled] %>
+            <span class="label-text">Enable maintenance mode</span>
+          </label>
+          <p class="mt-1 text-xs text-base-content/60">While enabled, only system admins can use the app — everyone else sees the message below.</p>
+        </div>
+
+        <div class="form-control">
+          <label class="label"><span class="label-text">Message shown to users</span></label>
+          <%= text_area_tag "maintenance_mode[message]", @status[:message], class: "textarea textarea-bordered", rows: 4 %>
+        </div>
+
+        <%= submit_tag "Save", class: "btn btn-primary" %>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="mt-8 card bg-base-200 border border-base-300/30 shadow-sm">
+    <div class="card-body">
+      <h2 class="card-title text-xl font-semibold mb-2">Force logout</h2>
+      <p class="mb-4 text-sm text-base-content/70">Immediately sign out every other active session — useful right before starting maintenance work.</p>
+      <%= button_to "Force logout all other users", force_logout_all_admin_maintenance_mode_path, method: :post,
+            data: { turbo_confirm: "Sign out every other active session? Everyone (except you) will need to log in again." },
+            class: "btn btn-error btn-outline btn-sm" %>
+    </div>
+  </div>
+</section>

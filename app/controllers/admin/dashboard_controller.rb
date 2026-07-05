@@ -6,6 +6,7 @@ module Admin
       @permission_count = Permission.count
       @audit_log_count = AuditLog.count
       @notification_count = Notification.active.count
+      @maintenance_status = MaintenanceMode.status
     end
   end
 end

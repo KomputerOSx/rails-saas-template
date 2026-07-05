@@ -19,6 +19,7 @@
         <li><%= link_to "Roles", admin_roles_path, class: "link" %> — read-only catalog of roles and their permissions</li>
         <li><%= link_to "Audit logs", admin_audit_logs_path, class: "link" %> — security/activity event log</li>
         <li><%= link_to "Notifications", admin_notifications_path, class: "link" %> — send/withdraw system messages</li>
+        <li><%= link_to "Maintenance mode", edit_admin_maintenance_mode_path, class: "link" %> — <%= @maintenance_status[:enabled] ? "currently ON" : "currently off" %></li>
       </ul>
     </div>
 

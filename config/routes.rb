@@ -50,6 +50,9 @@ Rails.application.routes.draw do
         patch :withdraw
       end
     end
+    resource :maintenance_mode, only: [ :edit, :update ], controller: "maintenance_mode" do
+      post :force_logout_all
+    end
   end
 
   # --- Organization invitations (public acceptance endpoint) ---

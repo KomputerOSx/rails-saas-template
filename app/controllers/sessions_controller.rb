@@ -4,6 +4,7 @@ class SessionsController < ApplicationController
   layout "auth"
 
   allow_unauthenticated_access only: [ :new, :create, :two_factor, :verify_two_factor, :resend_two_factor, :email_two_factor_fallback ]
+  skip_before_action :enforce_maintenance_mode!
 
   TWO_FACTOR_EXPIRY = 10.minutes
   TWO_FACTOR_MAX_ATTEMPTS = 5
