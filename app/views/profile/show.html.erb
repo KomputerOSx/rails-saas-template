@@ -75,7 +75,7 @@
             <dd class="mt-2 flex flex-wrap gap-1">
               <% if current_user.roles.any? %>
                 <% current_user.roles.each do |role| %>
-                  <span class="badge badge-outline badge-sm"><%= role.name %></span>
+                  <span class=""><%= role.name %></span>
                 <% end %>
               <% else %>
                 <span class="text-base-content/50">—</span>

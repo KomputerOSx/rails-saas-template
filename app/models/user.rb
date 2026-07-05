@@ -41,6 +41,7 @@ class User < ApplicationRecord
   validate :password_no_repeated_characters, if: :password_digest_changed?
   validate :password_no_keyboard_patterns, if: :password_digest_changed?
   validate :password_not_in_history, if: :password_digest_changed?
+  validate :clear_password_blank_error_for_oauth_users
 
   after_update :save_password_to_history, if: :saved_change_to_password_digest?
 
@@ -366,5 +367,9 @@ class User < ApplicationRecord
 
     old_passwords = password_histories.order(created_at: :desc).offset(PASSWORD_HISTORY_LIMIT)
     PasswordHistory.where(id: old_passwords.pluck(:id)).destroy_all
+  end
+
+  def clear_password_blank_error_for_oauth_users
+    errors.delete(:password, :blank) if persisted? && !password_digest_changed?
   end
 end

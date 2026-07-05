@@ -1,19 +1,13 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = ["select"]
+  static targets = ["button", "input"]
 
-  connect() {
-    this.resize()
-  }
-
-  change() {
-    this.resize()
+  select(event) {
+    const { id, name } = event.params
+    this.inputTarget.value = id
+    this.buttonTarget.firstChild.textContent = name
+    document.activeElement?.blur()
     this.element.requestSubmit()
-  }
-
-  resize() {
-    const label = this.selectTarget.options[this.selectTarget.selectedIndex]?.text || ""
-    this.selectTarget.style.width = `${label.length + 5}ch`
   }
 }
