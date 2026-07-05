@@ -118,7 +118,66 @@ Observed usage across the app today:
 
 ### Tables
 
-<!-- TODO: fill in — DaisyUI table classes/variants, empty-state pattern, row action pattern. -->
+Standard table pattern. Reference: `app/views/org/settings/index.html.erb` (Members table).
+
+**Structure:**
+```erb
+<%# Title + subheader live ABOVE the table, not inside a card %>
+<div class="mt-10">
+  <h2 class="text-lg font-semibold">Section title</h2>
+  <p class="mt-0.5 text-sm text-base-content/60">One-line description.</p>
+
+  <div class="mt-4 overflow-x-auto">
+    <table class="table table-sm">
+      <thead class="bg-base-200 text-base-content/70 text-xs uppercase tracking-wide">
+        <tr>
+          <th>Primary column</th>
+          <th>Secondary column</th>
+          <th class="text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% collection.each do |item| %>
+          <tr class="hover">
+            <td class="font-medium"><%= item.primary_field %></td>
+            <td class="text-base-content/60"><%= item.secondary_field %></td>
+            <td>
+              <div class="flex justify-end gap-1">
+                <%# icon-only action buttons %>
+                <%= button_to path, method: :delete, class: "btn btn-ghost btn-xs btn-square text-error", title: "Remove" do %>
+                  <span class="material-symbols-outlined" style="font-size:18px">delete</span>
+                <% end %>
+              </div>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>
+```
+
+**Rules:**
+- **No card wrapper** around tables — tables stand alone
+- **Title + subheader** sit above the table div, never inside it
+- `overflow-x-auto` wraps the `<table>` directly (not the whole section)
+- Use `table table-sm` — `table-sm` is default density
+- `<thead>` always has `bg-base-200 text-base-content/70 text-xs uppercase tracking-wide` for visual separation from body
+- `hover` on each `<tr>` for hover state
+- Primary identifier cell: `font-medium`
+- Muted/secondary data: `text-base-content/60`
+- Never put `flex` directly on `<td>` — wrap in `<div>`
+- Actions column header: `text-right`; actions cell: `<div class="flex justify-end gap-1">`
+- **Action buttons are icon-only**: `btn btn-ghost btn-xs btn-square` + `title` attr for tooltip
+  - Destructive: add `text-error`
+  - Icons: `person_remove` (remove member), `logout` (leave), `cancel` (revoke), `delete` (generic delete)
+- **Inline role/status changes** use a DaisyUI `dropdown` — display current value as clickable text with `unfold_more` chevron; dropdown lists all valid transitions as `button_to` forms
+
+**Empty state:** render `<p class="mt-4 text-sm text-base-content/60">No items.</p>` in place of the table.
+
+### Layout — centering
+
+`<main>` in `application.html.erb` uses `mx-auto` to center content within the flex column. Each page's top-level wrapper controls its own max-width (e.g. `max-w-4xl` for settings pages).
 
 ### Empty states
 

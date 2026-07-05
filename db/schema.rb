@@ -208,9 +208,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_05_160000) do
   end
 
   create_table "users", force: :cascade do |t|
-    t.integer "confirmation_attempts", default: 0, null: false
-    t.string "confirmation_code_digest"
-    t.datetime "confirmation_sent_at"
     t.datetime "confirmed_at"
     t.datetime "created_at", null: false
     t.string "email", null: false

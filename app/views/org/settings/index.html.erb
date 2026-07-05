@@ -1,11 +1,13 @@
-<section class="w-full max-w-3xl">
+<div class="w-full max-w-4xl">
   <p class="text-sm font-medium text-base-content/60">Organization</p>
   <div class="mt-3 flex items-center gap-3">
     <h1 class="text-4xl font-semibold tracking-normal"><%= Current.organization.name %></h1>
 
     <% if current_user.has_permission?("app.organization.manage", organization: Current.organization) %>
       <div data-controller="modal">
-        <button data-action="click->modal#open" class="btn btn-ghost btn-xs">Edit</button>
+        <button data-action="click->modal#open" class="btn btn-ghost btn-xs">
+          <span class="material-symbols-outlined" style="font-size:16px">edit</span>
+        </button>
 
         <dialog data-modal-target="dialog" class="modal"<%= " open".html_safe if Current.organization.errors.any? %>>
           <div class="modal-box">
@@ -33,42 +35,64 @@
     <% end %>
   </div>
 
-  <div class="mt-8 card border border-base-300">
-    <div class="card-body">
-      <h2 class="card-title text-xl font-semibold mb-4">Members</h2>
+  <%# ── Members ── %>
+  <div class="mt-10">
+    <h2 class="text-lg font-semibold">Members</h2>
+    <p class="mt-0.5 text-sm text-base-content/60">People with access to this organization.</p>
 
-      <table class="table">
-        <thead>
+    <div class="mt-4 overflow-x-auto">
+      <table class="table table-sm">
+        <thead class="bg-base-200 text-base-content/70 text-xs uppercase tracking-wide">
           <tr>
-            <th>Email</th>
-            <th>Roles</th>
-            <th></th>
+            <th>Member</th>
+            <th>Role</th>
+            <th class="text-right">Actions</th>
           </tr>
         </thead>
         <tbody>
           <% @memberships.each do |membership| %>
-            <tr>
-              <td><%= membership.user.email %></td>
-              <td class="flex flex-wrap gap-1">
-                <% membership.roles.each do |role| %>
-                  <span class="badge badge-outline"><%= role.name %></span>
+            <tr class="hover">
+              <td class="font-medium"><%= membership.user.email %></td>
+
+              <td>
+                <% if membership.has_role?(Role::APP_OWNER, scope: :app) %>
+                  <span class="text-sm text-base-content/50">owner</span>
+                <% else %>
+                  <div class="dropdown">
+                    <div tabindex="0" role="button" class="flex cursor-pointer items-center gap-0.5 text-sm hover:text-primary">
+                      <span><%= membership.has_role?(Role::APP_ADMIN, scope: :app) ? "admin" : "user" %></span>
+                      <span class="material-symbols-outlined" style="font-size:15px;line-height:1">unfold_more</span>
+                    </div>
+                    <div tabindex="0" class="dropdown-content z-10 mt-1 w-32 rounded-box bg-base-200 p-1 shadow-lg">
+                      <%= button_to "User", demote_org_member_path(membership), method: :patch,
+                            form_class: "block",
+                            class: "block w-full rounded px-3 py-1.5 text-left text-sm hover:bg-base-300 #{membership.has_role?(Role::APP_USER, scope: :app) ? 'font-semibold pointer-events-none' : ''}" %>
+                      <%= button_to "Admin", promote_org_member_path(membership), method: :patch,
+                            form_class: "block",
+                            class: "block w-full rounded px-3 py-1.5 text-left text-sm hover:bg-base-300 #{membership.has_role?(Role::APP_ADMIN, scope: :app) ? 'font-semibold pointer-events-none' : ''}" %>
+                    </div>
+                  </div>
                 <% end %>
               </td>
-              <td class="flex gap-2 justify-end">
-                <% if membership.has_role?(Role::APP_USER, scope: :app) %>
-                  <%= button_to "Promote to admin", promote_org_member_path(membership), method: :patch, class: "btn btn-xs btn-outline" %>
-                <% elsif membership.has_role?(Role::APP_ADMIN, scope: :app) %>
-                  <%= button_to "Demote to user", demote_org_member_path(membership), method: :patch, class: "btn btn-xs btn-outline" %>
-                <% end %>
-                <% if membership.user == current_user %>
-                  <%= button_to "Leave", leave_org_members_path, method: :delete,
-                        data: { turbo_confirm: "Leave #{Current.organization.name}?" },
-                        class: "btn btn-xs btn-error btn-outline" %>
-                <% elsif !membership.has_role?(Role::APP_OWNER, scope: :app) %>
-                  <%= button_to "Remove", org_member_path(membership), method: :delete,
-                        data: { turbo_confirm: "Remove #{membership.user.email} from #{Current.organization.name}?" },
-                        class: "btn btn-xs btn-error btn-outline" %>
-                <% end %>
+
+              <td>
+                <div class="flex justify-end gap-1">
+                  <% if membership.user == current_user %>
+                    <%= button_to leave_org_members_path, method: :delete,
+                          data: { turbo_confirm: "Leave #{Current.organization.name}?" },
+                          class: "btn btn-ghost btn-xs btn-square text-error",
+                          title: "Leave organization" do %>
+                      <span class="material-symbols-outlined" style="font-size:18px">logout</span>
+                    <% end %>
+                  <% elsif !membership.has_role?(Role::APP_OWNER, scope: :app) %>
+                    <%= button_to org_member_path(membership), method: :delete,
+                          data: { turbo_confirm: "Remove #{membership.user.email} from #{Current.organization.name}?" },
+                          class: "btn btn-ghost btn-xs btn-square text-error",
+                          title: "Remove member" do %>
+                      <span class="material-symbols-outlined" style="font-size:18px">person_remove</span>
+                    <% end %>
+                  <% end %>
+                </div>
               </td>
             </tr>
           <% end %>
@@ -77,40 +101,51 @@
     </div>
   </div>
 
-  <div class="mt-8 card border border-base-300">
-    <div class="card-body">
-      <h2 class="card-title text-xl font-semibold mb-4">Pending invitations</h2>
+  <%# ── Pending invitations ── %>
+  <div class="mt-10">
+    <h2 class="text-lg font-semibold">Pending invitations</h2>
+    <p class="mt-0.5 text-sm text-base-content/60">Invites waiting to be accepted.</p>
 
-      <% if @pending_invitations.any? %>
-        <table class="table">
-          <thead>
+    <% if @pending_invitations.any? %>
+      <div class="mt-4 overflow-x-auto">
+        <table class="table table-sm">
+          <thead class="bg-base-200 text-base-content/70 text-xs uppercase tracking-wide">
             <tr>
               <th>Email</th>
               <th>Invited by</th>
-              <th></th>
+              <th class="text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
             <% @pending_invitations.each do |invitation| %>
-              <tr>
-                <td><%= invitation.email %></td>
-                <td><%= invitation.invited_by&.email || "—" %></td>
-                <td><%= button_to "Revoke", org_invitation_path(invitation), method: :delete, class: "btn btn-xs btn-outline" %></td>
+              <tr class="hover">
+                <td class="font-medium"><%= invitation.email %></td>
+                <td class="text-base-content/60"><%= invitation.invited_by&.email || "—" %></td>
+                <td>
+                  <div class="flex justify-end">
+                    <%= button_to org_invitation_path(invitation), method: :delete,
+                          data: { turbo_confirm: "Revoke invite for #{invitation.email}?" },
+                          class: "btn btn-ghost btn-xs btn-square text-error",
+                          title: "Revoke invitation" do %>
+                      <span class="material-symbols-outlined" style="font-size:18px">cancel</span>
+                    <% end %>
+                  </div>
+                </td>
               </tr>
             <% end %>
           </tbody>
         </table>
-      <% else %>
-        <p class="text-base-content/60 text-sm">No pending invitations.</p>
-      <% end %>
+      </div>
+    <% else %>
+      <p class="mt-4 text-sm text-base-content/60">No pending invitations.</p>
+    <% end %>
 
-      <%= form_with url: org_invitations_path, method: :post, html: { class: "mt-6 flex items-end gap-2" } do %>
-        <div class="form-control">
-          <label class="label"><span class="label-text">Invite by email</span></label>
-          <input type="email" name="email" required class="input input border border-base-300ed input-sm">
-        </div>
-        <%= submit_tag "Invite", class: "btn btn-sm btn-primary" %>
-      <% end %>
-    </div>
+    <%= form_with url: org_invitations_path, method: :post, html: { class: "mt-6 flex items-end gap-2" } do %>
+      <div class="form-control">
+        <label class="label"><span class="label-text">Invite by email</span></label>
+        <input type="email" name="email" required class="input input border border-base-300ed input-sm">
+      </div>
+      <%= submit_tag "Invite", class: "btn btn-sm btn-primary" %>
+    <% end %>
   </div>
-</section>
+</div>
