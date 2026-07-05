@@ -95,8 +95,20 @@ Observed usage across the app today:
 
 ### Cards & surfaces
 
-<!-- TODO: fill in — standard card padding/border/shadow, when to use base-100 vs base-200,
-     nesting rules. -->
+**Rule:** All cards use `card border border-base-300` — no shadow classes (`shadow`, `shadow-*`).
+
+```erb
+<div class="card border border-base-300">
+  <div class="card-body">
+    ...
+  </div>
+</div>
+```
+
+- `card` — DaisyUI base (border-radius, overflow: hidden)
+- `border border-base-300` — explicit hard border, always present
+- No `shadow` / `shadow-sm` / `shadow-lg` — ever
+- `card-body` default padding applies unless the card wraps a flush element (e.g. table → `card-body p-0`)
 
 ### Navigation (navbar & sidebar)
 
@@ -231,3 +243,5 @@ DaisyUI tables use `border-collapse: collapse`, which causes `overflow: hidden` 
 - ✅ Do use DaisyUI semantic color tokens (`bg-base-200`, `text-primary`) instead of raw Tailwind
   colors (`bg-gray-100`, `text-blue-500`), so theme changes propagate everywhere.
 - ❌ Don't hardcode hex colors in views or component partials.
+- ✅ Do use `card border border-base-300` for all card components.
+- ❌ Don't add shadow classes (`shadow`, `shadow-sm`, `shadow-lg`, etc.) to cards.
