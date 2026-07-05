@@ -50,8 +50,12 @@ Rails.application.routes.draw do
         patch :promote
         patch :demote
       end
+      collection do
+        delete :leave
+      end
     end
     resources :invitations, only: [ :create, :destroy ]
+    post "switch", to: "switches#create", as: :switch
   end
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.

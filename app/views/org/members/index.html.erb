@@ -60,7 +60,11 @@
                 <% elsif membership.has_role?(Role::APP_ADMIN, scope: :app) %>
                   <%= button_to "Demote to user", demote_org_member_path(membership), method: :patch, class: "btn btn-xs btn-outline" %>
                 <% end %>
-                <% unless membership.has_role?(Role::APP_OWNER, scope: :app) %>
+                <% if membership.user == current_user %>
+                  <%= button_to "Leave", leave_org_members_path, method: :delete,
+                        data: { turbo_confirm: "Leave #{Current.organization.name}?" },
+                        class: "btn btn-xs btn-error btn-outline" %>
+                <% elsif !membership.has_role?(Role::APP_OWNER, scope: :app) %>
                   <%= button_to "Remove", org_member_path(membership), method: :delete,
                         data: { turbo_confirm: "Remove #{membership.user.email} from #{Current.organization.name}?" },
                         class: "btn btn-xs btn-error btn-outline" %>

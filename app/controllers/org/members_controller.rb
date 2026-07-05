@@ -21,6 +21,19 @@ module Org
       end
     end
 
+    def leave
+      organization = Current.organization
+      membership = organization.memberships.find_by!(user: current_user)
+
+      if membership.destroy
+        log_audit(:membership_destroyed, resource: organization, metadata: { removed_user_id: current_user.id, self_removal: true })
+        redirect_to dashboard_path, notice: "You have left #{organization.name}."
+      else
+        log_audit(:owner_removal_blocked, resource: organization, metadata: { target_user_id: current_user.id, self_removal: true })
+        redirect_to org_members_path, alert: "You can't leave! You're the organization's last owner."
+      end
+    end
+
     def promote
       @membership.grant_role!(Role.find_by!(scope: :app, name: Role::APP_ADMIN), granted_by: current_user)
       @membership.revoke_role!(Role.find_by!(scope: :app, name: Role::APP_USER))
