@@ -26,6 +26,12 @@ gem "bcrypt", "~> 3.1.7"
 gem "rotp", "~> 6.3"
 gem "rqrcode", "~> 2.2"
 
+# OmniAuth for "Sign in with Google/GitHub"
+gem "omniauth", "~> 2.1"
+gem "omniauth-google-oauth2", "~> 1.1"
+gem "omniauth-github", "~> 2.0"
+gem "omniauth-rails_csrf_protection", "~> 1.0"
+
 # Request throttling / IP blocklisting
 gem "rack-attack"
 
@@ -73,4 +79,3 @@ group :test do
   gem "capybara"
   gem "selenium-webdriver"
 end
-

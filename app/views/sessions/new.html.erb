@@ -19,7 +19,9 @@
         </div>
       <% end %>
 
-      <div class="divider"></div>
+      <div class="divider">or</div>
+
+      <%= render "sessions/omniauth_buttons" %>
 
       <div class="mt-4 flex flex-col gap-2 text-sm text-center">
         <%= link_to "Sign up", new_registration_path, class: "link link-primary" %>

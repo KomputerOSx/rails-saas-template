@@ -71,12 +71,17 @@ module Authentication
     ).tap do |session|
       Current.session = session
 
-      # SECURITY: Set cookie with proper flags
+      # SECURITY: Set cookie with proper flags.
+      # :lax (not :strict) — this cookie is set on the OAuth callback response, which the
+      # browser reaches via a cross-site-initiated redirect chain from the provider (e.g.
+      # accounts.google.com). A :strict cookie wouldn't be sent on the very next request
+      # (the redirect to dashboard_path), so the user would look logged out until a
+      # separate, purely same-site navigation (e.g. a manual refresh).
       cookies.signed[:session_id] = {
         value: session.id,
         expires: Session::SESSION_DURATION.from_now,
         httponly: true,
-        same_site: :strict,
+        same_site: :lax,
         secure: Rails.env.production?
       }
 

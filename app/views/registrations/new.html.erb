@@ -36,9 +36,11 @@
         </div>
       <% end %>
 
-      <div class="divider"></div>
+      <div class="divider">or</div>
 
-      <div class="text-sm text-center">
+      <%= render "sessions/omniauth_buttons" %>
+
+      <div class="mt-4 text-sm text-center">
         <%= link_to "Login", login_path, class: "link link-primary" %>
       </div>
     </div>

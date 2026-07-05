@@ -12,6 +12,7 @@ class User < ApplicationRecord
   has_many :organizations, through: :memberships
   has_many :notification_recipients, dependent: :destroy
   has_many :notifications, through: :notification_recipients
+  has_many :identities, dependent: :destroy
 
   MIN_PASSWORD_LENGTH = 8
   PASSWORD_HISTORY_LIMIT = 10
