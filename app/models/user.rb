@@ -116,6 +116,16 @@ class User < ApplicationRecord
     confirmed_at.present?
   end
 
+  # --- Onboarding ---
+
+  def onboarding_completed?
+    onboarding_completed_at.present?
+  end
+
+  def onboarding_current_step
+    Onboarding.find(onboarding_step) || Onboarding.first_step
+  end
+
   # --- Email change (requires a code confirmed from both the old and new address) ---
 
   def email_change_pending?

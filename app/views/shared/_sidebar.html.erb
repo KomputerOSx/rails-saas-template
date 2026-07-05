@@ -12,25 +12,25 @@
 
   <div class="relative z-0 flex h-full w-full">
     <div class="relative flex h-full flex-row">
-      <details class="w-16 open:w-72 group/sidebar relative z-20 h-full shrink-0 overflow-hidden border-r border-base-300 bg-base-200 max-md:hidden motion-safe:transition-all motion-safe:duration-300" data-sidebar-target="desktopSidebar" open>
+      <details class="w-25 open:w-72 group/sidebar relative z-20 h-full shrink-0 overflow-hidden border-r border-base-300 bg-base-200 max-md:hidden motion-safe:transition-all motion-safe:duration-300" data-sidebar-target="desktopSidebar" open>
 
         <!-- ================= CLOSED STATE (TINY VIEW) ================= -->
         <summary class="group-open/sidebar:hidden flex h-screen cursor-e-resize list-none flex-col items-center justify-between p-3 select-none">
           <!-- Top Section -->
           <div class="flex flex-col items-center gap-4 w-full">
             <button class="btn btn-ghost btn-square btn-sm hover:bg-base-300 text-base-content/70" data-action="click->sidebar#open">
-              <span class="material-symbols-outlined !text-[20px]">right_panel_close</span>
+              <span class="material-symbols-outlined !text-[25px]">right_panel_close</span>
             </button>
 
             <div class="flex flex-col items-center gap-2 w-full">
               <%= link_to root_path, class: "btn btn-ghost btn-square btn-sm #{current_page?(root_path) ? 'btn-active bg-base-300' : 'text-base-content/70'}", title: "Home" do %>
-                <span class="material-symbols-outlined !text-[20px]">home</span>
+                <span class="material-symbols-outlined !text-[25px]">home</span>
               <% end %>
               <a href="#" class="btn btn-ghost btn-square btn-sm text-base-content/40" title="Dashboard">
-                <span class="material-symbols-outlined !text-[20px]">dashboard</span>
+                <span class="material-symbols-outlined !text-[25px]">dashboard</span>
               </a>
               <a href="#" class="btn btn-ghost btn-square btn-sm text-base-content/40" title="Projects">
-                <span class="material-symbols-outlined !text-[20px]">folder</span>
+                <span class="material-symbols-outlined !text-[25px]">folder</span>
               </a>
             </div>
           </div>
@@ -39,7 +39,7 @@
           <div class="w-full flex flex-col items-center gap-2">
             <% if authenticated? %>
               <%= link_to profile_path, class: "btn btn-ghost btn-square btn-sm text-base-content/70", title: "Profile" do %>
-                <span class="material-symbols-outlined !text-[20px]">person</span>
+                <span class="material-symbols-outlined !text-[25px]">person</span>
               <% end %>
             <% end %>
           </div>
@@ -50,10 +50,10 @@
           <!-- Top Links -->
           <div class="w-full">
             <!-- Header Toggle Panel -->
-            <div class="flex items-center justify-between p-3 border-b border-base-300/50">
-              <span class="font-bold uppercase tracking-wider px-2">Wind Tunnel</span>
+            <div class="flex items-center justify-between p-4 border-b border-base-300/50">
+              <span class="font-bold uppercase tracking-wider px-2">WindTunnel</span>
               <button class="btn btn-ghost btn-square btn-xs hover:bg-base-300 text-base-content/70" data-action="click->sidebar#close">
-                <span class="material-symbols-outlined !text-[16px]">left_panel_close</span>
+                <span class="material-symbols-outlined !text-[25px]">left_panel_close</span>
               </button>
             </div>
 
@@ -61,19 +61,19 @@
               <li class="menu-title text-base-content/45">Workspace</li>
               <li>
                 <%= link_to root_path, class: current_page?(root_path) ? "active" : "" do %>
-                  <span class="material-symbols-outlined !text-[16px]">home</span>
+                  <span class="material-symbols-outlined !text-[25px]">home</span>
                   Home
                 <% end %>
               </li>
               <li>
                 <a class="opacity-40">
-                  <span class="material-symbols-outlined !text-[16px]">dashboard</span>
+                  <span class="material-symbols-outlined !text-[25px]">dashboard</span>
                   Dashboard
                 </a>
               </li>
               <li>
                 <a class="opacity-40">
-                  <span class="material-symbols-outlined !text-[16px]">folder</span>
+                  <span class="material-symbols-outlined !text-[25px]">folder</span>
                   Projects
                 </a>
               </li>
@@ -82,7 +82,7 @@
                 <li class="menu-title mt-4 text-base-content/45">Organization</li>
                 <li>
                   <%= link_to org_members_path, class: current_page?(org_members_path) ? "active" : "" do %>
-                    <span class="material-symbols-outlined !text-[16px]">hub</span>
+                    <span class="material-symbols-outlined !text-[25px]">hub</span>
                     Settings
                   <% end %>
                 </li>
@@ -92,7 +92,7 @@
               <% if authenticated? %>
                 <li>
                   <%= link_to profile_path do %>
-                    <span class="material-symbols-outlined !text-[16px]">person</span>
+                    <span class="material-symbols-outlined !text-[25px]">person</span>
                     Profile
                   <% end %>
                 </li>

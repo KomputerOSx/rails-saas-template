@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_05_150000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_05_160000) do
   create_table "audit_logs", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "event_type", null: false
@@ -225,6 +225,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_05_150000) do
     t.string "last_name"
     t.datetime "last_sign_in_at"
     t.datetime "locked_until"
+    t.datetime "onboarding_completed_at"
+    t.string "onboarding_step"
     t.string "password_digest", default: "", null: false
     t.datetime "totp_enabled_at"
     t.integer "totp_last_used_at"

@@ -35,6 +35,12 @@ Rails.application.routes.draw do
   root "home#index"
   get "dashboard" => "dashboard#index"
 
+  # --- Onboarding ---
+  get   "onboarding",       to: "onboarding#show",   as: :onboarding
+  get   "onboarding/:step", to: "onboarding#show",   as: :onboarding_step
+  patch "onboarding/:step", to: "onboarding#update"
+  post  "onboarding/skip",  to: "onboarding#skip",   as: :skip_onboarding
+
   resources :notification_recipients, only: [ :index, :destroy ] do
     member do
       patch :mark_read

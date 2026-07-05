@@ -7,6 +7,7 @@ class SessionsController < ApplicationController
 
   allow_unauthenticated_access only: [ :new, :create, :two_factor, :verify_two_factor, :resend_two_factor, :email_two_factor_fallback ]
   skip_before_action :enforce_maintenance_mode!
+  skip_before_action :enforce_onboarding_gate!
 
   DUMMY_PASSWORD_DIGEST = BCrypt::Password.create("not-a-real-password")
 

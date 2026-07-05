@@ -1,0 +1,16 @@
+<div class="form-control">
+  <label class="label" for="onboarding_display_name">
+    <span class="label-text">What should we call you?</span>
+  </label>
+  <%= text_field_tag :display_name, nil, id: "onboarding_display_name", class: "input input-bordered w-full", placeholder: "Your name" %>
+</div>
+
+<div class="form-control">
+  <label class="label" for="onboarding_role">
+    <span class="label-text">What's your role?</span>
+  </label>
+  <%= select_tag :role, options_for_select([ "Founder", "Engineering", "Product", "Design", "Other" ]),
+        id: "onboarding_role", class: "select select-bordered w-full", include_blank: "Select one" %>
+</div>
+
+<p class="text-xs text-base-content/50">This is a placeholder step — nothing entered here is saved yet.</p>
