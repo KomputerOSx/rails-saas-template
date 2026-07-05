@@ -1,99 +1,73 @@
 import { Controller } from "@hotwired/stimulus";
 
 // Connects to data-controller="sidebar"
+//
+// The desktop sidebar renders one single markup for both states; collapsing
+// only toggles [data-collapsed] on the <aside>, which the Tailwind
+// group-data-[collapsed]/sidebar variants react to. State is persisted to
+// localStorage ("true" = open, kept compatible with the previous implementation).
 export default class extends Controller {
-  static targets = [
-    "desktopSidebar",
-    "mobileSidebar",
-    "contentTemplate",
-    "sharedContent",
-    "desktopContent",
-    "mobileBackdrop",
-    "mobilePanel",
-  ];
+  static targets = ["desktopSidebar", "mobileSidebar", "mobileBackdrop", "mobilePanel", "toggleIcon"];
   static values = {
     storageKey: { type: String, default: "sidebarOpen" },
   };
 
   connect() {
-    // Bind the handler once so we can properly remove it later
-    this.boundHandleToggle = this.handleToggle.bind(this);
+    if (!this.hasDesktopSidebarTarget) return;
 
-    // Clone the shared sidebar content into both the desktop expanded panel and the mobile panel
-    if (this.hasContentTemplateTarget) {
-      if (this.hasDesktopContentTarget && !this.desktopContentTarget.querySelector("nav")) {
-        this.desktopContentTarget.appendChild(this.contentTemplateTarget.content.cloneNode(true));
-      }
+    // Temporarily disable transitions so the restored state doesn't animate on page load
+    this.desktopSidebarTarget.style.transition = "none";
 
-      if (this.hasSharedContentTarget && !this.sharedContentTarget.querySelector("nav")) {
-        this.sharedContentTarget.appendChild(this.contentTemplateTarget.content.cloneNode(true));
+    const savedState = localStorage.getItem(this.storageKeyValue);
+    this._applyCollapsed(savedState === "false");
 
-        // In the mobile clone, the header button should close the mobile overlay (not collapse the desktop rail)
-        const mobileNav = this.sharedContentTarget.querySelector("nav");
-        const closeButton = mobileNav?.querySelector('[data-action*="sidebar#close"]');
-        if (closeButton) {
-          closeButton.setAttribute("data-action", "click->sidebar#closeMobile");
-          closeButton.setAttribute("aria-label", "Close sidebar");
-
-          const icon = closeButton.querySelector(".material-symbols-outlined");
-          if (icon) icon.textContent = "close";
-        }
-      }
-    }
-
-    if (this.hasDesktopSidebarTarget) {
-      // Temporarily disable transitions to prevent animation on page load
-      this.desktopSidebarTarget.style.transition = "none";
-
-      // Restore the saved state from localStorage, default to open if no saved state
-      const savedState = localStorage.getItem(this.storageKeyValue);
-
-      if (savedState !== null) {
-        this.desktopSidebarTarget.open = savedState === "true";
-      } else {
-        // Default to open for first-time visitors
-        this.desktopSidebarTarget.open = true;
-      }
-
-      // Re-enable transitions after a brief delay
+    // Re-enable transitions after the restored state has painted
+    requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          this.desktopSidebarTarget.style.transition = "";
-        });
+        this.desktopSidebarTarget.style.transition = "";
       });
-
-      // Listen for toggle events to save the state
-      this.desktopSidebarTarget.addEventListener("toggle", this.boundHandleToggle);
-    }
-  }
-
-  disconnect() {
-    if (this.hasDesktopSidebarTarget && this.boundHandleToggle) {
-      this.desktopSidebarTarget.removeEventListener("toggle", this.boundHandleToggle);
-    }
-  }
-
-  handleToggle(event) {
-    // Save the current state to localStorage
-    localStorage.setItem(this.storageKeyValue, this.desktopSidebarTarget.open.toString());
+    });
   }
 
   open() {
-    if (this.hasDesktopSidebarTarget) {
-      this.desktopSidebarTarget.open = true;
-    }
+    this._setOpen(true);
   }
 
   close() {
-    if (this.hasDesktopSidebarTarget) {
-      this.desktopSidebarTarget.open = false;
-    }
+    this._setOpen(false);
   }
 
   toggle() {
-    if (this.hasDesktopSidebarTarget) {
-      this.desktopSidebarTarget.open = !this.desktopSidebarTarget.open;
+    this._setOpen(this.desktopSidebarTarget.hasAttribute("data-collapsed"));
+  }
+
+  _setOpen(open) {
+    if (!this.hasDesktopSidebarTarget) return;
+
+    this._applyCollapsed(!open);
+    localStorage.setItem(this.storageKeyValue, open.toString());
+  }
+
+  _applyCollapsed(collapsed) {
+    const sidebar = this.desktopSidebarTarget;
+    sidebar.toggleAttribute("data-collapsed", collapsed);
+
+    // Swap the glyph in JS: the Material Symbols stylesheet is unlayered, so it
+    // overrides Tailwind's layered `hidden` utility and a two-span CSS swap fails
+    if (this.hasToggleIconTarget) {
+      this.toggleIconTarget.textContent = collapsed ? "right_panel_close" : "left_panel_close";
     }
+
+    // Icon-only rows need tooltips, but only while collapsed. Adding/removing
+    // data-controller lets Stimulus connect/disconnect the tooltip controller,
+    // so tooltips never appear while the labels are visible.
+    sidebar.querySelectorAll("[data-tooltip-content]").forEach((item) => {
+      if (collapsed) {
+        item.setAttribute("data-controller", "tooltip");
+      } else {
+        item.removeAttribute("data-controller");
+      }
+    });
   }
 
   openMobile() {

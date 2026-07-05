@@ -9,14 +9,14 @@ module Org
       )
       OrganizationInvitationMailer.invite(invitation, raw_token).deliver_later
       log_audit(:organization_invitation_sent, resource: Current.organization, metadata: { email: invitation.email })
-      redirect_to org_members_path, notice: "Invitation sent to #{invitation.email}."
+      redirect_to org_settings_path, notice: "Invitation sent to #{invitation.email}."
     end
 
     def destroy
       invitation = Current.organization.organization_invitations.outstanding.find(params[:id])
       invitation.revoke!
       log_audit(:organization_invitation_revoked, resource: Current.organization, metadata: { email: invitation.email })
-      redirect_to org_members_path, notice: "Invitation revoked."
+      redirect_to org_settings_path, notice: "Invitation revoked."
     end
   end
 end

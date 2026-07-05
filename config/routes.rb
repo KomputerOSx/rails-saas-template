@@ -74,7 +74,8 @@ Rails.application.routes.draw do
   # --- Org-facing members/invitations management (distinct from the system-scope Admin:: namespace) ---
   namespace :org do
     resource :organization, only: [ :update ], controller: "organizations"
-    resources :members, only: [ :index, :destroy ] do
+    get "settings", to: "settings#index", as: :settings
+    resources :members, only: [ :destroy ] do
       member do
         patch :promote
         patch :demote

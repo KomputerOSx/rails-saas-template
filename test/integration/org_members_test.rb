@@ -14,7 +14,7 @@ class OrgMembersTest < ActionDispatch::IntegrationTest
     assert_no_difference "Membership.count" do
       delete org_member_path(membership)
     end
-    assert_redirected_to org_members_path
+    assert_redirected_to org_settings_path
     assert AuditLog.exists?(event_type: :owner_removal_blocked)
   end
 
@@ -30,7 +30,7 @@ class OrgMembersTest < ActionDispatch::IntegrationTest
     assert_difference "Membership.count", -1 do
       delete org_member_path(membership)
     end
-    assert_redirected_to org_members_path
+    assert_redirected_to org_settings_path
     assert AuditLog.exists?(event_type: :membership_destroyed)
   end
 
@@ -41,7 +41,7 @@ class OrgMembersTest < ActionDispatch::IntegrationTest
 
     post login_path, params: { email: users(:two).email, password: "password123" }
 
-    get org_members_path
+    get org_settings_path
     assert_response :success
 
     assert_no_difference "Membership.count" do
