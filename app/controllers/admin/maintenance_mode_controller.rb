@@ -32,7 +32,7 @@ module Admin
       sessions.destroy_all
 
       log_audit(:sessions_force_logged_out, metadata: { count: count })
-      redirect_to edit_admin_maintenance_mode_path, notice: "Signed out #{count} other session(s)."
+      redirect_to edit_admin_maintenance_mode_path, notice: "Logged out #{count} other session(s)."
     end
   end
 end

@@ -10,7 +10,7 @@ class InvitationsController < ApplicationController
 
     if authenticated?
       unless emails_match?
-        flash.now[:alert] = "This invitation was sent to #{@invitation.email}. Sign out and sign in with that email to accept it."
+        flash.now[:alert] = "This invitation was sent to #{@invitation.email}. Log out and log in with that email to accept it."
         render :mismatched_account
       end
       # renders :show — a confirm/accept button posting to accept_invitation_path
@@ -18,7 +18,7 @@ class InvitationsController < ApplicationController
       session[:pending_invitation_token] = params[:token]
 
       if User.exists?(email: @invitation.email)
-        redirect_to login_path, notice: "Sign in to accept your invitation to join #{@invitation.organization.name}."
+        redirect_to login_path, notice: "Log in to accept your invitation to join #{@invitation.organization.name}."
       else
         redirect_to new_registration_path(email: @invitation.email), notice: "Create your account to join #{@invitation.organization.name}."
       end

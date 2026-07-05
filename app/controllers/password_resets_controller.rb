@@ -69,7 +69,7 @@ class PasswordResetsController < ApplicationController
 
     if user.errors.empty?
       log_audit(:password_reset_completed, user: user, metadata: { email: user.email })
-      redirect_to login_path, notice: "Your password has been reset. Sign in with your new password."
+      redirect_to login_path, notice: "Your password has been reset. Log in with your new password."
     else
       log_audit(:password_reset_failed, user: user, metadata: { email: user.email, errors: user.errors.full_messages })
       flash.now[:alert] = user.errors.full_messages.join(", ")

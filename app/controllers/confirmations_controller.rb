@@ -44,7 +44,7 @@ class ConfirmationsController < ApplicationController
       # Someone else claimed this email while this signup was pending confirmation.
       PendingRegistration.destroy(email)
       session.delete(:pending_confirmation_email)
-      flash[:toast] = { message: "That email is already registered. Please sign in instead.", type: "error" }
+      flash[:toast] = { message: "That email is already registered. Please log in instead.", type: "error" }
       redirect_to login_path
       return
     end

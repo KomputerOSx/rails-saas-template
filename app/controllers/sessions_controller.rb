@@ -45,7 +45,7 @@ class SessionsController < ApplicationController
 
     unless user.confirmed?
       log_audit(:login_failure, user: user, metadata: { email: email, reason: "unconfirmed" })
-      flash.now[:toast] = { message: "Please confirm your email address before signing in. Check your inbox for the confirmation code.", type: "error" }
+      flash.now[:toast] = { message: "Please confirm your email address before logging in. Check your inbox for the confirmation code.", type: "error" }
       render :new, status: :unprocessable_entity
       return
     end
@@ -63,7 +63,7 @@ class SessionsController < ApplicationController
   def two_factor
     challenge = two_factor_challenge
     unless challenge&.user
-      redirect_to login_path, alert: "Please sign in to continue."
+      redirect_to login_path, alert: "Please log in to continue."
       return
     end
 
@@ -74,13 +74,13 @@ class SessionsController < ApplicationController
     challenge = two_factor_challenge
     user = challenge&.user
     unless user && challenge
-      redirect_to login_path, alert: "Your security code has expired. Please sign in again."
+      redirect_to login_path, alert: "Your security code has expired. Please log in again."
       return
     end
 
     if challenge.expired?
       clear_two_factor_challenge
-      redirect_to login_path, alert: "Your security code has expired. Please sign in again."
+      redirect_to login_path, alert: "Your security code has expired. Please log in again."
       return
     end
 
@@ -95,7 +95,7 @@ class SessionsController < ApplicationController
 
       if challenge.attempts >= TWO_FACTOR_MAX_ATTEMPTS
         clear_two_factor_challenge
-        redirect_to login_path, alert: "Too many incorrect codes. Please sign in again."
+        redirect_to login_path, alert: "Too many incorrect codes. Please log in again."
       else
         assign_two_factor_view_state(challenge)
         flash.now[:alert] = "Invalid code. Please try again."
@@ -108,7 +108,7 @@ class SessionsController < ApplicationController
     challenge = two_factor_challenge
     user = challenge&.user
     unless user && challenge
-      redirect_to login_path, alert: "Please sign in to continue."
+      redirect_to login_path, alert: "Please log in to continue."
       return
     end
 
@@ -126,7 +126,7 @@ class SessionsController < ApplicationController
     challenge = two_factor_challenge
     user = challenge&.user
     unless user && challenge&.delivery_method_totp?
-      redirect_to login_path, alert: "Please sign in to continue."
+      redirect_to login_path, alert: "Please log in to continue."
       return
     end
 
@@ -138,7 +138,7 @@ class SessionsController < ApplicationController
   def destroy
     log_audit(:logout)
     terminate_session
-    redirect_to root_path, notice: "Signed out successfully."
+    redirect_to root_path, notice: "Logged out successfully."
   end
 
   private
@@ -185,7 +185,7 @@ class SessionsController < ApplicationController
     log_audit(:login_success, user: user, metadata: { skipped_two_factor: skipped_two_factor })
 
     invitation = resume_pending_invitation_for(user)
-    notice = invitation ? "Signed in successfully. You've joined #{invitation.organization.name}." : "Signed in successfully."
+    notice = invitation ? "Logged in successfully. You've joined #{invitation.organization.name}." : "Logged in successfully."
     redirect_to dashboard_path, notice: notice
   end
 

@@ -5,7 +5,7 @@ class AuthenticationTest < ActionDispatch::IntegrationTest
     get root_path
 
     assert_response :success
-    assert_select "a", text: "Sign in"
+    assert_select "a", text: "Login"
     assert_select "a", text: "Sign up"
     assert_select "h1", text: "Build Your SaaS App At Warp Speed"
   end
@@ -33,7 +33,7 @@ class AuthenticationTest < ActionDispatch::IntegrationTest
 
     assert_redirected_to dashboard_path
     follow_redirect!
-    assert_select "button", text: "Sign out"
+    assert_select "button", text: "Logout"
   end
 
   test "user can sign in and sign out" do
@@ -41,13 +41,13 @@ class AuthenticationTest < ActionDispatch::IntegrationTest
 
     assert_redirected_to dashboard_path
     follow_redirect!
-    assert_select "button", text: "Sign out"
+    assert_select "button", text: "Logout"
 
     delete session_path
 
     assert_redirected_to root_path
     follow_redirect!
-    assert_select "a", text: "Sign in"
+    assert_select "a", text: "Login"
   end
 
   test "account locks after too many failed login attempts" do

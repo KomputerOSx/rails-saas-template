@@ -51,12 +51,12 @@ module Authentication
       )
 
       terminate_session
-      redirect_to login_path, alert: "Your session has expired. Please sign in again."
+      redirect_to login_path, alert: "Your session has expired. Please log in again."
     end
   end
 
   def redirect_to_login
-    redirect_to login_path, alert: "Please sign in to continue."
+    redirect_to login_path, alert: "Please log in to continue."
   end
 
   def current_user

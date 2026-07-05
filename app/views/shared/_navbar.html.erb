@@ -7,20 +7,12 @@
 
   <div class="flex-1">
     <% if authenticated? && current_user.organizations.any? %>
-      <div class="dropdown">
-        <div tabindex="0" role="button" class="btn btn-ghost text-lg font-bold normal-case text-base-content gap-1">
-          <%= Current.organization&.name || "Select organization" %>
-          <span class="material-symbols-outlined !text-[18px]">expand_more</span>
-        </div>
-        <ul tabindex="0" class="dropdown-content menu z-10 mt-2 w-56 rounded-box bg-base-200 p-2 shadow">
-          <% current_user.organizations.each do |organization| %>
-            <li>
-              <%= button_to organization.name, org_switch_path(organization_id: organization.id), method: :post,
-                    class: "btn btn-ghost btn-sm w-full justify-start normal-case #{"btn-active" if organization == Current.organization}" %>
-            </li>
-          <% end %>
-        </ul>
-      </div>
+      <%= form_with url: org_switch_path, method: :post, data: { controller: "org-switch" } do %>
+        <%= select_tag :organization_id,
+              options_for_select(current_user.organizations.map { |o| [ o.name, o.id ] }, Current.organization&.id),
+              class: "select select-ghost text-lg",
+              data: { org_switch_target: "select", action: "change->org-switch#change" } %>
+      <% end %>
     <% else %>
       <%= link_to "Windtunnel", root_path, class: "btn btn-ghost text-lg font-bold normal-case text-base-content" %>
     <% end %>
@@ -41,12 +33,12 @@
         </div>
       <% end %>
       <div class="hidden text-right sm:block">
-        <span class="block text-xs font-medium text-base-content/50">Signed in as</span>
+        <span class="block text-xs font-medium text-base-content/50">Logged in as</span>
         <span class="block max-w-[180px] truncate text-sm font-semibold text-base-content/80"><%= current_user.email %></span>
       </div>
-      <%= button_to "Sign out", session_path, method: :delete, class: "btn btn-error btn-sm" %>
+      <%= button_to "Logout", session_path, method: :delete, class: "btn btn-error btn-sm" %>
     <% else %>
-      <%= link_to "Sign in", login_path, class: "btn btn-sm border-base-300 bg-base-200 text-base-content hover:border-base-content/20 hover:bg-base-300" %>
+      <%= link_to "Login", login_path, class: "btn btn-sm border-base-300 bg-base-200 text-base-content hover:border-base-content/20 hover:bg-base-300" %>
       <%= link_to "Sign up", new_registration_path, class: "btn btn-primary btn-sm" %>
     <% end %>
   </div>

@@ -13,7 +13,8 @@ Rails.application.routes.draw do
   resource :password, only: [ :edit, :update ], controller: "passwords"
   resources :password_resets, only: [ :new, :create, :edit, :update ], param: :token
 
-  resource :registration, only: [ :new, :create ], controller: "registrations"
+  get  "signup", to: "registrations#new",    as: :new_registration
+  post "signup", to: "registrations#create", as: :registration
   get  "confirmations/new", to: "confirmations#new",    as: :new_confirmation
   post "confirmations",     to: "confirmations#create", as: :confirmations
 

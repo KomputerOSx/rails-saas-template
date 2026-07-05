@@ -28,7 +28,7 @@
       <h2 class="card-title text-xl font-semibold mb-2">Force logout</h2>
       <p class="mb-4 text-sm text-base-content/70">Immediately sign out every other active session — useful right before starting maintenance work.</p>
       <%= button_to "Force logout all other users", force_logout_all_admin_maintenance_mode_path, method: :post,
-            data: { turbo_confirm: "Sign out every other active session? Everyone (except you) will need to log in again." },
+            data: { turbo_confirm: "Log out every other active session? Everyone (except you) will need to log in again." },
             class: "btn btn-error btn-outline btn-sm" %>
     </div>
   </div>
