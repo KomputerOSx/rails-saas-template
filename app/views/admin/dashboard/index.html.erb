@@ -2,38 +2,49 @@
   <p class="text-sm font-medium text-base-content/60">Admin</p>
   <h1 class="mt-3 text-4xl font-semibold tracking-normal">System Admin Dashboard</h1>
 
-  <div class="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
-    <div class="card bg-base-200 border border-base-300/30 shadow-sm">
-      <div class="card-body">
-        <p class="text-xs text-base-content/60">Users</p>
-        <p class="text-3xl font-semibold"><%= @user_count %></p>
-        <%= link_to "Manage users", admin_users_path, class: "link link-primary text-sm" %>
-      </div>
+  <p class="mt-4 text-sm text-base-content/70">
+    <%= @user_count %> users &middot;
+    <%= @role_count %> roles &middot;
+    <%= @permission_count %> permissions &middot;
+    <%= @audit_log_count %> audit log entries
+  </p>
+
+  <div class="mt-8 space-y-8">
+    <div>
+      <h2 class="text-lg font-semibold">RBAC &amp; Admin</h2>
+      <ul class="mt-2 list-disc list-inside space-y-1">
+        <li><%= link_to "Dashboard", admin_root_path, class: "link" %> — this page</li>
+        <li><%= link_to "Users", admin_users_path, class: "link" %> — list users, view roles, grant/revoke roles</li>
+        <li><%= link_to "Roles", admin_roles_path, class: "link" %> — read-only catalog of roles and their permissions</li>
+        <li><%= link_to "Audit logs", admin_audit_logs_path, class: "link" %> — security/activity event log</li>
+      </ul>
     </div>
 
-    <div class="card bg-base-200 border border-base-300/30 shadow-sm">
-      <div class="card-body">
-        <p class="text-xs text-base-content/60">Roles</p>
-        <p class="text-3xl font-semibold"><%= @role_count %></p>
-        <%= link_to "View roles", admin_roles_path, class: "link link-primary text-sm" %>
-      </div>
+    <div>
+      <h2 class="text-lg font-semibold">Authentication</h2>
+      <ul class="mt-2 list-disc list-inside space-y-1">
+        <li><%= link_to "Login", login_path, class: "link" %></li>
+        <li><%= link_to "Sign up", new_registration_path, class: "link" %></li>
+        <li><%= link_to "Confirm email", new_confirmation_path, class: "link" %> — 6-digit code confirmation</li>
+        <li><%= link_to "Forgot password", new_password_reset_path, class: "link" %></li>
+      </ul>
     </div>
-  </div>
 
-  <div class="mt-8">
-    <h2 class="text-xl font-semibold mb-4">Recent audit activity</h2>
-    <div class="card bg-base-200 border border-base-300/30 shadow-sm">
-      <div class="card-body">
-        <ul class="divide-y divide-base-300/30">
-          <% @recent_audit_logs.each do |log| %>
-            <li class="py-2 flex items-center justify-between gap-4 text-sm">
-              <span><%= log.event_type.humanize %><%= " — #{log.user.email}" if log.user %></span>
-              <span class="text-base-content/50"><%= time_ago_in_words(log.created_at) %> ago</span>
-            </li>
-          <% end %>
-        </ul>
-        <%= link_to "View all audit logs", admin_audit_logs_path, class: "link link-primary text-sm mt-2" %>
-      </div>
+    <div>
+      <h2 class="text-lg font-semibold">Account</h2>
+      <ul class="mt-2 list-disc list-inside space-y-1">
+        <li><%= link_to "Profile", profile_path, class: "link" %> — details, roles, password, danger zone</li>
+        <li><%= link_to "Change password", edit_password_path, class: "link" %></li>
+        <li><%= link_to "Set up authenticator app (TOTP)", new_profile_totp_path, class: "link" %></li>
+      </ul>
+    </div>
+
+    <div>
+      <h2 class="text-lg font-semibold">General</h2>
+      <ul class="mt-2 list-disc list-inside space-y-1">
+        <li><%= link_to "Home", root_path, class: "link" %></li>
+        <li><%= link_to "Dashboard", dashboard_path, class: "link" %></li>
+      </ul>
     </div>
   </div>
 </section>

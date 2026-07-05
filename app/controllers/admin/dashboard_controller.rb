@@ -3,7 +3,8 @@ module Admin
     def index
       @user_count = User.count
       @role_count = Role.count
-      @recent_audit_logs = AuditLog.recent.limit(10)
+      @permission_count = Permission.count
+      @audit_log_count = AuditLog.count
     end
   end
 end
