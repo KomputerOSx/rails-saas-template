@@ -3,43 +3,38 @@
   <h1 class="mt-3 text-4xl font-semibold tracking-normal">Profile</h1>
 
   <div class="mt-8 grid grid-cols-1 gap-8">
+
+    <%# ── Personal Details ── %>
     <div class="card border border-base-300">
-      <div class="card-body">
-        <h2 class="card-title text-xl font-semibold mb-4">Personal Details</h2>
+      <div class="card-body p-0">
+        <dl class="divide-y divide-base-300">
 
-        <dl class="grid grid-cols-1 divide-y divide-base-300 max-w-md">
-          <div class="py-3 flex items-center justify-between gap-4">
+          <div class="flex items-center justify-between px-8 py-4">
             <div>
-              <dt class="text-xs text-base-content/60">Name</dt>
-              <dd class="mt-1"><%= [ current_user.first_name, current_user.last_name ].compact_blank.join(" ").presence || "—" %></dd>
+              <dt class="text-xs text-base-content/60 uppercase tracking-wide">Name</dt>
+              <dd class="mt-1 font-medium">
+                <%= [ current_user.first_name, current_user.last_name ].compact_blank.join(" ").presence || "—" %>
+              </dd>
             </div>
-
             <div data-controller="modal">
-              <button data-action="click->modal#open" class="btn btn-ghost btn-xs">Edit</button>
-
+              <button data-action="click->modal#open" class="btn btn-ghost btn-xs btn-square" title="Edit name">
+                <span class="material-symbols-outlined" style="font-size:16px">edit</span>
+              </button>
               <dialog data-modal-target="dialog" class="modal"<%= " open".html_safe if current_user.errors.any? %>>
                 <div class="modal-box">
                   <form method="dialog"><button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" data-action="click->modal#close">✕</button></form>
-
                   <h3 class="font-bold text-lg mb-4">Edit name</h3>
-
                   <%= form_with model: current_user, url: profile_path, method: :patch, html: { class: "space-y-4" } do |f| %>
                     <div class="form-control">
-                      <%= f.label :first_name, class: "label" do %>
-                        <span class="label-text">First name</span>
-                      <% end %>
+                      <%= f.label :first_name, class: "label" do %><span class="label-text">First name</span><% end %>
                       <%= f.text_field :first_name, class: error_class_for(current_user, :first_name, "input input-bordered w-full") %>
                       <%= field_errors(current_user, :first_name) %>
                     </div>
-
                     <div class="form-control">
-                      <%= f.label :last_name, class: "label" do %>
-                        <span class="label-text">Last name</span>
-                      <% end %>
+                      <%= f.label :last_name, class: "label" do %><span class="label-text">Last name</span><% end %>
                       <%= f.text_field :last_name, class: error_class_for(current_user, :last_name, "input input-bordered w-full") %>
                       <%= field_errors(current_user, :last_name) %>
                     </div>
-
                     <div class="form-control mt-2">
                       <%= f.submit "Save", class: "btn btn-primary w-full" %>
                     </div>
@@ -50,25 +45,24 @@
             </div>
           </div>
 
-          <div class="py-3 flex items-center justify-between gap-4">
+          <div class="flex items-center justify-between px-8 py-4">
             <div>
-              <dt class="text-xs text-base-content/60">Email</dt>
-              <dd class="mt-1"><%= current_user.email %></dd>
+              <dt class="text-xs text-base-content/60 uppercase tracking-wide">Email</dt>
+              <dd class="mt-1 font-medium"><%= current_user.email %></dd>
               <% if current_user.email_change_pending? %>
-                <dd class="mt-1 text-xs text-warning">
+                <dd class="mt-1 flex items-center gap-2 text-xs text-warning">
                   Pending change to <%= current_user.unconfirmed_email %>
-                  <%= button_to "Cancel", profile_email_change_path, method: :delete, class: "link link-error ml-1" %>
+                  <%= button_to "Cancel", profile_email_change_path, method: :delete, class: "link link-error" %>
                 </dd>
               <% end %>
             </div>
-
             <div data-controller="modal">
-              <button data-action="click->modal#open" class="btn btn-ghost btn-xs">Edit</button>
-
+              <button data-action="click->modal#open" class="btn btn-ghost btn-xs btn-square" title="Edit email">
+                <span class="material-symbols-outlined" style="font-size:16px">edit</span>
+              </button>
               <dialog data-modal-target="dialog" class="modal">
                 <div class="modal-box">
                   <form method="dialog"><button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" data-action="click->modal#close">✕</button></form>
-
                   <%= render "email_changes/frame" %>
                 </div>
                 <form method="dialog" class="modal-backdrop"><button>close</button></form>
@@ -76,12 +70,12 @@
             </div>
           </div>
 
-          <div class="py-3">
-            <dt class="text-xs text-base-content/60">Roles</dt>
-            <dd class="mt-1 flex flex-wrap gap-1">
+          <div class="px-8 py-4">
+            <dt class="text-xs text-base-content/60 uppercase tracking-wide">Roles</dt>
+            <dd class="mt-2 flex flex-wrap gap-1">
               <% if current_user.roles.any? %>
                 <% current_user.roles.each do |role| %>
-                  <span class="badge badge-outline"><%= role.name %></span>
+                  <span class="badge badge-outline badge-sm"><%= role.name %></span>
                 <% end %>
               <% else %>
                 <span class="text-base-content/50">—</span>
@@ -89,26 +83,27 @@
             </dd>
           </div>
 
-          <div class="py-3">
-            <dt class="text-xs text-base-content/60">Last login</dt>
-            <dd class="mt-1"><%= current_user.last_sign_in_at ? time_ago_in_words(current_user.last_sign_in_at) + " ago" : "—" %></dd>
+          <div class="px-8 py-4">
+            <dt class="text-xs text-base-content/60 uppercase tracking-wide">Last login</dt>
+            <dd class="mt-1 font-medium">
+              <%= current_user.last_sign_in_at ? time_ago_in_words(current_user.last_sign_in_at) + " ago" : "—" %>
+            </dd>
           </div>
+
         </dl>
       </div>
     </div>
 
+    <%# ── Security ── %>
     <div class="card border border-base-300">
-      <div class="card-body">
-        <h2 class="card-title text-xl font-semibold mb-4">Security</h2>
-
-        <div class="flex items-center justify-between max-w-md">
+      <div class="card-body p-0">
+        <div class="flex items-center justify-between px-8 py-4">
           <div>
             <p class="font-medium">Authenticator app (TOTP)</p>
-            <p class="text-sm text-base-content/60">
+            <p class="text-sm text-base-content/60 mt-0.5">
               <%= current_user.totp_enabled? ? "Enabled" : "Not enabled" %>
             </p>
           </div>
-
           <% if current_user.totp_enabled? %>
             <%= form_with url: profile_totp_path, method: :delete, html: { data: { turbo_confirm: "Enter your current password to disable authenticator app verification." } } do %>
               <div class="flex items-center gap-2">
@@ -123,16 +118,20 @@
       </div>
     </div>
 
+    <%# ── Danger Zone ── %>
     <div class="card border border-error">
-      <div class="card-body">
-        <h2 class="card-title text-error text-xl font-semibold">Danger Zone</h2>
-        <p class="text-sm text-base-content/70">
-          Once you delete your account, there is no going back. Please be certain.
-        </p>
-        <div class="mt-4 flex justify-start">
-          <%= button_to "Delete Account", profile_path, method: :delete, data: { turbo_confirm: "Are you sure?" }, class: "btn btn-error btn-outline" %>
+      <div class="card-body p-0">
+        <div class="flex items-center justify-between px-8 py-4">
+          <div>
+            <p class="font-medium text-error">Delete account</p>
+            <p class="text-sm text-base-content/60 mt-0.5">Once deleted, there is no going back.</p>
+          </div>
+          <%= button_to "Delete Account", profile_path, method: :delete,
+                data: { turbo_confirm: "Are you sure?" },
+                class: "btn btn-error btn-outline btn-sm shrink-0" %>
         </div>
       </div>
     </div>
+
   </div>
 </section>
