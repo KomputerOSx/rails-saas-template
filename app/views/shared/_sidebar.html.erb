@@ -16,11 +16,32 @@
 
     <div class="grow"></div>
 
-    <% if authenticated? %>
-      <div class="flex h-12 shrink-0 items-center border-t border-base-300 px-4">
-        <div class="truncate text-xs text-base-content/55"><%= current_user.email %></div>
-      </div>
-    <% end %>
+    <!-- Footer: user info and logout -->
+    <div class="flex flex-col gap-2 border-t border-base-300 p-3">
+      <% if authenticated? %>
+        <!-- User info -->
+        <div class="flex items-center gap-2">
+          <div class="min-w-0 flex-1">
+            <div class="text-xs text-base-content/50">Logged in as</div>
+            <div class="truncate text-sm font-semibold text-base-content/80"><%= current_user.email %></div>
+          </div>
+        </div>
+
+        <!-- Logout button -->
+        <%= button_to session_path, method: :delete, class: "flex h-10 items-center gap-3 rounded-lg px-2 hover:bg-base-200 text-error hover:text-error w-full", title: "Logout" do %>
+          <span class="flex w-6 shrink-0 items-center justify-center">
+            <span class="material-symbols-outlined !text-[22px]">logout</span>
+          </span>
+          <span class="truncate">Logout</span>
+        <% end %>
+      <% else %>
+        <!-- Login/Sign up for unauthenticated users -->
+        <div class="flex flex-col gap-2">
+          <%= link_to "Login", login_path, class: "btn btn-sm border-base-300 bg-base-200 text-base-content hover:border-base-content/20 hover:bg-base-300 w-full" %>
+          <%= link_to "Sign up", new_registration_path, class: "btn btn-primary btn-sm w-full" %>
+        </div>
+      <% end %>
+    </div>
   </div>
 </div>
 
@@ -51,9 +72,30 @@
 
   <div class="grow"></div>
 
-  <% if authenticated? %>
-    <div class="flex h-12 shrink-0 items-center border-t border-base-300 px-4">
-      <div class="min-w-0 truncate text-xs text-base-content/55 transition-opacity duration-200 group-data-[collapsed]/sidebar:opacity-0"><%= current_user.email %></div>
-    </div>
-  <% end %>
+  <!-- Footer: user info and logout -->
+  <div class="flex flex-col gap-2 border-t border-base-300 p-3">
+    <% if authenticated? %>
+      <!-- User info -->
+      <div class="flex items-center gap-2 group-data-[collapsed]/sidebar:justify-center">
+        <div class="min-w-0 flex-1 group-data-[collapsed]/sidebar:hidden">
+          <div class="text-xs text-base-content/50">Logged in as</div>
+          <div class="truncate text-sm font-semibold text-base-content/80"><%= current_user.email %></div>
+        </div>
+      </div>
+
+      <!-- Logout button -->
+      <%= button_to session_path, method: :delete, class: "flex h-10 items-center gap-3 rounded-lg px-2 hover:bg-base-200 text-error hover:text-error w-full text-sm group-data-[collapsed]/sidebar:w-10 group-data-[collapsed]/sidebar:justify-center group-data-[collapsed]/sidebar:p-0", title: "Logout" do %>
+        <span class="flex w-6 shrink-0 items-center justify-center">
+          <span class="material-symbols-outlined !text-[22px]">logout</span>
+        </span>
+        <span class="truncate transition-opacity duration-200 group-data-[collapsed]/sidebar:hidden">Logout</span>
+      <% end %>
+    <% else %>
+      <!-- Login/Sign up for unauthenticated users -->
+      <div class="flex flex-col gap-2">
+        <%= link_to "Login", login_path, class: "btn btn-sm border-base-300 bg-base-200 text-base-content hover:border-base-content/20 hover:bg-base-300 w-full" %>
+        <%= link_to "Sign up", new_registration_path, class: "btn btn-primary btn-sm w-full" %>
+      </div>
+    <% end %>
+  </div>
 </aside>
