@@ -17,7 +17,7 @@
         <tbody>
           <% @audit_logs.each do |log| %>
             <tr>
-              <td><%= log.event_type.humanize %></td>
+              <td><%= log.event_type&.humanize || "Unknown" %></td>
               <td><%= log.user&.email || "—" %></td>
               <td><%= log.ip_address %></td>
               <td><%= time_ago_in_words(log.created_at) %> ago</td>
