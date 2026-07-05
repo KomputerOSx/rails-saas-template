@@ -5,6 +5,7 @@ module Admin
       @role_count = Role.count
       @permission_count = Permission.count
       @audit_log_count = AuditLog.count
+      @notification_count = Notification.active.count
     end
   end
 end

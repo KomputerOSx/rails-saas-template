@@ -10,6 +10,8 @@ class User < ApplicationRecord
   has_many :roles, through: :user_roles
   has_many :memberships, dependent: :destroy
   has_many :organizations, through: :memberships
+  has_many :notification_recipients, dependent: :destroy
+  has_many :notifications, through: :notification_recipients
 
   MIN_PASSWORD_LENGTH = 8
   PASSWORD_HISTORY_LIMIT = 10
@@ -85,6 +87,10 @@ class User < ApplicationRecord
 
   def system_admin?
     has_role?(Role::SYSTEM_ADMIN, scope: :system)
+  end
+
+  def unread_notification_count
+    notification_recipients.inbox.unread.count
   end
 
   def grant_role!(role, granted_by: nil)

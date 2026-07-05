@@ -29,6 +29,15 @@ Rails.application.routes.draw do
   root "home#index"
   get "dashboard" => "dashboard#index"
 
+  resources :notification_recipients, only: [ :index, :destroy ] do
+    member do
+      patch :mark_read
+    end
+    collection do
+      patch :mark_all_read
+    end
+  end
+
   namespace :admin do
     root to: "dashboard#index"
     resources :users, only: [ :index, :show ] do
@@ -36,6 +45,11 @@ Rails.application.routes.draw do
     end
     resources :roles, only: [ :index, :show ]
     resources :audit_logs, only: [ :index, :show ]
+    resources :notifications, only: [ :index, :new, :create ] do
+      member do
+        patch :withdraw
+      end
+    end
   end
 
   # --- Organization invitations (public acceptance endpoint) ---

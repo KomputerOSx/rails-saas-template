@@ -1,0 +1,44 @@
+<section class="w-full max-w-3xl">
+  <p class="text-sm font-medium text-base-content/60">Account</p>
+  <div class="mt-3 flex items-center gap-3">
+    <h1 class="text-4xl font-semibold tracking-normal">Notifications</h1>
+  </div>
+
+  <div class="mt-8 card bg-base-200 border border-base-300/30 shadow-sm">
+    <div class="card-body">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="card-title text-xl font-semibold">Inbox</h2>
+        <% if @notification_recipients.any? { |r| r.read_at.nil? } %>
+          <%= button_to "Mark all read", mark_all_read_notification_recipients_path, method: :patch, class: "btn btn-xs btn-outline" %>
+        <% end %>
+      </div>
+
+      <% if @notification_recipients.any? %>
+        <ul class="divide-y divide-base-300/30">
+          <% @notification_recipients.each do |recipient| %>
+            <li class="py-4 flex items-start justify-between gap-4">
+              <div class="min-w-0">
+                <div class="flex items-center gap-2">
+                  <p class="font-medium"><%= recipient.notification.title %></p>
+                  <% if recipient.read_at.nil? %>
+                    <span class="badge badge-primary badge-xs">New</span>
+                  <% end %>
+                </div>
+                <p class="mt-1 text-sm text-base-content/70"><%= recipient.notification.body %></p>
+                <p class="mt-1 text-xs text-base-content/50"><%= time_ago_in_words(recipient.notification.created_at) %> ago</p>
+              </div>
+              <div class="flex flex-none gap-2">
+                <% if recipient.read_at.nil? %>
+                  <%= button_to "Mark read", mark_read_notification_recipient_path(recipient), method: :patch, class: "btn btn-xs btn-outline" %>
+                <% end %>
+                <%= button_to "Delete", notification_recipient_path(recipient), method: :delete, class: "btn btn-xs btn-error btn-outline" %>
+              </div>
+            </li>
+          <% end %>
+        </ul>
+      <% else %>
+        <p class="text-base-content/60 text-sm">No notifications.</p>
+      <% end %>
+    </div>
+  </div>
+</section>

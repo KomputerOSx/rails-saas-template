@@ -6,7 +6,8 @@
     <%= @user_count %> users &middot;
     <%= @role_count %> roles &middot;
     <%= @permission_count %> permissions &middot;
-    <%= @audit_log_count %> audit log entries
+    <%= @audit_log_count %> audit log entries &middot;
+    <%= @notification_count %> active notifications
   </p>
 
   <div class="mt-8 space-y-8">
@@ -17,6 +18,7 @@
         <li><%= link_to "Users", admin_users_path, class: "link" %> — list users, view roles, grant/revoke roles</li>
         <li><%= link_to "Roles", admin_roles_path, class: "link" %> — read-only catalog of roles and their permissions</li>
         <li><%= link_to "Audit logs", admin_audit_logs_path, class: "link" %> — security/activity event log</li>
+        <li><%= link_to "Notifications", admin_notifications_path, class: "link" %> — send/withdraw system messages</li>
       </ul>
     </div>
 

@@ -1,0 +1,49 @@
+<section class="w-full max-w-5xl">
+  <p class="text-sm font-medium text-base-content/60">Admin</p>
+  <h1 class="mt-3 text-4xl font-semibold tracking-normal">Notifications</h1>
+
+  <div class="mt-4">
+    <%= link_to "New notification", new_admin_notification_path, class: "btn btn-primary btn-sm" %>
+  </div>
+
+  <div class="mt-8 card bg-base-200 border border-base-300/30 shadow-sm">
+    <div class="card-body">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Created by</th>
+            <th>Recipients</th>
+            <th>Status</th>
+            <th>Created at</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @notifications.each do |notification| %>
+            <tr>
+              <td><%= notification.title %></td>
+              <td><%= notification.created_by&.email || "System" %></td>
+              <td><%= notification.notification_recipients.size %></td>
+              <td>
+                <% if notification.withdrawn? %>
+                  <span class="badge badge-neutral badge-sm">Withdrawn</span>
+                <% else %>
+                  <span class="badge badge-success badge-sm">Active</span>
+                <% end %>
+              </td>
+              <td><%= time_ago_in_words(notification.created_at) %> ago</td>
+              <td>
+                <% unless notification.withdrawn? %>
+                  <%= button_to "Withdraw", withdraw_admin_notification_path(notification), method: :patch,
+                        data: { turbo_confirm: "Withdraw this notification for all recipients? This cannot be undone." },
+                        class: "btn btn-xs btn-error btn-outline" %>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>

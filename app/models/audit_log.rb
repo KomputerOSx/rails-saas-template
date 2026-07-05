@@ -41,7 +41,9 @@ class AuditLog < ApplicationRecord
     organization_invitation_accepted: "organization_invitation_accepted",
     organization_invitation_revoked: "organization_invitation_revoked",
     owner_removal_blocked: "owner_removal_blocked",
-    organization_updated: "organization_updated"
+    organization_updated: "organization_updated",
+    notification_created: "notification_created",
+    notification_withdrawn: "notification_withdrawn"
   }
 
   validates :event_type, presence: true

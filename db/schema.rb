@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_05_020400) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_05_020600) do
   create_table "audit_logs", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "event_type", null: false
@@ -48,6 +48,31 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_05_020400) do
     t.index ["organization_id"], name: "index_memberships_on_organization_id"
     t.index ["user_id", "organization_id"], name: "index_memberships_on_user_id_and_organization_id", unique: true
     t.index ["user_id"], name: "index_memberships_on_user_id"
+  end
+
+  create_table "notification_recipients", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "dismissed_at"
+    t.integer "notification_id", null: false
+    t.datetime "read_at"
+    t.datetime "updated_at", null: false
+    t.integer "user_id", null: false
+    t.index ["notification_id", "user_id"], name: "idx_notification_recipients_unique", unique: true
+    t.index ["notification_id"], name: "index_notification_recipients_on_notification_id"
+    t.index ["user_id", "dismissed_at", "read_at"], name: "idx_notification_recipients_inbox"
+    t.index ["user_id"], name: "index_notification_recipients_on_user_id"
+  end
+
+  create_table "notifications", force: :cascade do |t|
+    t.text "body", null: false
+    t.datetime "created_at", null: false
+    t.integer "created_by_id"
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.datetime "withdrawn_at"
+    t.index ["created_at"], name: "index_notifications_on_created_at"
+    t.index ["created_by_id"], name: "index_notifications_on_created_by_id"
+    t.index ["withdrawn_at"], name: "index_notifications_on_withdrawn_at"
   end
 
   create_table "organization_invitations", force: :cascade do |t|
@@ -205,6 +230,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_05_020400) do
   add_foreign_key "membership_roles", "users", column: "granted_by_id"
   add_foreign_key "memberships", "organizations"
   add_foreign_key "memberships", "users"
+  add_foreign_key "notification_recipients", "notifications"
+  add_foreign_key "notification_recipients", "users"
+  add_foreign_key "notifications", "users", column: "created_by_id"
   add_foreign_key "organization_invitations", "organizations"
   add_foreign_key "organization_invitations", "roles"
   add_foreign_key "organization_invitations", "users", column: "invited_by_id"
