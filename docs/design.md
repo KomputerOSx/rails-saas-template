@@ -127,6 +127,7 @@ themes without any hardcoded colors.
 | `<select multiple>` | `select-field` (auto-detected via `:not([multiple])` / `[multiple]` in CSS) |
 | `<textarea>` | `textarea-field` |
 | `<input type="checkbox">` | `checkbox-field` |
+| `<input type="radio">` | `radio-field` |
 
 ```erb
 <div class="form-control">
@@ -146,8 +147,18 @@ themes without any hardcoded colors.
   helper to render the message below the field.
 - Disabled state is handled automatically (`opacity-75`, `cursor-not-allowed`, `bg-base-200`) — just
   set the `disabled` attribute, no extra class needed.
-- Radio buttons and file inputs aren't used anywhere in the app yet; if one is added, extend
-  `checkbox-field`'s pattern (same tokens, adapt the shape) rather than reaching for DaisyUI's classes.
+- File inputs aren't used anywhere in the app yet; if one is added, follow `checkbox-field`/`radio-field`'s
+  pattern (same tokens, adapt the shape) rather than reaching for DaisyUI's classes.
+- **Radio group spanning multiple endpoints:** when each radio option needs to submit to a *different*
+  URL (e.g. org settings' role radios — "User" posts to the demote endpoint, "Admin" to the promote
+  endpoint), don't split them into separate forms — that breaks native radio mutual-exclusivity (radios
+  only group within one `<form>`). Instead use one `form_with` (any option's URL as the default `action`)
+  wrapping both radios, with `data-controller="auto-submit"` on the form and, on each radio,
+  `data-action="change->auto-submit#submit"` + `data-auto-submit-url-param="<the other endpoints>"`. The
+  `auto-submit` Stimulus controller (`app/javascript/controllers/auto_submit_controller.js`) repoints
+  `form.action` to the selected radio's URL before calling `requestSubmit()` — one real radio group, no
+  visible submit button, backend routes untouched. Reference: `app/views/org/settings/index.html.erb`
+  (Edit member modal).
 
 ### Badges
 
@@ -297,8 +308,9 @@ crowded into the row. Reference: `app/views/org/settings/index.html.erb` (Member
 shown read-only in the table as a `badge badge-outline rounded-none badge-sm` (square, not pill — matches
 the table's flat look rather than the rounded badges used for status elsewhere), and the row's only
 action is one "Edit member" icon button. Inside that modal:
-- Role change: a `join` of two `btn-sm` buttons (`btn-primary` for the active role, `btn-outline` for the
-  other) posting to the promote/demote endpoints — not a dropdown.
+- Role change: a `radio-field` group (not a dropdown, not separate buttons) auto-submitting on change —
+  see the "Radio group spanning multiple endpoints" note under Forms & inputs above, since role posts to
+  two different endpoints (promote/demote) from what's otherwise one radio group.
 - Destructive action (remove): its own `btn-error btn-outline btn-sm w-full` button at the bottom, still
   wired to `confirm-modal`. The shared `#confirm-modal` dialog (`app/views/shared/_confirm_modal.html.erb`)
   is a single global `<dialog>`, so it layers on top of an already-open edit modal without any special

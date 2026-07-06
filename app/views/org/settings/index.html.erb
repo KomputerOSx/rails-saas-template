@@ -96,17 +96,26 @@
                           <h3 class="font-bold text-lg">Edit member</h3>
                           <p class="mt-1 text-sm text-base-content/60"><%= membership.user.email %></p>
 
-                          <div class="form-control mt-4">
+                          <fieldset class="form-control mt-4">
                             <label class="label"><span class="label-text">Role</span></label>
-                            <div class="join w-full">
-                              <%= button_to "User", demote_org_member_path(membership), method: :patch,
-                                    form_class: "join-item w-1/2",
-                                    class: "btn btn-sm w-full #{membership.has_role?(Role::APP_USER, scope: :app) ? "btn-primary" : "btn-outline"}" %>
-                              <%= button_to "Admin", promote_org_member_path(membership), method: :patch,
-                                    form_class: "join-item w-1/2",
-                                    class: "btn btn-sm w-full #{membership.has_role?(Role::APP_ADMIN, scope: :app) ? "btn-primary" : "btn-outline"}" %>
-                            </div>
-                          </div>
+                            <%= form_with url: demote_org_member_path(membership), method: :patch,
+                                  html: { class: "space-y-2" }, data: { controller: "auto-submit" } do %>
+                              <label class="flex items-center gap-2.5 cursor-pointer">
+                                <input type="radio" name="role" value="user" class="radio-field"
+                                       data-action="change->auto-submit#submit"
+                                       data-auto-submit-url-param="<%= demote_org_member_path(membership) %>"
+                                       <%= "checked" if membership.has_role?(Role::APP_USER, scope: :app) %>>
+                                <span class="text-sm font-medium">User</span>
+                              </label>
+                              <label class="flex items-center gap-2.5 cursor-pointer">
+                                <input type="radio" name="role" value="admin" class="radio-field"
+                                       data-action="change->auto-submit#submit"
+                                       data-auto-submit-url-param="<%= promote_org_member_path(membership) %>"
+                                       <%= "checked" if membership.has_role?(Role::APP_ADMIN, scope: :app) %>>
+                                <span class="text-sm font-medium">Admin</span>
+                              </label>
+                            <% end %>
+                          </fieldset>
 
                           <div class="divider my-4"></div>
 

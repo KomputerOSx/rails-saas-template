@@ -236,6 +236,17 @@
   @apply cursor-not-allowed opacity-75;
 }
 
+.radio-field {
+  @apply size-4 cursor-pointer appearance-none rounded-full border border-base-300 bg-base-100 checked:border-primary checked:bg-primary focus:outline-2 focus:outline-offset-2 focus:outline-primary disabled:cursor-not-allowed disabled:border-base-300 disabled:bg-base-200 disabled:checked:bg-base-200 disabled:opacity-75;
+}
+
+.radio-field:checked {
+  background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3ccircle cx='8' cy='8' r='3'/%3e%3c/svg%3e");
+  background-size: 100% 100%;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
 /* Toast Notifications */
 .toast-item {
   @apply absolute w-full left-0 select-none;
