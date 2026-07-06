@@ -168,6 +168,18 @@
   border-color: var(--color-base-300);
 }
 
+/* Tables — filled <thead> corner safeguard. The card wrapper's overflow:hidden clips most of
+   a filled header's rectangle, but border-collapse can still leave a hairline square corner
+   poking past the card's border-radius in Chrome/WebKit. Round the header row's own outer
+   corners to match so there's nothing left for the parent clip to miss. */
+.table thead tr:first-child th:first-child {
+  border-top-left-radius: var(--radius-box);
+}
+
+.table thead tr:first-child th:last-child {
+  border-top-right-radius: var(--radius-box);
+}
+
 /* Form fields — flat/ringed style (replaces DaisyUI's input/select/textarea/checkbox
    classes app-wide), built on this app's DaisyUI semantic tokens so it's correct in
    both the "dark" and "light" themes. See docs/design.md → Forms & inputs. */

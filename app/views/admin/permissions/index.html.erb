@@ -21,8 +21,8 @@
   <div class="card mt-4 border border-base-300">
     <div class="card-body p-0">
       <div class="overflow-x-auto">
-        <table class="table table-sm table-zebra">
-          <thead class="text-sm font-semibold text-base-content">
+        <table class="table table-sm">
+          <thead class="text-sm font-semibold text-base-content bg-base-200">
             <tr class="border-b border-base-300">
               <th>Key</th>
               <th>Description</th>
@@ -32,7 +32,7 @@
           </thead>
           <tbody>
             <% @permissions.each do |permission| %>
-              <tr class="hover:bg-base-300">
+              <tr class="hover:bg-base-200">
                 <td class="font-medium font-mono text-sm"><%= permission.key %></td>
                 <td class="text-base-content/60"><%= permission.description.presence || "—" %></td>
                 <td class="text-base-content/60"><%= permission.roles.map(&:name).join(", ").presence || "—" %></td>

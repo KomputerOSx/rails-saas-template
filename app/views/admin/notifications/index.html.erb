@@ -28,8 +28,8 @@
   <div class="card mt-4 border border-base-300">
     <div class="card-body p-0">
       <div class="overflow-x-auto">
-        <table class="table table-sm table-zebra">
-          <thead class="text-sm font-semibold text-base-content">
+        <table class="table table-sm">
+          <thead class="text-sm font-semibold text-base-content bg-base-200">
             <tr class="border-b border-base-300">
               <th>Title</th>
               <th>Created by</th>
@@ -41,7 +41,7 @@
           </thead>
           <tbody>
             <% @notifications.each do |notification| %>
-              <tr class="hover:bg-base-300">
+              <tr class="hover:bg-base-200">
                 <td class="font-medium"><%= notification.title %></td>
                 <td class="text-base-content/60"><%= notification.created_by&.email || "System" %></td>
                 <td><%= notification.notification_recipients.size %></td>

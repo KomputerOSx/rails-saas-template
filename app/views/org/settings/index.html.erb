@@ -47,8 +47,8 @@
     <div class="card mt-4 border border-base-300">
       <div class="card-body p-0">
       <div class="overflow-x-auto">
-      <table class="table table-sm table-zebra">
-        <thead class="text-sm font-semibold text-base-content">
+      <table class="table table-sm">
+        <thead class="text-sm font-semibold text-base-content bg-base-200">
           <tr class="border-b border-base-300">
             <th><%= sort_link "Member", "email", current_sort: @sort, current_dir: @direction %></th>
             <th><%= sort_link "Role",   "role",  current_sort: @sort, current_dir: @direction %></th>
@@ -57,27 +57,16 @@
         </thead>
         <tbody>
           <% @memberships.each do |membership| %>
-            <tr class="hover:bg-base-300">
+            <tr class="hover:bg-base-200">
               <td class="font-medium"><%= membership.user.email %></td>
 
               <td>
                 <% if membership.has_role?(Role::APP_OWNER, scope: :app) %>
-                  <span class="text-sm text-base-content/50">owner</span>
+                  <span class="badge badge-outline rounded-none badge-sm">Owner</span>
                 <% else %>
-                  <div class="dropdown">
-                    <div tabindex="0" role="button" class="flex cursor-pointer items-center gap-0.5 text-sm hover:text-primary">
-                      <span><%= membership.has_role?(Role::APP_ADMIN, scope: :app) ? "admin" : "user" %></span>
-                      <span class="material-symbols-outlined" style="font-size:15px;line-height:1">unfold_more</span>
-                    </div>
-                    <div tabindex="0" class="dropdown-content z-10 mt-1 w-32 rounded-box bg-base-200 p-1 shadow-lg">
-                      <%= button_to "User", demote_org_member_path(membership), method: :patch,
-                            form_class: "block",
-                            class: "block w-full rounded px-3 py-1.5 text-left text-sm hover:bg-base-300 #{membership.has_role?(Role::APP_USER, scope: :app) ? 'font-semibold pointer-events-none' : ''}" %>
-                      <%= button_to "Admin", promote_org_member_path(membership), method: :patch,
-                            form_class: "block",
-                            class: "block w-full rounded px-3 py-1.5 text-left text-sm hover:bg-base-300 #{membership.has_role?(Role::APP_ADMIN, scope: :app) ? 'font-semibold pointer-events-none' : ''}" %>
-                    </div>
-                  </div>
+                  <span class="badge badge-outline rounded-none badge-sm">
+                    <%= membership.has_role?(Role::APP_ADMIN, scope: :app) ? "Admin" : "User" %>
+                  </span>
                 <% end %>
               </td>
 
@@ -95,16 +84,43 @@
                       <span class="material-symbols-outlined" style="font-size:18px">logout</span>
                     <% end %>
                   <% elsif !membership.has_role?(Role::APP_OWNER, scope: :app) %>
-                    <%= button_to org_member_path(membership), method: :delete,
-                          data: {
-                            controller: "confirm-modal",
-                            action: "click->confirm-modal#confirm",
-                            confirm_modal_message_value: "Remove #{membership.user.email} from #{Current.organization.name}?"
-                          },
-                          class: "btn btn-ghost btn-xs btn-square text-error",
-                          title: "Remove member" do %>
-                      <span class="material-symbols-outlined" style="font-size:18px">person_remove</span>
-                    <% end %>
+                    <div data-controller="modal">
+                      <button data-action="click->modal#open" class="btn btn-ghost btn-xs btn-square" title="Edit member">
+                        <span class="material-symbols-outlined" style="font-size:18px">edit</span>
+                      </button>
+
+                      <dialog data-modal-target="dialog" class="modal">
+                        <div class="modal-box">
+                          <form method="dialog"><button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" data-action="click->modal#close">✕</button></form>
+
+                          <h3 class="font-bold text-lg">Edit member</h3>
+                          <p class="mt-1 text-sm text-base-content/60"><%= membership.user.email %></p>
+
+                          <div class="form-control mt-4">
+                            <label class="label"><span class="label-text">Role</span></label>
+                            <div class="join w-full">
+                              <%= button_to "User", demote_org_member_path(membership), method: :patch,
+                                    form_class: "join-item w-1/2",
+                                    class: "btn btn-sm w-full #{membership.has_role?(Role::APP_USER, scope: :app) ? "btn-primary" : "btn-outline"}" %>
+                              <%= button_to "Admin", promote_org_member_path(membership), method: :patch,
+                                    form_class: "join-item w-1/2",
+                                    class: "btn btn-sm w-full #{membership.has_role?(Role::APP_ADMIN, scope: :app) ? "btn-primary" : "btn-outline"}" %>
+                            </div>
+                          </div>
+
+                          <div class="divider my-4"></div>
+
+                          <%= button_to "Remove from organization", org_member_path(membership), method: :delete,
+                                data: {
+                                  controller: "confirm-modal",
+                                  action: "click->confirm-modal#confirm",
+                                  confirm_modal_message_value: "Remove #{membership.user.email} from #{Current.organization.name}?"
+                                },
+                                class: "btn btn-error btn-outline btn-sm w-full" %>
+                        </div>
+                        <form method="dialog" class="modal-backdrop"><button>close</button></form>
+                      </dialog>
+                    </div>
                   <% end %>
                 </div>
               </td>
@@ -126,8 +142,8 @@
       <div class="card mt-4 border border-base-300">
         <div class="card-body p-0">
         <div class="overflow-x-auto">
-        <table class="table table-sm table-zebra">
-          <thead class="text-sm font-semibold text-base-content">
+        <table class="table table-sm">
+          <thead class="text-sm font-semibold text-base-content bg-base-200">
             <tr class="border-b border-base-300">
               <th>Email</th>
               <th>Invited by</th>
@@ -136,7 +152,7 @@
           </thead>
           <tbody>
             <% @pending_invitations.each do |invitation| %>
-              <tr class="hover:bg-base-300">
+              <tr class="hover:bg-base-200">
                 <td class="font-medium"><%= invitation.email %></td>
                 <td class="text-base-content/60"><%= invitation.invited_by&.email || "—" %></td>
                 <td>

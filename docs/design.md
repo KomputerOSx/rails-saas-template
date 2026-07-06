@@ -218,7 +218,7 @@ Standard table pattern. Reference: `app/views/org/settings/index.html.erb` (Memb
   <div class="card mt-4 border border-base-300">
     <div class="card-body p-0">
       <div class="overflow-x-auto">
-        <table class="table table-sm table-zebra">
+        <table class="table table-sm">
           <thead class="text-sm font-semibold text-base-content">
             <tr class="border-b border-base-300">
               <th>Primary column</th>
@@ -228,7 +228,7 @@ Standard table pattern. Reference: `app/views/org/settings/index.html.erb` (Memb
           </thead>
           <tbody>
             <% collection.each do |item| %>
-              <tr class="hover:bg-base-300">
+              <tr class="hover:bg-base-200">
                 <td class="font-medium"><%= item.primary_field %></td>
                 <td class="text-base-content/60"><%= item.secondary_field %></td>
                 <td>
@@ -263,20 +263,22 @@ Standard table pattern. Reference: `app/views/org/settings/index.html.erb` (Memb
 DaisyUI tables use `border-collapse: collapse`, which causes `overflow: hidden` on plain divs to not clip cell backgrounds at the corners in Chrome/WebKit. `card` handles this correctly. Also avoid `rounded-box` — dark theme sets `--radius-box: 0.25rem` (invisible).
 
 **Header row:**
-- No `bg-*` on `<thead>` — a filled thead background causes corner-bleed issues with `border-collapse: collapse`
-- Header distinction via: `text-sm font-semibold text-base-content` on `<thead>` + `border-b border-base-300`
-  on the `<tr>`. (Previously `text-base-content/60 text-xs uppercase tracking-wide` — replaced to match
-  the flatter, sentence-case header style used by buttons/badges/forms; the `border-b` separator is kept
-  as-is since it doesn't have the corner-bleed problem a filled `<thead>` background does.)
+- `bg-base-200` on `<thead>` + `text-sm font-semibold text-base-content` + `border-b border-base-300` on
+  the `<tr>`. (Header text style previously `text-base-content/60 text-xs uppercase tracking-wide` —
+  replaced to match the flatter, sentence-case style used by buttons/badges/forms.)
+- **Corner-bleed guard:** a filled `<thead>` combined with `border-collapse` can leave a hairline square
+  corner poking past the card's `border-radius` in Chrome/WebKit, even inside the `card` wrapper's
+  `overflow: hidden`. Handled once, globally, in `app/assets/tailwind/application.css`:
+  `.table thead tr:first-child th:first-child` / `th:last-child` get `border-top-left/right-radius:
+  var(--radius-box)` directly, so the header row's own corners match the card and there's nothing left
+  for the parent clip to miss. No per-view markup needed — just use `bg-base-200` on `<thead>` as normal.
 
 **Rows & cells:**
-- `table-zebra` on the `<table>` — DaisyUI's built-in striping (`base-200` on even `tbody` rows). Safe
-  to combine with `border-collapse` (unlike a filled `<thead>`, since it stripes individual `<tr>`s, not
-  one continuous band across the top edge).
-- `hover:bg-base-300` on each `<tr>` — **not** a bare `class="hover"`. `hover` alone is not a real
+- No zebra striping — tried `table-zebra` (DaisyUI's built-in even-row striping), reverted per
+  preference. Rows are otherwise flush against the card background.
+- `hover:bg-base-200` on each `<tr>` — **not** a bare `class="hover"`. `hover` alone is not a real
   Tailwind/DaisyUI class (there's no utility named exactly `hover` — it's a variant prefix, e.g.
-  `hover:bg-base-300`), so it compiles to nothing and silently did nothing. Use `base-300` (not `-200`)
-  so the hover state reads distinctly from the zebra stripe's `base-200`.
+  `hover:bg-base-200`), so it compiles to nothing and silently did nothing everywhere it was used.
 - Primary identifier: `font-medium`
 - Secondary/muted data: `text-base-content/60`
 - Never put `flex` directly on `<td>` — wrap contents in `<div>`
@@ -287,6 +289,22 @@ DaisyUI tables use `border-collapse: collapse`, which causes `overflow: hidden` 
 - Destructive actions: add `text-error`
 - Confirmation: wire via `confirm-modal` Stimulus controller (not `data-turbo-confirm`)
 - Icons: `person_remove` (remove), `logout` (leave), `cancel` (revoke), `delete` (generic)
+
+**"Edit" modal instead of separate row actions:** when a row has more than one mutating action on the
+same record (e.g. change role + remove), collapse them into a single `btn-ghost btn-xs btn-square` edit
+button that opens a `data-controller="modal"` dialog, rather than several small buttons/dropdowns
+crowded into the row. Reference: `app/views/org/settings/index.html.erb` (Members table) — role is
+shown read-only in the table as a `badge badge-outline rounded-none badge-sm` (square, not pill — matches
+the table's flat look rather than the rounded badges used for status elsewhere), and the row's only
+action is one "Edit member" icon button. Inside that modal:
+- Role change: a `join` of two `btn-sm` buttons (`btn-primary` for the active role, `btn-outline` for the
+  other) posting to the promote/demote endpoints — not a dropdown.
+- Destructive action (remove): its own `btn-error btn-outline btn-sm w-full` button at the bottom, still
+  wired to `confirm-modal`. The shared `#confirm-modal` dialog (`app/views/shared/_confirm_modal.html.erb`)
+  is a single global `<dialog>`, so it layers on top of an already-open edit modal without any special
+  handling — no need to build a bespoke nested-modal mechanism.
+- A user's own row keeps its distinct "Leave organization" icon button (unchanged) rather than going
+  through the edit modal — you can't self-edit a role, only leave.
 
 **Sortable headers:** use the `sort_link` helper — `sort_link "Label", "column", current_sort: @sort, current_dir: @direction`
 
