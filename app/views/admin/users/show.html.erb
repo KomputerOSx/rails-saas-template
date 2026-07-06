@@ -10,7 +10,7 @@
         <%= [ @user.first_name, @user.last_name ].compact_blank.join(" ").presence || @user.email %>
       </h1>
     </div>
-    <%= link_to "Back", admin_users_path, class: "btn btn-outline shrink-0" %>
+    <%= link_to "Back", admin_users_path, class: "btn btn-outline btn-sm shrink-0" %>
   </div>
 
   <div class="mt-6 flex flex-wrap items-center gap-2">

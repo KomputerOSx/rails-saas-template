@@ -86,7 +86,11 @@ Observed usage across the app today:
 - `btn-sm` / `btn-xs` / `btn-lg` — size variants (`btn-sm` most common)
 - `btn-square` / `btn-circle` — icon-only buttons
 
-<!-- TODO: fill in — house rules for when to use each variant, icon+label spacing convention, etc. -->
+**Rule:** Main function buttons (e.g. "New role", "New permission"), "Back" buttons, and other
+navigation buttons all use `btn-sm`. Full-size (`btn` with no size modifier) is not used for these.
+Table row actions go smaller still, `btn-xs` (see Tables below).
+
+<!-- TODO: fill in — icon+label spacing convention, etc. -->
 
 ### Forms & inputs
 

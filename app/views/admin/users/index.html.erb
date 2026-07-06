@@ -46,7 +46,10 @@
                 </td>
                 <td>
                   <div class="flex justify-end">
-                    <%= link_to "Manage", admin_user_path(user), class: "link link-primary" %>
+                    <%= link_to admin_user_path(user),
+                          class: "btn btn-ghost btn-xs btn-square tooltip", data: { tip: "View" }, aria: { label: "View" } do %>
+                      <span class="material-symbols-outlined !text-[18px]">visibility</span>
+                    <% end %>
                   </div>
                 </td>
               </tr>

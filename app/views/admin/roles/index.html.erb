@@ -4,7 +4,7 @@
       <p class="text-sm font-medium text-base-content/60">Admin</p>
       <h1 class="mt-3 text-4xl font-semibold tracking-normal">Roles</h1>
     </div>
-    <%= link_to "New role", new_admin_role_path, class: "btn btn-primary shrink-0" %>
+    <%= link_to "New role", new_admin_role_path, class: "btn btn-primary btn-sm shrink-0" %>
   </div>
 
   <%= form_with url: admin_roles_path, method: :get, html: { class: "mt-6 flex flex-wrap items-end gap-2" } do %>
@@ -43,21 +43,24 @@
             <% @roles.each do |role| %>
               <tr class="hover">
                 <td class="font-medium">
-                  <%= role.name %>
-                  <% if role.permanent? %><span class="badge badge-ghost badge-sm ml-1">permanent</span><% end %>
+                  <% if role.permanent? %>
+
+                    <div class="text-primary"><%= role.name %></div>
+                  <% else %>
+                    <%= role.name %>
+                  <% end %>
                 </td>
-                <td><span class="badge badge-outline"><%= role.scope %></span></td>
+                <td><span class="badge badge-outline badge-sm"><%= role.scope %></span></td>
                 <td class="text-base-content/60"><%= role.permissions.map(&:key).join(", ").presence || "—" %></td>
                 <td>
                   <div class="flex justify-end gap-1">
-                    <%= link_to "View", admin_role_path(role), class: "link link-primary" %>
-                    <span class="text-base-content/30">&middot;</span>
-                    <%= link_to "Edit", edit_admin_role_path(role), class: "link" %>
-                    <% unless role.permanent? %>
-                      <span class="text-base-content/30">&middot;</span>
-                      <%= button_to "Delete", admin_role_path(role), method: :delete,
-                            class: "link link-error",
-                            data: { turbo_confirm: "Delete the #{role.name} role? This cannot be undone." } %>
+                    <%= link_to admin_role_path(role),
+                          class: "btn btn-ghost btn-xs btn-square tooltip", data: { tip: "View" }, aria: { label: "View" } do %>
+                      <span class="material-symbols-outlined !text-[18px]">visibility</span>
+                    <% end %>
+                    <%= link_to edit_admin_role_path(role),
+                          class: "btn btn-ghost btn-xs btn-square tooltip", data: { tip: "Edit" }, aria: { label: "Edit" } do %>
+                      <span class="material-symbols-outlined !text-[18px]">edit</span>
                     <% end %>
                   </div>
                 </td>

@@ -11,7 +11,7 @@
         <% if @role.permanent? %><span class="badge badge-ghost badge-sm align-middle">permanent</span><% end %>
       </h1>
     </div>
-    <%= link_to "Back", admin_roles_path, class: "btn btn-outline shrink-0" %>
+    <%= link_to "Back", admin_roles_path, class: "btn btn-outline btn-sm shrink-0" %>
   </div>
 
   <div class="mt-6 flex flex-wrap items-center gap-2">
@@ -19,11 +19,12 @@
     <% unless @role.permanent? %>
       <%= button_to "Delete role", admin_role_path(@role), method: :delete,
             class: "btn btn-sm btn-error btn-outline",
-            data: { turbo_confirm: "Delete the #{@role.name} role? This cannot be undone." } %>
+            data: { controller: "confirm-modal", action: "click->confirm-modal#confirm",
+                    confirm_modal_message_value: "Delete the #{@role.name} role? This cannot be undone." } %>
     <% end %>
   </div>
 
-  <div class="mt-8 card bg-base-200 border border-base-300/30 shadow-sm">
+  <div class="mt-8 card border border-base-300">
     <div class="card-body">
       <dl class="grid grid-cols-1 divide-y divide-base-300/30 max-w-md">
         <div class="py-3">

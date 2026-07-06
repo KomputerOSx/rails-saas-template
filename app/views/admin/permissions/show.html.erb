@@ -8,7 +8,7 @@
       </p>
       <h1 class="mt-3 text-4xl font-semibold tracking-normal font-mono"><%= @permission.key %></h1>
     </div>
-    <%= link_to "Back", admin_permissions_path, class: "btn btn-outline shrink-0" %>
+    <%= link_to "Back", admin_permissions_path, class: "btn btn-outline btn-sm shrink-0" %>
   </div>
 
   <div class="mt-6 flex flex-wrap items-center gap-2">
@@ -18,7 +18,7 @@
           data: { turbo_confirm: "Delete the #{@permission.key} permission? This removes it from every role that has it." } %>
   </div>
 
-  <div class="mt-8 card bg-base-200 border border-base-300/30 shadow-sm">
+  <div class="mt-8 card border border-base-300">
     <div class="card-body">
       <dl class="grid grid-cols-1 divide-y divide-base-300/30 max-w-md">
         <div class="py-3">
