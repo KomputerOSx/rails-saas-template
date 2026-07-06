@@ -14,7 +14,10 @@
   ]
 
   if Current.organization && current_membership&.roles&.any?
-    sections << { title: "Organization", items: [{ icon: "hub", label: "Settings", path: org_settings_path }] }
+    sections << { title: "Organization", items: [
+      { icon: "hub", label: "Settings", path: org_settings_path },
+      { icon: "star", label: "Features", path: org_features_path }
+    ] }
   end
 
   if authenticated?

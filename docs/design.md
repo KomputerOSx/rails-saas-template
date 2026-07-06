@@ -81,7 +81,7 @@ Observed usage across the app today:
 
 - `btn btn-primary` — primary/default action
 - `btn btn-ghost` — low-emphasis / toolbar actions
-- `btn btn-outline` — secondary action
+- `btn btn-outline` — secondary action (uncolored — see below, this is the "Secondary" button)
 - `btn btn-error` — destructive action
 - `btn-sm` / `btn-xs` / `btn-lg` — size variants (`btn-sm` most common)
 - `btn-square` / `btn-circle` — icon-only buttons
@@ -90,7 +90,27 @@ Observed usage across the app today:
 navigation buttons all use `btn-sm`. Full-size (`btn` with no size modifier) is not used for these.
 Table row actions go smaller still, `btn-xs` (see Tables below).
 
-<!-- TODO: fill in — icon+label spacing convention, etc. -->
+**Rule:** Buttons keep DaisyUI's semantic classes (`btn`, `btn-primary`, `btn-secondary`, `btn-error`,
+`btn-ghost`, `btn-outline`, ...) in views — never hand-roll button styling in a template. The visual
+language is re-skinned once, globally, in `app/assets/tailwind/application.css`:
+
+- Solid semantic buttons (`btn-primary`, `btn-error`, etc.) get a subtle same-color tinted border
+  (`color-mix(... 40%, transparent)`) instead of DaisyUI's flat solid-color edge — a soft rim rather
+  than a hard line.
+- The uncolored `btn-outline` (no `btn-primary`/`btn-error`/etc. alongside it) is the app's "Secondary"
+  button: a soft translucent `base-100` fill with a faint border, brightening to a solid border +
+  `base-content` text on hover. It is not a transparent outline in this app.
+- `btn-ghost` is `shadow-none`; fills with a light translucent tint of its color (or `base-content` if
+  uncolored) on hover.
+- `--radius-field` is `0.5rem` (`rounded-lg`) app-wide, up from DaisyUI's default `0.25rem` — buttons
+  and any remaining native DaisyUI field elements pick this up automatically.
+- **Press animation:** buttons scale to `96%` instantly on `:active` (`transform: scale(0.96)`), with
+  no transition on the transform — it snaps rather than eases. DaisyUI's own `.btn` includes `transform`
+  in its default `transition-property`; our override redeclares `transition-property` without
+  `transform` (keeping `background-color, border-color, color, box-shadow, opacity` smooth at `100ms`)
+  specifically so the press-down doesn't animate.
+- `cursor: pointer` is applied globally to any non-disabled `<button>` / `[role="button"]`, not just
+  `.btn` — DaisyUI's own `.btn` already sets this, this backstops plain buttons/toggles that skip it.
 
 ### Forms & inputs
 
@@ -128,6 +148,26 @@ themes without any hardcoded colors.
   set the `disabled` attribute, no extra class needed.
 - Radio buttons and file inputs aren't used anywhere in the app yet; if one is added, extend
   `checkbox-field`'s pattern (same tokens, adapt the shape) rather than reaching for DaisyUI's classes.
+
+### Badges
+
+**Rule:** Badges keep DaisyUI's semantic classes (`badge`, `badge-primary`, `badge-success`,
+`badge-error`, `badge-warning`, `badge-neutral`, `badge-outline`, `badge-ghost`, ...) in views. Like
+buttons, the visual language is re-skinned once, globally, in `app/assets/tailwind/application.css` —
+never hand-roll badge colors in a template.
+
+- Colored badges (`badge-primary`, `badge-success`, `badge-error`, `badge-warning`, `badge-neutral`,
+  `badge-secondary`, `badge-accent`, `badge-info`) are soft pills: a light tinted background
+  (`color-mix(... 15%, transparent)`), text in the badge's own color (not white/content-color), and a
+  matching tinted border (`color-mix(... 25%, transparent)`) — not DaisyUI's default solid fill.
+- `badge-outline` (used for neutral tags like a role's scope) is a soft neutral pill: faint
+  `base-content`-tinted background, `base-300` border, `base-content` text.
+- `badge-ghost` (used for low-emphasis states like "Off"/"permanent") is left as DaisyUI's default —
+  already a muted `base-200` fill, which fits the soft-pill family as-is.
+- Already fully rounded (`rounded-full`-equivalent) via the theme's `--radius-selector: 2rem` — no
+  extra class needed.
+- `badge-sm` / `badge-xs` for size — same sizing rules as elsewhere (small in tables, `xs` for inline
+  indicators like the unread-notification count).
 
 ### Cards & surfaces
 
@@ -178,8 +218,8 @@ Standard table pattern. Reference: `app/views/org/settings/index.html.erb` (Memb
   <div class="card mt-4 border border-base-300">
     <div class="card-body p-0">
       <div class="overflow-x-auto">
-        <table class="table table-sm">
-          <thead class="text-base-content/60 text-xs uppercase tracking-wide">
+        <table class="table table-sm table-zebra">
+          <thead class="text-sm font-semibold text-base-content">
             <tr class="border-b border-base-300">
               <th>Primary column</th>
               <th>Secondary column</th>
@@ -188,7 +228,7 @@ Standard table pattern. Reference: `app/views/org/settings/index.html.erb` (Memb
           </thead>
           <tbody>
             <% collection.each do |item| %>
-              <tr class="hover">
+              <tr class="hover:bg-base-300">
                 <td class="font-medium"><%= item.primary_field %></td>
                 <td class="text-base-content/60"><%= item.secondary_field %></td>
                 <td>
@@ -224,10 +264,19 @@ DaisyUI tables use `border-collapse: collapse`, which causes `overflow: hidden` 
 
 **Header row:**
 - No `bg-*` on `<thead>` — a filled thead background causes corner-bleed issues with `border-collapse: collapse`
-- Header distinction via: `text-base-content/60 text-xs uppercase tracking-wide` on `<thead>` + `border-b border-base-300` on the `<tr>`
+- Header distinction via: `text-sm font-semibold text-base-content` on `<thead>` + `border-b border-base-300`
+  on the `<tr>`. (Previously `text-base-content/60 text-xs uppercase tracking-wide` — replaced to match
+  the flatter, sentence-case header style used by buttons/badges/forms; the `border-b` separator is kept
+  as-is since it doesn't have the corner-bleed problem a filled `<thead>` background does.)
 
 **Rows & cells:**
-- `hover` on each `<tr>`
+- `table-zebra` on the `<table>` — DaisyUI's built-in striping (`base-200` on even `tbody` rows). Safe
+  to combine with `border-collapse` (unlike a filled `<thead>`, since it stripes individual `<tr>`s, not
+  one continuous band across the top edge).
+- `hover:bg-base-300` on each `<tr>` — **not** a bare `class="hover"`. `hover` alone is not a real
+  Tailwind/DaisyUI class (there's no utility named exactly `hover` — it's a variant prefix, e.g.
+  `hover:bg-base-300`), so it compiles to nothing and silently did nothing. Use `base-300` (not `-200`)
+  so the hover state reads distinctly from the zebra stripe's `base-200`.
 - Primary identifier: `font-medium`
 - Secondary/muted data: `text-base-content/60`
 - Never put `flex` directly on `<td>` — wrap contents in `<div>`

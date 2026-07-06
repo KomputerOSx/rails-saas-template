@@ -127,8 +127,8 @@
       <div class="card mt-4 border border-base-300">
         <div class="card-body p-0">
           <div class="overflow-x-auto">
-            <table class="table table-sm">
-              <thead class="text-base-content/60 text-xs uppercase tracking-wide">
+            <table class="table table-sm table-zebra">
+              <thead class="text-sm font-semibold text-base-content">
                 <tr class="border-b border-base-300">
                   <th>Organisation</th>
                   <th>Role</th>
@@ -136,7 +136,7 @@
               </thead>
               <tbody>
                 <% @memberships.each do |membership| %>
-                  <tr class="hover">
+                  <tr class="hover:bg-base-300">
                     <td class="font-medium"><%= membership.organization.name %></td>
                     <td class="text-base-content/60"><%= membership.roles.map(&:name).join(", ").presence || "—" %></td>
                   </tr>

@@ -30,8 +30,8 @@
   <div class="card mt-4 border border-base-300">
     <div class="card-body p-0">
       <div class="overflow-x-auto">
-        <table class="table table-sm">
-          <thead class="text-base-content/60 text-xs uppercase tracking-wide">
+        <table class="table table-sm table-zebra">
+          <thead class="text-sm font-semibold text-base-content">
             <tr class="border-b border-base-300">
               <th>Name</th>
               <th>Scope</th>
@@ -41,7 +41,7 @@
           </thead>
           <tbody>
             <% @roles.each do |role| %>
-              <tr class="hover">
+              <tr class="hover:bg-base-300">
                 <td class="font-medium">
                   <% if role.permanent? %>
 

@@ -143,6 +143,31 @@
     --btn-inset: 0 0 0 0 oklch(0% 0 0/0);
   }
 }
+/* Badges — soft pill style (replaces DaisyUI's solid badge fill), still using DaisyUI's
+   badge/badge-primary/badge-success/etc. semantics. See docs/design.md → Badges. */
+.badge {
+  @apply gap-1 font-medium;
+}
+
+.badge-primary,
+.badge-secondary,
+.badge-accent,
+.badge-neutral,
+.badge-info,
+.badge-success,
+.badge-warning,
+.badge-error {
+  --badge-bg: color-mix(in oklab, var(--badge-color) 15%, transparent);
+  --badge-fg: var(--badge-color);
+  border-color: color-mix(in oklab, var(--badge-color) 25%, transparent);
+}
+
+.badge-outline {
+  --badge-bg: color-mix(in oklab, var(--color-base-content) 5%, transparent);
+  color: var(--color-base-content);
+  border-color: var(--color-base-300);
+}
+
 /* Form fields — flat/ringed style (replaces DaisyUI's input/select/textarea/checkbox
    classes app-wide), built on this app's DaisyUI semantic tokens so it's correct in
    both the "dark" and "light" themes. See docs/design.md → Forms & inputs. */
