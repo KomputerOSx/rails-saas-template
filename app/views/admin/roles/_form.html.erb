@@ -1,6 +1,6 @@
 <div class="form-control">
   <%= f.label :name, class: "label" do %><span class="label-text">Name</span><% end %>
-  <%= f.text_field :name, class: error_class_for(@role, :name, "input input-bordered w-full"), disabled: @role.permanent? %>
+  <%= f.text_field :name, class: error_class_for(@role, :name, "input-field w-full"), disabled: @role.permanent? %>
   <% if @role.permanent? %>
     <p class="mt-1 text-xs text-base-content/60">Permanent roles can't be renamed.</p>
   <% end %>
@@ -10,7 +10,7 @@
 <div class="form-control">
   <% if @role.new_record? %>
     <%= f.label :scope, class: "label" do %><span class="label-text">Scope</span><% end %>
-    <%= f.select :scope, Role.scopes.keys, {}, class: "select select-bordered w-full" %>
+    <%= f.select :scope, Role.scopes.keys, {}, class: "select-field w-full" %>
     <p class="mt-1 text-xs text-base-content/60">
       System-scope roles attach directly to a user; app-scope roles attach to an organization
       membership. Can't be changed after creation.
@@ -23,7 +23,7 @@
 
 <div class="form-control">
   <%= f.label :description, class: "label" do %><span class="label-text">Description</span><% end %>
-  <%= f.text_area :description, class: error_class_for(@role, :description, "textarea textarea-bordered w-full"), rows: 2 %>
+  <%= f.text_area :description, class: error_class_for(@role, :description, "textarea-field w-full"), rows: 2 %>
   <%= field_errors(@role, :description) %>
 </div>
 
@@ -35,7 +35,7 @@
         <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
           <%= f.collection_check_boxes :permission_ids, @permissions, :id, :key do |b| %>
             <label class="label cursor-pointer justify-start gap-2">
-              <%= b.check_box(class: "checkbox checkbox-sm") %>
+              <%= b.check_box(class: "checkbox-field") %>
               <span class="label-text"><%= b.text %></span>
             </label>
           <% end %>

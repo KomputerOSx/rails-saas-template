@@ -9,7 +9,7 @@
   <%= form_with url: profile_email_change_path, method: :post, html: { class: "space-y-4" } do %>
     <div class="form-control">
       <label class="label" for="new_email"><span class="label-text">New email address</span></label>
-      <input type="email" name="email" id="new_email" autocomplete="email" class="<%= error_class_for(current_user, :email, "input input-bordered w-full") %>" required>
+      <input type="email" name="email" id="new_email" autocomplete="email" class="<%= error_class_for(current_user, :email, "input-field w-full") %>" required>
       <%= field_errors(current_user, :email) %>
     </div>
 

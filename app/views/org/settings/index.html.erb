@@ -22,7 +22,7 @@
                     <%= f.label :name, class: "label" do %>
                       <span class="label-text">Name</span>
                     <% end %>
-                    <%= f.text_field :name, class: error_class_for(Current.organization, :name, "input input border border-base-300ed w-full") %>
+                    <%= f.text_field :name, class: error_class_for(Current.organization, :name, "input-field w-full") %>
                     <%= field_errors(Current.organization, :name) %>
                   </div>
 
@@ -168,7 +168,7 @@
     <%= form_with url: org_invitations_path, method: :post, html: { class: "mt-6 flex items-end gap-2" } do %>
       <div class="form-control">
         <label class="label"><span class="label-text">Invite by email</span></label>
-        <input type="email" name="email" required class="input input border border-base-300ed input-sm">
+        <input type="email" name="email" required class="input-field">
       </div>
       <%= submit_tag "Invite", class: "btn btn-sm btn-primary" %>
     <% end %>

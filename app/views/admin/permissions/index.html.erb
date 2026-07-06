@@ -10,7 +10,7 @@
   <%= form_with url: admin_permissions_path, method: :get, html: { class: "mt-6 flex flex-wrap items-end gap-2" } do %>
     <div class="form-control">
       <label class="label"><span class="label-text text-xs">Search</span></label>
-      <input type="text" name="q" value="<%= @q %>" placeholder="Key" class="input input-bordered input-sm w-56">
+      <input type="text" name="q" value="<%= @q %>" placeholder="Key" class="input-field w-56">
     </div>
     <%= submit_tag "Filter", class: "btn btn-sm btn-primary" %>
     <% if @q.present? %>

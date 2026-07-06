@@ -27,12 +27,12 @@
                   <%= form_with model: current_user, url: profile_path, method: :patch, html: { class: "space-y-4" } do |f| %>
                     <div class="form-control">
                       <%= f.label :first_name, class: "label" do %><span class="label-text">First name</span><% end %>
-                      <%= f.text_field :first_name, class: error_class_for(current_user, :first_name, "input input-bordered w-full") %>
+                      <%= f.text_field :first_name, class: error_class_for(current_user, :first_name, "input-field w-full") %>
                       <%= field_errors(current_user, :first_name) %>
                     </div>
                     <div class="form-control">
                       <%= f.label :last_name, class: "label" do %><span class="label-text">Last name</span><% end %>
-                      <%= f.text_field :last_name, class: error_class_for(current_user, :last_name, "input input-bordered w-full") %>
+                      <%= f.text_field :last_name, class: error_class_for(current_user, :last_name, "input-field w-full") %>
                       <%= field_errors(current_user, :last_name) %>
                     </div>
                     <div class="form-control mt-2">
@@ -107,7 +107,7 @@
           <% if current_user.totp_enabled? %>
             <%= form_with url: profile_totp_path, method: :delete, html: { data: { turbo_confirm: "Enter your current password to disable authenticator app verification." } } do %>
               <div class="flex items-center gap-2">
-                <input type="password" name="current_password" placeholder="Current password" class="input input-bordered input-sm" required>
+                <input type="password" name="current_password" placeholder="Current password" class="input-field" required>
                 <%= submit_tag "Disable", class: "btn btn-sm btn-error btn-outline" %>
               </div>
             <% end %>
@@ -162,7 +162,7 @@
                            placeholder="<%= current_user.email %>"
                            data-deletion-confirm-target="emailInput"
                            data-action="input->deletion-confirm#validate"
-                           class="input input-bordered w-full">
+                           class="input-field w-full">
                   </div>
 
                   <div class="form-control">

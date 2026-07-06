@@ -6,7 +6,7 @@
       <%= form_with url: password_reset_path(@token), method: :patch, html: { class: "mt-4 space-y-4" } do %>
         <div class="form-control">
           <label class="label" for="password"><span class="label-text">New password</span></label>
-          <input type="password" name="password" id="password" autofocus autocomplete="new-password" class="input input-bordered w-full">
+          <input type="password" name="password" id="password" autofocus autocomplete="new-password" class="input-field w-full">
           <div class="px-1 pt-1">
             <span class="text-xs text-base-content text-opacity-60">(<%= User::MIN_PASSWORD_LENGTH %> characters minimum)</span>
           </div>
@@ -14,7 +14,7 @@
 
         <div class="form-control">
           <label class="label" for="password_confirmation"><span class="label-text">Confirm new password</span></label>
-          <input type="password" name="password_confirmation" id="password_confirmation" autocomplete="new-password" class="input input-bordered w-full">
+          <input type="password" name="password_confirmation" id="password_confirmation" autocomplete="new-password" class="input-field w-full">
         </div>
 
         <div class="form-control mt-2">

@@ -94,8 +94,40 @@ Table row actions go smaller still, `btn-xs` (see Tables below).
 
 ### Forms & inputs
 
-<!-- TODO: fill in — input/select/textarea conventions, validation/error state styling,
-     Tom Select usage rules, label placement. -->
+**Rule:** All text inputs, selects, textareas, and checkboxes use the app's own flat/ringed field
+classes — **not** DaisyUI's `input` / `select` / `textarea` / `checkbox` classes. These are defined
+in `app/assets/tailwind/application.css` on top of DaisyUI's semantic color tokens (`base-100`,
+`base-content`, `base-300`, `primary`, `error`), so they stay correct in both the `dark` and `light`
+themes without any hardcoded colors.
+
+| Element | Class |
+| --- | --- |
+| `<input>` (text/email/password/etc.) | `input-field` |
+| `<select>` (single) | `select-field` |
+| `<select multiple>` | `select-field` (auto-detected via `:not([multiple])` / `[multiple]` in CSS) |
+| `<textarea>` | `textarea-field` |
+| `<input type="checkbox">` | `checkbox-field` |
+
+```erb
+<div class="form-control">
+  <label class="label"><span class="label-text">Email</span></label>
+  <%= f.email_field :email, class: "input-field w-full" %>
+</div>
+```
+
+- The `form-control` div and `label` / `label-text` classes are still DaisyUI's — only the field
+  element itself (`<input>`/`<select>`/`<textarea>`/checkbox) uses the custom classes above.
+- No size modifiers (`input-sm`, `select-sm`, etc.) — the field classes are a single fixed size (compact,
+  `text-sm`, `px-3 py-2`). Don't reintroduce DaisyUI size classes on top of them.
+- **Error state:** append a plain `error` class (not DaisyUI's `input-error`). The `error_class_for(object,
+  field, base_class)` helper (`app/helpers/application_helper.rb`) does this automatically — pass it
+  the field's base class (e.g. `error_class_for(@user, :email, "input-field w-full")`) and it appends
+  `" error"` when the object has errors on that field. Pair with the `field_errors(object, field)`
+  helper to render the message below the field.
+- Disabled state is handled automatically (`opacity-75`, `cursor-not-allowed`, `bg-base-200`) — just
+  set the `disabled` attribute, no extra class needed.
+- Radio buttons and file inputs aren't used anywhere in the app yet; if one is added, extend
+  `checkbox-field`'s pattern (same tokens, adapt the shape) rather than reaching for DaisyUI's classes.
 
 ### Cards & surfaces
 

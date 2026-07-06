@@ -10,11 +10,11 @@
   <%= form_with url: admin_roles_path, method: :get, html: { class: "mt-6 flex flex-wrap items-end gap-2" } do %>
     <div class="form-control">
       <label class="label"><span class="label-text text-xs">Search</span></label>
-      <input type="text" name="q" value="<%= @q %>" placeholder="Name" class="input input-bordered input-sm w-56">
+      <input type="text" name="q" value="<%= @q %>" placeholder="Name" class="input-field w-56">
     </div>
     <div class="form-control">
       <label class="label"><span class="label-text text-xs">Scope</span></label>
-      <select name="scope" class="select select-bordered select-sm">
+      <select name="scope" class="select-field">
         <option value="">All scopes</option>
         <% Role.scopes.each_key do |scope| %>
           <option value="<%= scope %>" <%= "selected" if @scope == scope %>><%= scope %></option>

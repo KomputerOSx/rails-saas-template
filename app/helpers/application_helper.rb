@@ -29,6 +29,6 @@ module ApplicationHelper
   # Returns the dynamic classes for input fields when they have validation errors
   def error_class_for(object, field, base_class = "")
     return base_class if object.nil? || !object.respond_to?(:errors) || object.errors[field].empty?
-    "#{base_class} input-error"
+    "#{base_class} error"
   end
 end

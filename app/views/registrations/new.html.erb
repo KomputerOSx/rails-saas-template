@@ -8,7 +8,7 @@
           <%= f.label :email, class: "label" do %>
             <span class="label-text">Email</span>
           <% end %>
-          <%= f.email_field :email, autofocus: true, autocomplete: "email", class: error_class_for(@user, :email, "input input-bordered w-full") %>
+          <%= f.email_field :email, autofocus: true, autocomplete: "email", class: error_class_for(@user, :email, "input-field w-full") %>
           <%= field_errors(@user, :email) %>
         </div>
 
@@ -19,7 +19,7 @@
           <div class="px-1 pb-1">
             <span class="text-xs text-base-content text-opacity-60"><%= User::MIN_PASSWORD_LENGTH %> characters minimum</span>
           </div>
-          <%= f.password_field :password, autocomplete: "new-password", class: error_class_for(@user, :password, "input input-bordered w-full") %>
+          <%= f.password_field :password, autocomplete: "new-password", class: error_class_for(@user, :password, "input-field w-full") %>
           <%= field_errors(@user, :password) %>
         </div>
 
@@ -27,7 +27,7 @@
           <%= f.label :password_confirmation, class: "label" do %>
             <span class="label-text">Confirm Password</span>
           <% end %>
-          <%= f.password_field :password_confirmation, autocomplete: "new-password", class: error_class_for(@user, :password_confirmation, "input input-bordered w-full") %>
+          <%= f.password_field :password_confirmation, autocomplete: "new-password", class: error_class_for(@user, :password_confirmation, "input-field w-full") %>
           <%= field_errors(@user, :password_confirmation) %>
         </div>
 

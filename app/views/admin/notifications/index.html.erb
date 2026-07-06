@@ -9,11 +9,11 @@
   <%= form_with url: admin_notifications_path, method: :get, html: { class: "mt-6 flex flex-wrap items-end gap-2" } do %>
     <div class="form-control">
       <label class="label"><span class="label-text text-xs">Search</span></label>
-      <input type="text" name="q" value="<%= @q %>" placeholder="Title" class="input input-bordered input-sm w-56">
+      <input type="text" name="q" value="<%= @q %>" placeholder="Title" class="input-field w-56">
     </div>
     <div class="form-control">
       <label class="label"><span class="label-text text-xs">Status</span></label>
-      <select name="status" class="select select-bordered select-sm">
+      <select name="status" class="select-field">
         <option value="">All statuses</option>
         <option value="active" <%= "selected" if @status == "active" %>>Active</option>
         <option value="withdrawn" <%= "selected" if @status == "withdrawn" %>>Withdrawn</option>

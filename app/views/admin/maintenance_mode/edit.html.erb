@@ -15,7 +15,7 @@
 
         <div class="form-control">
           <label class="label"><span class="label-text">Message shown to users</span></label>
-          <%= text_area_tag "maintenance_mode[message]", @status[:message], class: "textarea textarea-bordered", rows: 4 %>
+          <%= text_area_tag "maintenance_mode[message]", @status[:message], class: "textarea-field", rows: 4 %>
         </div>
 
         <%= submit_tag "Save", class: "btn btn-primary" %>

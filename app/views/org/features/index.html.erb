@@ -22,7 +22,7 @@
                   <label class="label cursor-pointer gap-2">
                     <input type="hidden" name="features[<%= feature.key %>][enabled]" value="0">
                     <input type="checkbox" name="features[<%= feature.key %>][enabled]" value="1"
-                           class="checkbox checkbox-sm"
+                           class="checkbox-field"
                            <%= "checked" if Current.organization.feature_org_setting_enabled?(feature.key) %>>
                   </label>
                 <% else %>

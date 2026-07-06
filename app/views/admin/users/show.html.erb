@@ -23,17 +23,17 @@
           <%= form_with model: @user, url: admin_user_path(@user), method: :patch, html: { class: "space-y-4" } do |f| %>
             <div class="form-control">
               <%= f.label :first_name, class: "label" do %><span class="label-text">First name</span><% end %>
-              <%= f.text_field :first_name, class: error_class_for(@user, :first_name, "input input-bordered w-full") %>
+              <%= f.text_field :first_name, class: error_class_for(@user, :first_name, "input-field w-full") %>
               <%= field_errors(@user, :first_name) %>
             </div>
             <div class="form-control">
               <%= f.label :last_name, class: "label" do %><span class="label-text">Last name</span><% end %>
-              <%= f.text_field :last_name, class: error_class_for(@user, :last_name, "input input-bordered w-full") %>
+              <%= f.text_field :last_name, class: error_class_for(@user, :last_name, "input-field w-full") %>
               <%= field_errors(@user, :last_name) %>
             </div>
             <div class="form-control">
               <%= f.label :email, class: "label" do %><span class="label-text">Email</span><% end %>
-              <%= f.email_field :email, class: error_class_for(@user, :email, "input input-bordered w-full") %>
+              <%= f.email_field :email, class: error_class_for(@user, :email, "input-field w-full") %>
               <%= field_errors(@user, :email) %>
             </div>
             <div class="form-control mt-2">
@@ -173,7 +173,7 @@
           <%= form_with url: admin_user_user_role_path(@user), method: :post, html: { class: "mt-6 flex items-end gap-2" } do %>
             <div class="form-control">
               <label class="label"><span class="label-text">Grant role</span></label>
-              <select name="role_id" class="select select-bordered select-sm">
+              <select name="role_id" class="select-field">
                 <% grantable_roles.each do |role| %>
                   <option value="<%= role.id %>"><%= role.name %> (<%= role.scope %>)</option>
                 <% end %>

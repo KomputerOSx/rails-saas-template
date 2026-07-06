@@ -5,11 +5,11 @@
   <%= form_with url: admin_audit_logs_path, method: :get, html: { class: "mt-6 flex flex-wrap items-end gap-2" } do %>
     <div class="form-control">
       <label class="label"><span class="label-text text-xs">Search</span></label>
-      <input type="text" name="q" value="<%= @q %>" placeholder="Email or IP" class="input input-bordered input-sm w-56">
+      <input type="text" name="q" value="<%= @q %>" placeholder="Email or IP" class="input-field w-56">
     </div>
     <div class="form-control">
       <label class="label"><span class="label-text text-xs">Event</span></label>
-      <select name="event_type" class="select select-bordered select-sm">
+      <select name="event_type" class="select-field">
         <option value="">All events</option>
         <% AuditLog.event_types.keys.sort.each do |event_type| %>
           <option value="<%= event_type %>" <%= "selected" if @event_type == event_type %>><%= event_type.humanize %></option>

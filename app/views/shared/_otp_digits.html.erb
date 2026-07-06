@@ -10,7 +10,7 @@
       autocomplete="<%= i.zero? ? "one-time-code" : "off" %>"
       <%= "autofocus" if i.zero? && local_assigns[:autofocus] != false %>
       required
-      class="input input-bordered w-10 h-12 sm:w-12 sm:h-14 text-center text-lg font-semibold<%= " input-error" if local_assigns[:error] %>"
+      class="input-field w-10 h-12 sm:w-12 sm:h-14 text-center text-lg font-semibold<%= " error" if local_assigns[:error] %>"
     >
   <% end %>
 </div>

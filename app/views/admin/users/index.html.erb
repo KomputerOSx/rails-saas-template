@@ -5,11 +5,11 @@
   <%= form_with url: admin_users_path, method: :get, html: { class: "mt-6 flex flex-wrap items-end gap-2" } do %>
     <div class="form-control">
       <label class="label"><span class="label-text text-xs">Search</span></label>
-      <input type="text" name="q" value="<%= @q %>" placeholder="Email" class="input input-bordered input-sm w-56">
+      <input type="text" name="q" value="<%= @q %>" placeholder="Email" class="input-field w-56">
     </div>
     <div class="form-control">
       <label class="label"><span class="label-text text-xs">Role</span></label>
-      <select name="role" class="select bg-base-200 select-sm">
+      <select name="role" class="select-field">
         <option value="">All roles</option>
         <% @roles.each do |role| %>
           <option value="<%= role.name %>" <%= "selected" if @role == role.name %>><%= role.name %></option>

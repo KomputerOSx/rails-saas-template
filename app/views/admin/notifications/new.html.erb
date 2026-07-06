@@ -7,12 +7,12 @@
       <%= form_with url: admin_notifications_path, method: :post, html: { class: "space-y-4" } do %>
         <div class="form-control">
           <label class="label"><span class="label-text">Title</span></label>
-          <%= text_field_tag "notification[title]", nil, class: "input input-bordered" %>
+          <%= text_field_tag "notification[title]", nil, class: "input-field" %>
         </div>
 
         <div class="form-control">
           <label class="label"><span class="label-text">Body</span></label>
-          <%= text_area_tag "notification[body]", nil, class: "textarea textarea-bordered", rows: 4 %>
+          <%= text_area_tag "notification[body]", nil, class: "textarea-field", rows: 4 %>
         </div>
 
         <div class="form-control">
@@ -25,7 +25,7 @@
         <div class="form-control">
           <label class="label"><span class="label-text">Or pick specific users</span></label>
           <%= select_tag "notification[user_ids][]", options_from_collection_for_select(@users, :id, :email),
-                multiple: true, class: "select select-bordered h-40" %>
+                multiple: true, class: "select-field h-40" %>
           <p class="mt-1 text-xs text-base-content/60">If "Send to all users" is checked, this list is ignored.</p>
         </div>
 
