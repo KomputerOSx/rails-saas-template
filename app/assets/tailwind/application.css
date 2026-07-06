@@ -32,7 +32,7 @@
   --color-error: oklch(64% 0.246 16.439);
   --color-error-content: oklch(0% 0 0);
   --radius-selector: 2rem;
-  --radius-field: 0.25rem;
+  --radius-field: 0.5rem;
   --radius-box: 0.25rem;
   --size-selector: 0.25rem;
   --size-field: 0.25rem;
@@ -69,7 +69,7 @@
   --color-error: oklch(64% 0.246 16.439);
   --color-error-content: oklch(0% 0 0);
   --radius-selector: 2rem;
-  --radius-field: 0.25rem;
+  --radius-field: 0.5rem;
   --radius-box: 0.25rem;
   --size-selector: 0.25rem;
   --size-field: 0.25rem;
@@ -81,20 +81,60 @@
 
 
 
-/* Lighter, more subtle border for the plain (uncolored) outline button; brightens to full base-content on hover */
+/* Buttons — subtle bordered/shadowed style, still using DaisyUI's btn/btn-primary/
+   btn-secondary/btn-error/btn-ghost/btn-outline semantics. See docs/design.md → Buttons. */
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+.btn {
+  @apply shadow-sm font-medium;
+  transition-property: background-color, border-color, color, box-shadow, opacity;
+  transition-duration: 100ms;
+  transition-timing-function: ease-in-out;
+}
+
+/* Instant (untransitioned) press-down — scale isn't in transition-property above, so it snaps */
+.btn:active:not(.btn-disabled):not(:disabled) {
+  transform: scale(0.96);
+}
+
+/* Solid semantic buttons (btn-primary, btn-error, etc.) get a subtly tinted border instead of
+   DaisyUI's flat same-color edge — a faint "rim" rather than a hard line. */
+.btn-primary,
+.btn-secondary,
+.btn-accent,
+.btn-neutral,
+.btn-info,
+.btn-success,
+.btn-warning,
+.btn-error {
+  --btn-border: color-mix(in oklab, var(--btn-color) 40%, transparent);
+}
+
+/* Plain (uncolored) outline button acts as the "secondary" button: a soft translucent fill
+   instead of a transparent outline, with a subtle border; brightens on hover. */
 .btn-outline:not(.btn-primary):not(.btn-secondary):not(.btn-accent):not(.btn-neutral):not(.btn-info):not(.btn-success):not(.btn-warning):not(.btn-error) {
-  --btn-border: color-mix(in oklab, var(--color-base-content) 25%, transparent);
+  --btn-bg: color-mix(in oklab, var(--color-base-100) 90%, transparent);
+  --btn-border: color-mix(in oklab, var(--color-base-content) 15%, transparent);
 }
 
 @media (hover: hover) {
   .btn-outline:not(.btn-primary):not(.btn-secondary):not(.btn-accent):not(.btn-neutral):not(.btn-info):not(.btn-success):not(.btn-warning):not(.btn-error):hover {
-    --btn-bg: #0000;
+    --btn-bg: var(--color-base-100);
     --btn-border: var(--color-base-content);
     color: var(--color-base-content);
   }
 }
 
 /* Ghost button: transparent at rest; hover fills with a light translucent tint of its color, or base-content (white/black per theme) when uncolored */
+.btn-ghost {
+  @apply shadow-none;
+}
+
 @media (hover: hover) {
   .btn-ghost:hover {
     --btn-bg: color-mix(in oklab, var(--btn-color, var(--color-base-content)) 12%, transparent);
