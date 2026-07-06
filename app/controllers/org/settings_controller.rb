@@ -4,6 +4,8 @@ module Org
     SORT_DIRECTIONS = %w[asc desc].freeze
 
     def index
+      skip_authorization # visible to any org member, no permission required
+
       @sort      = params[:sort].presence_in(SORT_COLUMNS) || "email"
       @direction = params[:direction].presence_in(SORT_DIRECTIONS) || "asc"
 

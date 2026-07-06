@@ -1,9 +1,7 @@
 module Org
   class MembersController < BaseController
-    require_organization_permission "app.members.remove", only: [ :destroy ]
-    require_organization_permission "app.members.promote", only: [ :promote, :demote ]
-
     before_action :set_membership, only: [ :destroy, :promote, :demote ]
+    before_action :authorize_membership, only: [ :destroy, :promote, :demote ]
     before_action :reject_owner_target, only: [ :promote, :demote ]
 
     def destroy
@@ -17,6 +15,8 @@ module Org
     end
 
     def leave
+      skip_authorization # self-removal is always allowed, no permission required
+
       organization = Current.organization
       membership = organization.memberships.find_by!(user: current_user)
 
@@ -47,6 +47,12 @@ module Org
 
     def set_membership
       @membership = Current.organization.memberships.find(params[:id])
+    end
+
+    # `authorize` defaults to checking "#{action_name}?" on MembershipPolicy,
+    # i.e. `destroy?`/`promote?`/`demote?` — one method per action, no query needed.
+    def authorize_membership
+      authorize @membership
     end
 
     def reject_owner_target

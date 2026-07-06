@@ -2,11 +2,13 @@ class ApplicationController < ActionController::Base
   include Authentication
   include MaintenanceGate
   include OnboardingGate
-  include Authorization
+  include Pundit::Authorization
   include AuditLogging
   include CurrentOrganization
 
   protect_from_forgery with: :exception
+
+  rescue_from Pundit::NotAuthorizedError, with: :deny_authorization!
 
   # Only allow modern browsers supporting webp images, web push, badges, import maps, CSS nesting, and CSS :has.
   allow_browser versions: :modern
@@ -23,5 +25,10 @@ class ApplicationController < ActionController::Base
   # of the app's verification methods expect.
   def otp_code_param
     Array(params[:code]).join
+  end
+
+  def deny_authorization!
+    log_audit(:authorization_denied, metadata: { path: request.path })
+    redirect_to root_path, alert: "You are not authorized to access this page."
   end
 end

@@ -1,8 +1,8 @@
 module Org
   class OrganizationsController < BaseController
-    require_organization_permission "app.organization.manage", only: [ :update ]
-
     def update
+      authorize Current.organization
+
       if Current.organization.update(organization_params)
         log_audit(:organization_updated, resource: Current.organization)
         redirect_to org_settings_path, notice: "Organization updated."

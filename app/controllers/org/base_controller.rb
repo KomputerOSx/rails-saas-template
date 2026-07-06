@@ -1,6 +1,7 @@
 module Org
   class BaseController < ApplicationController
     before_action :require_current_organization!
+    after_action :verify_authorized
 
     private
 

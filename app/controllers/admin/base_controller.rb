@@ -1,5 +1,6 @@
 module Admin
   class BaseController < ApplicationController
-    require_system_admin
+    before_action { authorize :system, :manage?, policy_class: SystemPolicy }
+    after_action :verify_authorized
   end
 end

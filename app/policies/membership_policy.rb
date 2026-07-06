@@ -1,0 +1,21 @@
+# frozen_string_literal: true
+
+class MembershipPolicy < ApplicationPolicy
+  def destroy?
+    permission?("app.members.remove")
+  end
+
+  def promote?
+    permission?("app.members.promote")
+  end
+
+  def demote?
+    permission?("app.members.promote")
+  end
+
+  private
+
+  def permission?(key)
+    user&.has_permission?(key, organization: record.organization) || false
+  end
+end
