@@ -49,7 +49,13 @@ class AuditLog < ApplicationRecord
     sessions_force_logged_out: "sessions_force_logged_out",
     user_disabled: "user_disabled",
     user_enabled: "user_enabled",
-    user_updated: "user_updated"
+    user_updated: "user_updated",
+    role_created: "role_created",
+    role_updated: "role_updated",
+    role_deleted: "role_deleted",
+    permission_created: "permission_created",
+    permission_updated: "permission_updated",
+    permission_deleted: "permission_deleted"
   }
 
   validates :event_type, presence: true

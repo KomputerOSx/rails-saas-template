@@ -16,7 +16,8 @@
       <ul class="mt-2 list-disc list-inside space-y-1">
         <li><%= link_to "Dashboard", admin_root_path, class: "link" %> — this page</li>
         <li><%= link_to "Users", admin_users_path, class: "link" %> — list users, view roles, grant/revoke roles</li>
-        <li><%= link_to "Roles", admin_roles_path, class: "link" %> — read-only catalog of roles and their permissions</li>
+        <li><%= link_to "Roles", admin_roles_path, class: "link" %> — create, edit, and delete roles; assign permissions</li>
+        <li><%= link_to "Permissions", admin_permissions_path, class: "link" %> — create, edit, and delete permissions</li>
         <li><%= link_to "Audit logs", admin_audit_logs_path, class: "link" %> — security/activity event log</li>
         <li><%= link_to "Notifications", admin_notifications_path, class: "link" %> — send/withdraw system messages</li>
         <li><%= link_to "Maintenance mode", edit_admin_maintenance_mode_path, class: "link" %> — <%= @maintenance_status[:enabled] ? "currently ON" : "currently off" %></li>

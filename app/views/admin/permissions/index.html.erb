@@ -1,0 +1,60 @@
+<section class="w-full max-w-4xl">
+  <div class="flex items-start justify-between">
+    <div>
+      <p class="text-sm font-medium text-base-content/60">Admin</p>
+      <h1 class="mt-3 text-4xl font-semibold tracking-normal">Permissions</h1>
+    </div>
+    <%= link_to "New permission", new_admin_permission_path, class: "btn btn-primary shrink-0" %>
+  </div>
+
+  <%= form_with url: admin_permissions_path, method: :get, html: { class: "mt-6 flex flex-wrap items-end gap-2" } do %>
+    <div class="form-control">
+      <label class="label"><span class="label-text text-xs">Search</span></label>
+      <input type="text" name="q" value="<%= @q %>" placeholder="Key" class="input input-bordered input-sm w-56">
+    </div>
+    <%= submit_tag "Filter", class: "btn btn-sm btn-primary" %>
+    <% if @q.present? %>
+      <%= link_to "Clear", admin_permissions_path, class: "btn btn-sm btn-ghost" %>
+    <% end %>
+  <% end %>
+
+  <div class="card mt-4 border border-base-300">
+    <div class="card-body p-0">
+      <div class="overflow-x-auto">
+        <table class="table table-sm">
+          <thead class="text-base-content/60 text-xs uppercase tracking-wide">
+            <tr class="border-b border-base-300">
+              <th>Key</th>
+              <th>Description</th>
+              <th>Roles</th>
+              <th class="text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @permissions.each do |permission| %>
+              <tr class="hover">
+                <td class="font-medium font-mono text-sm"><%= permission.key %></td>
+                <td class="text-base-content/60"><%= permission.description.presence || "—" %></td>
+                <td class="text-base-content/60"><%= permission.roles.map(&:name).join(", ").presence || "—" %></td>
+                <td>
+                  <div class="flex justify-end gap-1">
+                    <%= link_to "View", admin_permission_path(permission), class: "link link-primary" %>
+                    <span class="text-base-content/30">&middot;</span>
+                    <%= link_to "Edit", edit_admin_permission_path(permission), class: "link" %>
+                    <span class="text-base-content/30">&middot;</span>
+                    <%= button_to "Delete", admin_permission_path(permission), method: :delete,
+                          class: "link link-error",
+                          data: { turbo_confirm: "Delete the #{permission.key} permission? This removes it from every role that has it." } %>
+                  </div>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+        <% if @permissions.none? %>
+          <p class="px-8 py-6 text-sm text-base-content/60">No permissions match your search.</p>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</section>

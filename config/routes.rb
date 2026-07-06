@@ -62,7 +62,8 @@ Rails.application.routes.draw do
         post  :send_reset_link
       end
     end
-    resources :roles, only: [ :index, :show ]
+    resources :roles
+    resources :permissions
     resources :audit_logs, only: [ :index, :show ]
     resources :notifications, only: [ :index, :new, :create ] do
       member do

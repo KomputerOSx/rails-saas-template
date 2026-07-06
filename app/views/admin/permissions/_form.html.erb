@@ -1,0 +1,19 @@
+<div class="form-control">
+  <%= f.label :key, class: "label" do %><span class="label-text">Key</span><% end %>
+  <%= f.text_field :key, class: error_class_for(@permission, :key, "input input-bordered w-full font-mono"), placeholder: "app.members.invite" %>
+  <p class="mt-1 text-xs text-base-content/60">
+    Lowercase, dot-separated segments (at least two), e.g. <code>app.organization.manage</code> or
+    <code>system.users.manage</code>.
+  </p>
+  <%= field_errors(@permission, :key) %>
+</div>
+
+<div class="form-control">
+  <%= f.label :description, class: "label" do %><span class="label-text">Description</span><% end %>
+  <%= f.text_area :description, class: error_class_for(@permission, :description, "textarea textarea-bordered w-full"), rows: 2 %>
+  <%= field_errors(@permission, :description) %>
+</div>
+
+<div class="form-control mt-2">
+  <%= f.submit(@permission.new_record? ? "Create permission" : "Save changes", class: "btn btn-primary") %>
+</div>

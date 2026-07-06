@@ -1,6 +1,11 @@
 <section class="w-full max-w-4xl">
-  <p class="text-sm font-medium text-base-content/60">Admin</p>
-  <h1 class="mt-3 text-4xl font-semibold tracking-normal">Roles</h1>
+  <div class="flex items-start justify-between">
+    <div>
+      <p class="text-sm font-medium text-base-content/60">Admin</p>
+      <h1 class="mt-3 text-4xl font-semibold tracking-normal">Roles</h1>
+    </div>
+    <%= link_to "New role", new_admin_role_path, class: "btn btn-primary shrink-0" %>
+  </div>
 
   <%= form_with url: admin_roles_path, method: :get, html: { class: "mt-6 flex flex-wrap items-end gap-2" } do %>
     <div class="form-control">
@@ -44,8 +49,16 @@
                 <td><span class="badge badge-outline"><%= role.scope %></span></td>
                 <td class="text-base-content/60"><%= role.permissions.map(&:key).join(", ").presence || "—" %></td>
                 <td>
-                  <div class="flex justify-end">
+                  <div class="flex justify-end gap-1">
                     <%= link_to "View", admin_role_path(role), class: "link link-primary" %>
+                    <span class="text-base-content/30">&middot;</span>
+                    <%= link_to "Edit", edit_admin_role_path(role), class: "link" %>
+                    <% unless role.permanent? %>
+                      <span class="text-base-content/30">&middot;</span>
+                      <%= button_to "Delete", admin_role_path(role), method: :delete,
+                            class: "link link-error",
+                            data: { turbo_confirm: "Delete the #{role.name} role? This cannot be undone." } %>
+                    <% end %>
                   </div>
                 </td>
               </tr>
