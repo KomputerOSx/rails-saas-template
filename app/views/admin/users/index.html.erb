@@ -9,7 +9,7 @@
     </div>
     <div class="form-control">
       <label class="label"><span class="label-text text-xs">Role</span></label>
-      <select name="role" class="select select-bordered select-sm">
+      <select name="role" class="select bg-base-200 select-sm">
         <option value="">All roles</option>
         <% @roles.each do |role| %>
           <option value="<%= role.name %>" <%= "selected" if @role == role.name %>><%= role.name %></option>
@@ -30,6 +30,7 @@
             <tr class="border-b border-base-300">
               <th>Email</th>
               <th>Roles</th>
+              <th>Status</th>
               <th class="text-right">Actions</th>
             </tr>
           </thead>
@@ -43,6 +44,15 @@
                       <span><%= role.name %> (<%= role.scope %>) </span>
                     <% end %>
                   </div>
+                </td>
+                <td>
+                  <% if user.disabled? %>
+                    <span class="badge badge-error badge-sm">Disabled</span>
+                  <% elsif user.locked? %>
+                    <span class="badge badge-warning badge-sm">Locked</span>
+                  <% else %>
+                    <span class="badge badge-success badge-sm">Active</span>
+                  <% end %>
                 </td>
                 <td>
                   <div class="flex justify-end">
