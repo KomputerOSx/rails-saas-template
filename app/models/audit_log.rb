@@ -55,7 +55,11 @@ class AuditLog < ApplicationRecord
     role_deleted: "role_deleted",
     permission_created: "permission_created",
     permission_updated: "permission_updated",
-    permission_deleted: "permission_deleted"
+    permission_deleted: "permission_deleted",
+    feature_updated: "feature_updated",
+    feature_access_granted: "feature_access_granted",
+    feature_access_revoked: "feature_access_revoked",
+    organization_feature_settings_updated: "organization_feature_settings_updated"
   }
 
   validates :event_type, presence: true

@@ -1,0 +1,43 @@
+<section class="w-full max-w-3xl">
+  <p class="text-sm font-medium text-base-content/60">
+    <%= link_to "Organization", org_settings_path, class: "hover:text-base-content" %>
+    <span class="mx-1">/</span>
+    <span>Features</span>
+  </p>
+  <h1 class="mt-3 text-4xl font-semibold tracking-normal">Features</h1>
+  <p class="mt-1 text-sm text-base-content/60">Features available to <%= Current.organization.name %>.</p>
+
+  <div class="mt-8 card border border-base-300">
+    <div class="card-body p-0">
+      <% if @features.any? %>
+        <%= form_with url: org_features_path, method: :patch do %>
+          <div class="divide-y divide-base-300">
+            <% @features.each do |feature| %>
+              <div class="flex items-center justify-between gap-4 px-8 py-4">
+                <div>
+                  <p class="font-medium"><%= feature.name %></p>
+                  <p class="text-sm text-base-content/60"><%= feature.description %></p>
+                </div>
+                <% if feature.manager_activation_required? %>
+                  <label class="label cursor-pointer gap-2">
+                    <input type="hidden" name="features[<%= feature.key %>][enabled]" value="0">
+                    <input type="checkbox" name="features[<%= feature.key %>][enabled]" value="1"
+                           class="checkbox checkbox-sm"
+                           <%= "checked" if Current.organization.feature_org_setting_enabled?(feature.key) %>>
+                  </label>
+                <% else %>
+                  <span class="badge badge-success badge-sm">On</span>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+          <div class="px-8 py-4">
+            <%= submit_tag "Save", class: "btn btn-primary btn-sm" %>
+          </div>
+        <% end %>
+      <% else %>
+        <p class="px-8 py-6 text-sm text-base-content/60">No features are available to your organization yet.</p>
+      <% end %>
+    </div>
+  </div>
+</section>

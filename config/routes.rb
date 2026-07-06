@@ -64,6 +64,7 @@ Rails.application.routes.draw do
     end
     resources :roles
     resources :permissions
+    resources :features, only: [ :index, :edit, :update ]
     resources :audit_logs, only: [ :index, :show ]
     resources :notifications, only: [ :index, :new, :create ] do
       member do
@@ -93,6 +94,8 @@ Rails.application.routes.draw do
       end
     end
     resources :invitations, only: [ :create, :destroy ]
+    get   "features", to: "features#index",  as: :features
+    patch "features", to: "features#update"
     post "switch", to: "switches#create", as: :switch
   end
 

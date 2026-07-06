@@ -1,0 +1,9 @@
+# Feature catalog, synced into the `features` table at boot by
+# config/initializers/feature_registry.rb (see app/models/feature_registry.rb).
+#
+# Example:
+# example_widget:
+#   name: "Example Widget"
+#   description: "Illustrative feature — delete once real features are added."
+#   manager_activation_required: true
+{}

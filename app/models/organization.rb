@@ -1,11 +1,17 @@
 class Organization < ApplicationRecord
+  include FeatureToggleable
+
   SLUG_FORMAT = /\A[a-z0-9](?:[a-z0-9\-]*[a-z0-9])?\z/
   RESERVED_SLUGS = %w[admin org invitations login logout password confirmations registration profile up rails].freeze
+
+  serialize :features, coder: JSON
+  after_initialize { self.features ||= {} }
 
   has_many :memberships, dependent: :destroy
   has_many :users, through: :memberships
   has_many :membership_roles, through: :memberships
   has_many :organization_invitations, dependent: :destroy
+  has_many :feature_organization_accesses, dependent: :destroy
 
   validates :name, presence: true
   validates :slug, presence: true, uniqueness: true,

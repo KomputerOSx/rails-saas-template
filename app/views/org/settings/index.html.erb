@@ -1,38 +1,43 @@
 <div class="w-full max-w-4xl">
-  <p class="text-sm font-medium text-base-content/60">Organization</p>
-  <div class="mt-3 flex items-center gap-3">
-    <h1 class="text-4xl font-semibold tracking-normal"><%= Current.organization.name %></h1>
+  <div class="flex items-start justify-between">
+    <div>
+      <p class="text-sm font-medium text-base-content/60">Organization</p>
+      <div class="mt-3 flex items-center gap-3">
+        <h1 class="text-4xl font-semibold tracking-normal"><%= Current.organization.name %></h1>
 
-    <% if current_user.has_permission?("app.organization.manage", organization: Current.organization) %>
-      <div data-controller="modal">
-        <button data-action="click->modal#open" class="btn btn-ghost btn-xs">
-          <span class="material-symbols-outlined" style="font-size:16px">edit</span>
-        </button>
+        <% if current_user.has_permission?("app.organization.manage", organization: Current.organization) %>
+          <div data-controller="modal">
+            <button data-action="click->modal#open" class="btn btn-ghost btn-xs">
+              <span class="material-symbols-outlined" style="font-size:16px">edit</span>
+            </button>
 
-        <dialog data-modal-target="dialog" class="modal"<%= " open".html_safe if Current.organization.errors.any? %>>
-          <div class="modal-box">
-            <form method="dialog"><button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" data-action="click->modal#close">✕</button></form>
+            <dialog data-modal-target="dialog" class="modal"<%= " open".html_safe if Current.organization.errors.any? %>>
+              <div class="modal-box">
+                <form method="dialog"><button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" data-action="click->modal#close">✕</button></form>
 
-            <h3 class="font-bold text-lg mb-4">Edit organization name</h3>
+                <h3 class="font-bold text-lg mb-4">Edit organization name</h3>
 
-            <%= form_with model: Current.organization, url: org_organization_path, method: :patch, html: { class: "space-y-4" } do |f| %>
-              <div class="form-control">
-                <%= f.label :name, class: "label" do %>
-                  <span class="label-text">Name</span>
+                <%= form_with model: Current.organization, url: org_organization_path, method: :patch, html: { class: "space-y-4" } do |f| %>
+                  <div class="form-control">
+                    <%= f.label :name, class: "label" do %>
+                      <span class="label-text">Name</span>
+                    <% end %>
+                    <%= f.text_field :name, class: error_class_for(Current.organization, :name, "input input border border-base-300ed w-full") %>
+                    <%= field_errors(Current.organization, :name) %>
+                  </div>
+
+                  <div class="form-control mt-2">
+                    <%= f.submit "Save", class: "btn btn-primary w-full" %>
+                  </div>
                 <% end %>
-                <%= f.text_field :name, class: error_class_for(Current.organization, :name, "input input border border-base-300ed w-full") %>
-                <%= field_errors(Current.organization, :name) %>
               </div>
-
-              <div class="form-control mt-2">
-                <%= f.submit "Save", class: "btn btn-primary w-full" %>
-              </div>
-            <% end %>
+              <form method="dialog" class="modal-backdrop"><button>close</button></form>
+            </dialog>
           </div>
-          <form method="dialog" class="modal-backdrop"><button>close</button></form>
-        </dialog>
+        <% end %>
       </div>
-    <% end %>
+    </div>
+    <%= link_to "Features", org_features_path, class: "btn btn-outline shrink-0" %>
   </div>
 
   <%# ── Members ── %>

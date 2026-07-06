@@ -1,0 +1,51 @@
+<div class="form-control">
+  <label class="label"><span class="label-text">Key</span></label>
+  <p class="font-mono text-sm"><%= @feature.key %></p>
+  <p class="mt-1 text-xs text-base-content/60">
+    Features are defined in <code>config/features.yml</code> — the key can't be changed here.
+  </p>
+</div>
+
+<div class="form-control">
+  <label class="label cursor-pointer justify-start gap-2">
+    <%= f.check_box :enabled, class: "checkbox checkbox-sm" %>
+    <span class="label-text">Enabled globally</span>
+  </label>
+  <p class="mt-1 text-xs text-base-content/60">
+    The global kill switch. Even organizations granted access below stay off while this is unchecked.
+  </p>
+</div>
+
+<div class="form-control">
+  <label class="label cursor-pointer justify-start gap-2">
+    <%= f.check_box :manager_activation_required, class: "checkbox checkbox-sm" %>
+    <span class="label-text">Requires org opt-in</span>
+  </label>
+  <p class="mt-1 text-xs text-base-content/60">
+    If checked, an organization granted access below must also opt in themselves (in Org Settings) before it's on for them.
+  </p>
+</div>
+
+<div class="form-control">
+  <label class="label"><span class="label-text">Organization access</span></label>
+  <div class="card border border-base-300">
+    <div class="card-body max-h-72 overflow-y-auto">
+      <% if @organizations.any? %>
+        <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <%= f.collection_check_boxes :organization_ids, @organizations, :id, :name do |b| %>
+            <label class="label cursor-pointer justify-start gap-2">
+              <%= b.check_box(class: "checkbox checkbox-sm") %>
+              <span class="label-text"><%= b.text %></span>
+            </label>
+          <% end %>
+        </div>
+      <% else %>
+        <p class="text-sm text-base-content/60">No organizations exist yet.</p>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<div class="form-control mt-2">
+  <%= f.submit "Save changes", class: "btn btn-primary" %>
+</div>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_05_233357) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_06_010200) do
   create_table "audit_logs", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "event_type", null: false
@@ -26,6 +26,28 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_05_233357) do
     t.index ["resource_type", "resource_id"], name: "index_audit_logs_on_resource"
     t.index ["user_id", "event_type"], name: "index_audit_logs_on_user_id_and_event_type"
     t.index ["user_id"], name: "index_audit_logs_on_user_id"
+  end
+
+  create_table "feature_organization_accesses", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.boolean "enabled", default: true, null: false
+    t.integer "feature_id", null: false
+    t.integer "organization_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["feature_id", "organization_id"], name: "index_feature_org_accesses_on_feature_and_org", unique: true
+    t.index ["feature_id"], name: "index_feature_organization_accesses_on_feature_id"
+    t.index ["organization_id"], name: "index_feature_organization_accesses_on_organization_id"
+  end
+
+  create_table "features", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.boolean "enabled", default: false, null: false
+    t.string "key", null: false
+    t.boolean "manager_activation_required", default: true, null: false
+    t.string "name", null: false
+    t.datetime "updated_at", null: false
+    t.index ["key"], name: "index_features_on_key", unique: true
   end
 
   create_table "identities", force: :cascade do |t|
@@ -106,6 +128,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_05_233357) do
 
   create_table "organizations", force: :cascade do |t|
     t.datetime "created_at", null: false
+    t.text "features"
     t.string "name", null: false
     t.string "slug", null: false
     t.datetime "updated_at", null: false
@@ -239,6 +262,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_05_233357) do
   end
 
   add_foreign_key "audit_logs", "users"
+  add_foreign_key "feature_organization_accesses", "features"
+  add_foreign_key "feature_organization_accesses", "organizations"
   add_foreign_key "identities", "users"
   add_foreign_key "membership_roles", "memberships"
   add_foreign_key "membership_roles", "roles"
