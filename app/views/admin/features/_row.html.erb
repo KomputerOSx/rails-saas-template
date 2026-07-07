@@ -9,7 +9,7 @@
       <div data-controller="modal">
         <button data-action="click->modal#open" class="link link-primary">Edit</button>
         <dialog id="<%= dom_id(feature, :dialog) %>" data-modal-target="dialog" class="modal">
-          <div class="modal-box">
+          <div class="modal-box max-w-3xl">
             <form method="dialog"><button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" data-action="click->modal#close">✕</button></form>
             <h3 class="font-bold text-lg mb-4"><%= feature.name %></h3>
             <%= turbo_frame_tag dom_id(feature, :edit_frame), src: edit_admin_feature_path(feature) do %>

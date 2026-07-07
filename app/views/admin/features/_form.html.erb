@@ -9,33 +9,66 @@
 <div class="form-control">
   <label class="label cursor-pointer justify-start gap-2">
     <%= f.check_box :applies_to_all_organizations, class: "checkbox-field" %>
-    <span class="label-text">Apply to all organizations (including ones created in the future)</span>
+    <span class="label-text">Apply to all organizations (including future ones)</span>
   </label>
   <p class="mt-1 text-xs text-base-content/60">
-    When checked, every organization gets access automatically - including ones that don't exist
-    yet. The list below is ignored (and left untouched, in case this is turned off later) while
-    this is on.
+    Overrides the list below, which stays saved in case this is turned off later.
   </p>
 </div>
 
-<div class="form-control">
+<div class="form-control" data-controller="org-filter">
   <label class="label"><span class="label-text">Organization access</span></label>
-  <div class="card border border-base-300">
-    <div class="card-body max-h-72 overflow-y-auto">
-      <% if @organizations.any? %>
-        <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
-          <%= f.collection_check_boxes :organization_ids, @organizations, :id, :name do |b| %>
-            <label class="label cursor-pointer justify-start gap-2 <%= "opacity-50" if @feature.applies_to_all_organizations? %>">
-              <%= b.check_box(class: "checkbox-field", disabled: @feature.applies_to_all_organizations?) %>
-              <span class="label-text"><%= b.text %></span>
-            </label>
-          <% end %>
-        </div>
-      <% else %>
-        <p class="text-sm text-base-content/60">No organizations exist yet.</p>
-      <% end %>
+
+  <%# Preserves the "the org-selector dialog was submitted" signal that
+      Admin::FeaturesController#update relies on (params[:feature].key?(:organization_ids)).
+      collection_check_boxes used to emit this hidden field for free; now that we hand-roll
+      the checkboxes for table layout, it must be added back explicitly - unconditionally,
+      even when there are no organizations to list. %>
+  <%= hidden_field_tag "feature[organization_ids][]", "", id: nil %>
+
+  <% if @organizations.any? %>
+    <input type="text" class="input-field mb-2" placeholder="Filter by name, slug, or ID…"
+           data-action="input->org-filter#filter" aria-label="Filter organizations">
+
+    <div class="card border border-base-300">
+      <div class="card-body p-0 max-h-72 overflow-y-auto">
+        <table class="table table-sm">
+          <thead class="text-sm font-semibold text-base-content bg-base-200">
+            <tr class="border-b border-base-300">
+              <th class="w-8"></th>
+              <th>Name</th>
+              <th>Slug</th>
+              <th>ID</th>
+              <th>Members</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% granted_ids = @feature.organization_ids %>
+            <% @organizations.each do |organization| %>
+              <tr class="hover:bg-base-200 <%= "opacity-50" if @feature.applies_to_all_organizations? %>"
+                  data-org-filter-target="row"
+                  data-org-filter-search-value="<%= [organization.name, organization.slug, organization.id].join(" ").downcase %>">
+                <td>
+                  <%= check_box_tag "feature[organization_ids][]", organization.id,
+                        granted_ids.include?(organization.id),
+                        id: "feature_organization_ids_#{organization.id}",
+                        class: "checkbox-field",
+                        disabled: @feature.applies_to_all_organizations?,
+                        aria: { label: "Grant access to #{organization.name}" } %>
+                </td>
+                <td class="font-medium"><%= organization.name %></td>
+                <td class="font-mono text-xs text-base-content/60"><%= organization.slug %></td>
+                <td class="font-mono text-xs text-base-content/60"><%= organization.id %></td>
+                <td class="text-base-content/60"><%= organization.memberships.size %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
     </div>
-  </div>
+  <% else %>
+    <p class="text-sm text-base-content/60">No organizations exist yet.</p>
+  <% end %>
 </div>
 
 <div class="form-control mt-2">

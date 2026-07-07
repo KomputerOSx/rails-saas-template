@@ -10,7 +10,7 @@ module Admin
     end
 
     def edit
-      @organizations = Organization.order(:name)
+      @organizations = Organization.order(:name).includes(:memberships)
       render partial: "edit_frame"
     end
 
@@ -18,7 +18,7 @@ module Admin
       if @feature.update(feature_params)
         sync_organization_access! if params[:feature].key?(:organization_ids)
         log_audit(:feature_updated, resource: @feature, metadata: { key: @feature.key, enabled: @feature.enabled })
-        @organizations = Organization.order(:name)
+        @organizations = Organization.order(:name).includes(:memberships)
         respond_to do |format|
           format.turbo_stream do
             flash.now[:toast] = { message: "Feature updated.", type: "success" }
@@ -33,7 +33,7 @@ module Admin
           format.html { redirect_to admin_features_path, notice: "Feature updated." }
         end
       else
-        @organizations = Organization.order(:name)
+        @organizations = Organization.order(:name).includes(:memberships)
         flash.now[:alert] = @feature.errors.full_messages.join(", ")
         respond_to do |format|
           format.turbo_stream do
