@@ -39,6 +39,9 @@ class InvitationsController < ApplicationController
 
     flash[:toast] = { message: "You've joined #{@invitation.organization.name}.", type: "success" }
     redirect_to dashboard_path
+  rescue OrganizationInvitation::MemberLimitReached
+    flash[:toast] = { message: "#{@invitation.organization.name} is at its plan's member limit. Ask an owner to upgrade before you can join.", type: "error" }
+    redirect_to invitation_path(params[:token])
   end
 
   private

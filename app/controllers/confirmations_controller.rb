@@ -64,7 +64,7 @@ class ConfirmationsController < ApplicationController
     log_audit(:login_success, user: user, metadata: { auto_login_after_confirmation: true })
 
     invitation = resume_pending_invitation_for(user, token: pending_invitation_token)
-    flash[:toast] = if invitation
+    flash[:toast] ||= if invitation
       { message: "Email confirmed! You've joined #{invitation.organization.name}.", type: "success" }
     else
       { message: "Email confirmed! Welcome aboard.", type: "success" }

@@ -38,6 +38,10 @@ gem "rack-attack"
 # Object-oriented authorization policies
 gem "pundit", "~> 2.3"
 
+# Stripe subscription billing
+gem "pay", ">= 11.6.2"
+gem "stripe", ">= 19.3"
+
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem "tzinfo-data", platforms: %i[ windows jruby ]
 
@@ -83,4 +87,7 @@ group :test do
   # Use system testing [https://guides.rubyonrails.org/testing.html#system-testing]
   gem "capybara"
   gem "selenium-webdriver"
+
+  # minitest 6 split Object#stub out of the core gem
+  gem "minitest-mock"
 end

@@ -57,8 +57,10 @@ class OrgMembersTest < ActionDispatch::IntegrationTest
 
     post login_path, params: { email: users(:two).email, password: "password123" }
 
-    assert_difference "OrganizationInvitation.count", 1 do
-      post org_invitations_path, params: { email: "invitee@example.com" }
+    with_active_subscription(@organization, Billing::Plans::STARTER) do
+      assert_difference "OrganizationInvitation.count", 1 do
+        post org_invitations_path, params: { email: "invitee@example.com" }
+      end
     end
 
     patch promote_org_member_path(admin_membership)

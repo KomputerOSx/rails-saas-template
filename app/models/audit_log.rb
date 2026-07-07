@@ -59,7 +59,10 @@ class AuditLog < ApplicationRecord
     feature_updated: "feature_updated",
     feature_access_granted: "feature_access_granted",
     feature_access_revoked: "feature_access_revoked",
-    organization_feature_settings_updated: "organization_feature_settings_updated"
+    organization_feature_settings_updated: "organization_feature_settings_updated",
+    subscription_created: "subscription_created",
+    subscription_updated: "subscription_updated",
+    subscription_cancelled: "subscription_cancelled"
   }
 
   validates :event_type, presence: true

@@ -17,7 +17,9 @@ class OrganizationInvitationsTest < ActionDispatch::IntegrationTest
     assert_redirected_to login_path
     assert_equal raw_token, session[:pending_invitation_token]
 
-    post login_path, params: { email: invitee.email, password: "password123" }
+    with_active_subscription(@organization, Billing::Plans::STARTER) do
+      post login_path, params: { email: invitee.email, password: "password123" }
+    end
     assert_redirected_to dashboard_path
 
     invitation.reload
@@ -39,7 +41,9 @@ class OrganizationInvitationsTest < ActionDispatch::IntegrationTest
     assert_redirected_to two_factor_login_path
 
     code = ROTP::TOTP.new(invitee.totp_secret).now
-    post verify_two_factor_login_path, params: { code: code.chars }
+    with_active_subscription(@organization, Billing::Plans::STARTER) do
+      post verify_two_factor_login_path, params: { code: code.chars }
+    end
     assert_redirected_to dashboard_path
 
     assert invitation.reload.accepted_at.present?
@@ -53,14 +57,16 @@ class OrganizationInvitationsTest < ActionDispatch::IntegrationTest
     get invitation_path(raw_token)
     assert_redirected_to new_registration_path(email: email)
 
-    perform_enqueued_jobs do
-      post registration_path, params: {
-        user: { email: email, password: "Tr8kMvln52", password_confirmation: "Tr8kMvln52" }
-      }
-    end
+    with_active_subscription(@organization, Billing::Plans::STARTER) do
+      perform_enqueued_jobs do
+        post registration_path, params: {
+          user: { email: email, password: "Tr8kMvln52", password_confirmation: "Tr8kMvln52" }
+        }
+      end
 
-    code = ActionMailer::Base.deliveries.last.body.encoded[/(\d{6})/, 1]
-    post confirmations_path, params: { code: code.chars }
+      code = ActionMailer::Base.deliveries.last.body.encoded[/(\d{6})/, 1]
+      post confirmations_path, params: { code: code.chars }
+    end
     assert_redirected_to dashboard_path
 
     user = User.find_by!(email: email)

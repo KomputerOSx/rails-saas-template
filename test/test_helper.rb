@@ -1,6 +1,7 @@
 ENV["RAILS_ENV"] ||= "test"
 require_relative "../config/environment"
 require "rails/test_help"
+require "minitest/mock"
 
 module ActiveSupport
   class TestCase
@@ -27,6 +28,18 @@ module ActiveSupport
     # attempts across different test cases in the same worker would accumulate and
     # trip rate limits that have nothing to do with the test being run.
     setup { Rails.cache.clear }
+
+    # Gives an organization an active paid subscription for the duration of the block, using
+    # Pay's fake processor (no network calls) plus a stub of Billing::Plans.for_stripe_price so
+    # Organization#current_plan resolves to `plan` without needing real Stripe price ids in
+    # test credentials. Wrap any assertions that depend on the organization's plan/seat limit
+    # in this block.
+    def with_active_subscription(organization, plan)
+      customer = organization.set_payment_processor(:fake_processor, allow_fake: true)
+      customer.subscribe(plan: "price_fake_#{plan.key}")
+
+      Billing::Plans.stub(:for_stripe_price, plan) { yield }
+    end
 
     # Add more helper methods to be used by all tests here...
   end

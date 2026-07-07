@@ -38,4 +38,67 @@ class OrganizationTest < ActiveSupport::TestCase
     assert_equal "jane-doe", org_one.slug
     assert_equal "jane-doe-2", org_two.slug
   end
+
+  test "current_plan defaults to Free with no subscription" do
+    organization = Organization.create_personal_for!(users(:one))
+
+    assert_equal Billing::Plans::FREE, organization.current_plan
+    assert_equal 1, organization.member_limit
+  end
+
+  test "current_plan resolves to the plan matching the active subscription's price" do
+    organization = Organization.create_personal_for!(users(:one))
+
+    with_active_subscription(organization, Billing::Plans::STARTER) do
+      assert_equal Billing::Plans::STARTER, organization.current_plan
+      assert_equal 5, organization.member_limit
+    end
+  end
+
+  test "current_plan falls back to Free once the subscription is canceled" do
+    organization = Organization.create_personal_for!(users(:one))
+
+    with_active_subscription(organization, Billing::Plans::STARTER) do
+      organization.payment_processor.subscription.update!(status: "canceled", ends_at: 1.day.ago)
+    end
+
+    assert_equal Billing::Plans::FREE, organization.current_plan
+  end
+
+  test "member_count_with_pending counts memberships and outstanding invitations, not revoked ones" do
+    organization = Organization.create_personal_for!(users(:one))
+    role = Role.find_or_create_by!(scope: :app, name: Role::APP_USER)
+
+    assert_equal 1, organization.member_count_with_pending
+
+    invitation, = OrganizationInvitation.generate_for!(organization: organization, email: "a@example.com", role: role)
+    assert_equal 2, organization.member_count_with_pending
+
+    invitation.revoke!
+    assert_equal 1, organization.member_count_with_pending
+  end
+
+  test "at_member_limit? is true for a fresh Free-tier org (the owner already fills the sole seat)" do
+    organization = Organization.create_personal_for!(users(:one))
+
+    assert organization.at_member_limit?
+    assert_equal 0, organization.remaining_seats
+  end
+
+  test "at_member_limit? is false while a paid plan has open seats" do
+    organization = Organization.create_personal_for!(users(:one))
+
+    with_active_subscription(organization, Billing::Plans::STARTER) do
+      assert_not organization.at_member_limit?
+      assert_equal 4, organization.remaining_seats
+    end
+  end
+
+  test "over_member_limit? reflects the over_member_limit_at flag, not a live recompute" do
+    organization = Organization.create_personal_for!(users(:one))
+
+    assert_not organization.over_member_limit?
+    organization.update!(over_member_limit_at: Time.current)
+    assert organization.over_member_limit?
+  end
 end

@@ -2,6 +2,8 @@ class OrganizationInvitation < ApplicationRecord
   EXPIRY = 7.days
   TOKEN_BYTES = 32
 
+  MemberLimitReached = Class.new(StandardError)
+
   belongs_to :organization
   belongs_to :role
   belongs_to :invited_by, class_name: "User", optional: true
@@ -48,8 +50,22 @@ class OrganizationInvitation < ApplicationRecord
     revoked_at.blank? && accepted_at.blank? && expires_at.future?
   end
 
+  # Raises MemberLimitReached instead of joining once the organization is full - checked
+  # here (not just at invite-creation time) since this is the single call path shared by
+  # every acceptance route (direct accept, and the login/signup/confirmation resumption
+  # flows in InvitationResumption), so the limit can't be bypassed by resuming a stashed
+  # invitation instead of clicking "Accept" directly.
+  #
+  # Uses ">" rather than Organization#at_member_limit?'s ">=": this invitation already
+  # occupies one of the organization's reserved seats (it counts toward
+  # member_count_with_pending as an outstanding invitation), so converting it into a real
+  # membership doesn't add a new occupant - it's only blocked if the org has become
+  # genuinely oversubscribed since the invite was sent (e.g. a plan downgrade).
   def accept!(user)
     transaction do
+      already_member = organization.memberships.exists?(user: user)
+      raise MemberLimitReached if !already_member && organization.member_count_with_pending > organization.member_limit
+
       membership = organization.memberships.find_or_create_by!(user: user)
       membership.grant_role!(role, granted_by: invited_by)
       update!(accepted_at: Time.current)

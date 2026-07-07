@@ -24,7 +24,10 @@ Rails.application.routes.draw do
   post "confirmations",     to: "confirmations#create", as: :confirmations
 
   resource :profile, only: [ :show, :update, :destroy ], controller: "profile"
-  resource :billing, only: [ :show ], controller: "billing"
+  resource :billing, only: [ :show ], controller: "billing" do
+    resources :checkouts, only: [ :create ], controller: "billing/checkouts"
+    resource :portal_session, only: [ :create ], controller: "billing/portal_sessions"
+  end
   get    "profile/totp/new",     to: "profile#new_totp",          as: :new_profile_totp
   post   "profile/totp",         to: "profile#create_totp",       as: :profile_totp
   delete "profile/totp",         to: "profile#destroy_totp"

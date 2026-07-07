@@ -4,6 +4,12 @@ class Organization < ApplicationRecord
   SLUG_FORMAT = /\A[a-z0-9](?:[a-z0-9\-]*[a-z0-9])?\z/
   RESERVED_SLUGS = %w[admin org invitations login logout password confirmations registration profile up rails].freeze
 
+  # Pay::Customer#email delegates to owner.email (Pay::Customer#api_record_attributes reads it
+  # unconditionally), so Organization needs its own #email even though we have no email column -
+  # see #email below, which borrows the current owner's.
+  pay_customer default_payment_processor: :stripe,
+    stripe_attributes: ->(pay_customer) { { name: pay_customer.owner.name } }
+
   serialize :features, coder: JSON
   after_initialize { self.features ||= {} }
 
@@ -66,5 +72,38 @@ class Organization < ApplicationRecord
     end
 
     slug
+  end
+
+  # Stripe Customer email (see Pay::Customer#email, which delegates here) - Organization has
+  # no email column of its own, so we borrow the current owner's. Falls back gracefully if the
+  # org somehow has no owner membership.
+  def email
+    memberships.joins(:roles).find_by(roles: { name: Role::APP_OWNER, scope: :app })&.user&.email
+  end
+
+  def current_plan
+    subscription = payment_processor&.subscription
+    return Billing::Plans::FREE unless subscription&.active?
+    Billing::Plans.for_stripe_price(subscription.processor_plan) || Billing::Plans::FREE
+  end
+
+  def member_limit
+    current_plan.member_limit
+  end
+
+  def member_count_with_pending
+    memberships.count + organization_invitations.outstanding.count
+  end
+
+  def at_member_limit?
+    member_count_with_pending >= member_limit
+  end
+
+  def remaining_seats
+    [ member_limit - member_count_with_pending, 0 ].max
+  end
+
+  def over_member_limit?
+    over_member_limit_at.present?
   end
 end
