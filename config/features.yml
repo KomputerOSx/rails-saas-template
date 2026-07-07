@@ -6,4 +6,8 @@
 #   name: "Example Widget"
 #   description: "Illustrative feature - delete once real features are added."
 #   org_opt_in_required: true
-{}
+
+example_widget:
+  name: "Example Widget"
+  description: "Illustrative feature - delete once real features are added."
+  org_opt_in_required: true
