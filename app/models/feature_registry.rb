@@ -3,7 +3,7 @@
 # freshly created database, so this must also run from an after_initialize hook to
 # reach every later deploy of an existing database).
 #
-# `enabled` is only set on creation — an admin's toggle in Admin::FeaturesController is
+# `enabled` is only set on creation - an admin's toggle in Admin::FeaturesController is
 # never overwritten by a redeploy; only genuinely new keys defined in the YAML get
 # inserted.
 class FeatureRegistry

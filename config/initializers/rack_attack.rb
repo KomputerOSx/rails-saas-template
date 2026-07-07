@@ -15,7 +15,7 @@ class Rack::Attack
     req.params["email"].to_s.downcase.presence if req.path == "/password_resets" && req.post?
   end
 
-  # Key on IP — req.session is not decrypted at Rack middleware level so user_id is never present there
+  # Key on IP - req.session is not decrypted at Rack middleware level so user_id is never present there
   throttle("password_changes/ip", limit: 5, period: 15.minutes) do |req|
     req.ip if req.path == "/password" && req.patch?
   end
@@ -29,7 +29,7 @@ class Rack::Attack
     req.params.dig("user", "email").to_s.downcase.presence if req.path == "/registration" && req.post?
   end
 
-  # Confirmation codes are only 6 digits — throttling by IP is the primary defense against
+  # Confirmation codes are only 6 digits - throttling by IP is the primary defense against
   # brute-forcing one within its expiry window (no per-record attempt lockout is kept).
   throttle("confirmations/ip", limit: 10, period: 10.minutes) do |req|
     req.ip if req.path == "/confirmations" && req.post?
@@ -45,7 +45,7 @@ class Rack::Attack
     req.ip if req.path == "/login/two_factor" && req.post?
   end
 
-  # Resend/fallback both send an email — throttle to stop email-bombing an account.
+  # Resend/fallback both send an email - throttle to stop email-bombing an account.
   throttle("two_factor_resend/ip", limit: 5, period: 10.minutes) do |req|
     req.ip if req.path == "/login/two_factor/resend" && req.post?
   end

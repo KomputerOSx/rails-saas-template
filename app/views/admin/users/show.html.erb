@@ -59,11 +59,11 @@
         </div>
         <div class="flex items-center justify-between px-8 py-4">
           <dt class="text-xs text-base-content/60 uppercase tracking-wide">First Name</dt>
-          <dd class="font-medium"><%= @user.first_name.presence || "—" %></dd>
+          <dd class="font-medium"><%= @user.first_name.presence || "-" %></dd>
         </div>
         <div class="flex items-center justify-between px-8 py-4">
           <dt class="text-xs text-base-content/60 uppercase tracking-wide">Last Name</dt>
-          <dd class="font-medium"><%= @user.last_name.presence || "—" %></dd>
+          <dd class="font-medium"><%= @user.last_name.presence || "-" %></dd>
         </div>
         <div class="flex items-center justify-between px-8 py-4">
           <dt class="text-xs text-base-content/60 uppercase tracking-wide">Role</dt>
@@ -73,7 +73,7 @@
                 <span class=""><%= role.name %> (<%= role.scope%>)</span>
               <% end %>
             <% else %>
-              <span class="text-base-content/50">—</span>
+              <span class="text-base-content/50">-</span>
             <% end %>
           </dd>
         </div>
@@ -96,7 +96,7 @@
               <%= @user.last_sign_in_at.strftime("%B %d, %Y at %I:%M %p") %>
               <span class="text-base-content/60">(<%= time_ago_in_words(@user.last_sign_in_at) %> ago)</span>
             <% else %>
-              <span class="text-base-content/50">—</span>
+              <span class="text-base-content/50">-</span>
             <% end %>
           </dd>
         </div>
@@ -138,7 +138,7 @@
                 <% @memberships.each do |membership| %>
                   <tr class="hover:bg-base-200">
                     <td class="font-medium"><%= membership.organization.name %></td>
-                    <td class="text-base-content/60"><%= membership.roles.map(&:name).join(", ").presence || "—" %></td>
+                    <td class="text-base-content/60"><%= membership.roles.map(&:name).join(", ").presence || "-" %></td>
                   </tr>
                 <% end %>
               </tbody>

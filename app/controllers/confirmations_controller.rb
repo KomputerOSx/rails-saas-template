@@ -52,7 +52,7 @@ class ConfirmationsController < ApplicationController
     pending_invitation_token = session[:pending_invitation_token]
 
     PendingRegistration.destroy(email)
-    reset_session # regenerate session id — defends against session fixation
+    reset_session # regenerate session id - defends against session fixation
 
     log_audit(:user_registered, user: user, metadata: { email: user.email })
     log_audit(:account_confirmed, user: user, metadata: { email: user.email })

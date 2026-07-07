@@ -1,5 +1,5 @@
 # Holds a not-yet-created account between "signed up" and "entered the confirmation
-# code" — backed by Rails.cache (not the database) so no `users` row exists, and no
+# code" - backed by Rails.cache (not the database) so no `users` row exists, and no
 # unique-email conflict is possible, until the code is actually confirmed. Auto-expires
 # via the cache TTL; brute-forcing the code is mitigated at the Rack::Attack layer
 # (config/initializers/rack_attack.rb), not by per-record attempt tracking here.

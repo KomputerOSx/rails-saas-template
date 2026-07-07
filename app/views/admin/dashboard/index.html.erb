@@ -1,54 +1,144 @@
-<section class="w-full max-w-3xl">
+<section class="w-full max-w-5xl">
   <p class="text-sm font-medium text-base-content/60">Admin</p>
-  <h1 class="mt-3 text-4xl font-semibold tracking-normal">System Admin Dashboard</h1>
+  <h1 class="mt-3 text-4xl font-semibold tracking-normal">Dashboard</h1>
+  <p class="mt-2 text-sm text-base-content/60">System-wide overview of users, access control, and activity.</p>
 
-  <p class="mt-4 text-sm text-base-content/70">
-    <%= @user_count %> users &middot;
-    <%= @role_count %> roles &middot;
-    <%= @permission_count %> permissions &middot;
-    <%= @audit_log_count %> audit log entries &middot;
-    <%= @notification_count %> active notifications
-  </p>
+  <% if @maintenance_status[:enabled] %>
+    <div class="mt-6 flex items-center gap-3 rounded-lg border border-warning/25 bg-warning/10 px-4 py-3">
+      <span class="material-symbols-outlined text-warning !text-[20px]">warning</span>
+      <p class="text-sm">Maintenance mode is on - regular users are currently locked out.</p>
+      <%= link_to "Manage", edit_admin_maintenance_mode_path, class: "btn btn-sm btn-outline ml-auto shrink-0" %>
+    </div>
+  <% end %>
 
-  <div class="mt-8 space-y-8">
-    <div>
-      <h2 class="text-lg font-semibold">RBAC &amp; Admin</h2>
-      <ul class="mt-2 list-disc list-inside space-y-1">
-        <li><%= link_to "Dashboard", admin_root_path, class: "link" %> — this page</li>
-        <li><%= link_to "Users", admin_users_path, class: "link" %> — list users, view roles, grant/revoke roles</li>
-        <li><%= link_to "Roles", admin_roles_path, class: "link" %> — create, edit, and delete roles; assign permissions</li>
-        <li><%= link_to "Permissions", admin_permissions_path, class: "link" %> — create, edit, and delete permissions</li>
-        <li><%= link_to "Audit logs", admin_audit_logs_path, class: "link" %> — security/activity event log</li>
-        <li><%= link_to "Notifications", admin_notifications_path, class: "link" %> — send/withdraw system messages</li>
-        <li><%= link_to "Maintenance mode", edit_admin_maintenance_mode_path, class: "link" %> — <%= @maintenance_status[:enabled] ? "currently ON" : "currently off" %></li>
-      </ul>
+  <%# Stat tiles %>
+  <div class="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <%= link_to admin_users_path, class: "card border border-base-300 transition-colors hover:border-base-content/25" do %>
+      <div class="card-body p-5">
+        <p class="text-sm text-base-content/60">Users</p>
+        <p class="mt-1 text-3xl font-semibold"><%= number_with_delimiter(@user_count) %></p>
+        <% if @new_user_count.positive? %>
+          <p class="mt-1 text-xs text-success">+<%= @new_user_count %> in the last 7 days</p>
+        <% else %>
+          <p class="mt-1 text-xs text-base-content/60">No signups in the last 7 days</p>
+        <% end %>
+      </div>
+    <% end %>
+
+    <div class="card border border-base-300">
+      <div class="card-body p-5">
+        <p class="text-sm text-base-content/60">Organizations</p>
+        <p class="mt-1 text-3xl font-semibold"><%= number_with_delimiter(@organization_count) %></p>
+        <p class="mt-1 text-xs text-base-content/60">Workspaces across the system</p>
+      </div>
     </div>
 
-    <div>
-      <h2 class="text-lg font-semibold">Authentication</h2>
-      <ul class="mt-2 list-disc list-inside space-y-1">
-        <li><%= link_to "Login", login_path, class: "link" %></li>
-        <li><%= link_to "Sign up", new_registration_path, class: "link" %></li>
-        <li><%= link_to "Confirm email", new_confirmation_path, class: "link" %> — 6-digit code confirmation</li>
-        <li><%= link_to "Forgot password", new_password_reset_path, class: "link" %></li>
-      </ul>
+    <%= link_to admin_audit_logs_path, class: "card border border-base-300 transition-colors hover:border-base-content/25" do %>
+      <div class="card-body p-5">
+        <p class="text-sm text-base-content/60">Audit log entries</p>
+        <p class="mt-1 text-3xl font-semibold"><%= number_with_delimiter(@audit_log_count) %></p>
+        <% if @security_event_count.positive? %>
+          <p class="mt-1 text-xs text-warning"><%= pluralize(@security_event_count, "security event") %> in the last 24 hours</p>
+        <% else %>
+          <p class="mt-1 text-xs text-base-content/60">No security events in the last 24 hours</p>
+        <% end %>
+      </div>
+    <% end %>
+
+    <%= link_to admin_roles_path, class: "card border border-base-300 transition-colors hover:border-base-content/25" do %>
+      <div class="card-body p-5">
+        <p class="text-sm text-base-content/60">Roles</p>
+        <p class="mt-1 text-3xl font-semibold"><%= number_with_delimiter(@role_count) %></p>
+        <p class="mt-1 text-xs text-base-content/60">System and organization scopes</p>
+      </div>
+    <% end %>
+
+    <%= link_to admin_permissions_path, class: "card border border-base-300 transition-colors hover:border-base-content/25" do %>
+      <div class="card-body p-5">
+        <p class="text-sm text-base-content/60">Permissions</p>
+        <p class="mt-1 text-3xl font-semibold"><%= number_with_delimiter(@permission_count) %></p>
+        <p class="mt-1 text-xs text-base-content/60">Grantable actions across roles</p>
+      </div>
+    <% end %>
+
+    <%= link_to admin_notifications_path, class: "card border border-base-300 transition-colors hover:border-base-content/25" do %>
+      <div class="card-body p-5">
+        <p class="text-sm text-base-content/60">Active notifications</p>
+        <p class="mt-1 text-3xl font-semibold"><%= number_with_delimiter(@notification_count) %></p>
+        <p class="mt-1 text-xs text-base-content/60">System messages currently live</p>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="mt-10 grid grid-cols-1 gap-8 lg:grid-cols-3">
+    <%# Recent activity %>
+    <div class="lg:col-span-2">
+      <div class="flex items-end justify-between">
+        <div>
+          <h2 class="text-lg font-semibold">Recent activity</h2>
+          <p class="mt-0.5 text-sm text-base-content/60">Latest security and account events.</p>
+        </div>
+        <%= link_to "View all", admin_audit_logs_path, class: "btn btn-ghost btn-sm shrink-0" %>
+      </div>
+
+      <% if @recent_audit_logs.any? %>
+        <div class="card mt-4 border border-base-300">
+          <div class="card-body p-0">
+            <div class="divide-y divide-base-300">
+              <% @recent_audit_logs.each do |log| %>
+                <%= link_to admin_audit_log_path(log), class: "flex items-center gap-3 px-5 py-3 transition-colors hover:bg-base-200" do %>
+                  <div class="min-w-0 flex-1">
+                    <p class="truncate text-sm font-medium"><%= log.event_type&.humanize || "Unknown event" %></p>
+                    <p class="truncate text-xs text-base-content/60">
+                      <%= log.user&.email || "System" %><%= " - #{log.ip_address}" if log.ip_address.present? %>
+                    </p>
+                  </div>
+                  <span class="shrink-0 text-xs text-base-content/60"><%= time_ago_in_words(log.created_at) %> ago</span>
+                <% end %>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      <% else %>
+        <p class="mt-4 text-sm text-base-content/60">No activity yet.</p>
+      <% end %>
     </div>
 
+    <%# Quick actions %>
     <div>
-      <h2 class="text-lg font-semibold">Account</h2>
-      <ul class="mt-2 list-disc list-inside space-y-1">
-        <li><%= link_to "Profile", profile_path, class: "link" %> — details, roles, password, danger zone</li>
-        <li><%= link_to "Change password", edit_password_path, class: "link" %></li>
-        <li><%= link_to "Set up authenticator app (TOTP)", new_profile_totp_path, class: "link" %></li>
-      </ul>
-    </div>
+      <h2 class="text-lg font-semibold">Manage</h2>
+      <p class="mt-0.5 text-sm text-base-content/60">Jump to an admin area.</p>
 
-    <div>
-      <h2 class="text-lg font-semibold">General</h2>
-      <ul class="mt-2 list-disc list-inside space-y-1">
-        <li><%= link_to "Home", root_path, class: "link" %></li>
-        <li><%= link_to "Dashboard", dashboard_path, class: "link" %></li>
-      </ul>
+      <div class="card mt-4 border border-base-300">
+        <div class="card-body p-2">
+          <nav class="flex flex-col">
+            <% [
+              { name: "Users",            icon: "group",           path: admin_users_path },
+              { name: "Roles",            icon: "verified_user",   path: admin_roles_path },
+              { name: "Permissions",      icon: "key",             path: admin_permissions_path },
+              { name: "Features",         icon: "toggle_on",       path: admin_features_path },
+              { name: "Notifications",    icon: "campaign",        path: admin_notifications_path },
+              { name: "Audit logs",       icon: "receipt_long",    path: admin_audit_logs_path }
+            ].each do |item| %>
+              <%= link_to item[:path], class: "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-base-200" do %>
+                <span class="material-symbols-outlined text-base-content/60 !text-[20px]"><%= item[:icon] %></span>
+                <span class="font-medium"><%= item[:name] %></span>
+                <span class="material-symbols-outlined ml-auto text-base-content/40 !text-[18px]">chevron_right</span>
+              <% end %>
+            <% end %>
+
+            <%= link_to edit_admin_maintenance_mode_path, class: "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-base-200" do %>
+              <span class="material-symbols-outlined text-base-content/60 !text-[20px]">engineering</span>
+              <span class="font-medium">Maintenance mode</span>
+              <% if @maintenance_status[:enabled] %>
+                <span class="badge badge-warning badge-sm ml-auto">On</span>
+              <% else %>
+                <span class="badge badge-ghost badge-sm ml-auto">Off</span>
+              <% end %>
+            <% end %>
+          </nav>
+        </div>
+      </div>
     </div>
   </div>
 </section>

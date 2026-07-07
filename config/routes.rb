@@ -12,7 +12,7 @@ Rails.application.routes.draw do
 
   # --- OmniAuth (Google / GitHub) ---
   # The request phase (/auth/:provider) is handled directly by the OmniAuth::Builder
-  # middleware (config/initializers/omniauth.rb) — only the callback needs a route.
+  # middleware (config/initializers/omniauth.rb) - only the callback needs a route.
   get "auth/:provider/callback", to: "omniauth_callbacks#create"
 
   resource :password, only: [ :edit, :update ], controller: "passwords"

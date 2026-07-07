@@ -40,7 +40,7 @@ module Admin
     end
 
     # Submitted organization_ids is the full desired "granted" set. Never deletes
-    # FeatureOrganizationAccess rows — flips enabled true/false instead, so access
+    # FeatureOrganizationAccess rows - flips enabled true/false instead, so access
     # history is preserved rather than lost.
     def sync_organization_access!
       submitted_ids = Array(params[:feature][:organization_ids]).reject(&:blank?).map(&:to_i)

@@ -13,7 +13,7 @@
 # config/rbac.yml regardless of the deploy tool. Called again here explicitly, not just
 # trusted to have already run: on a brand-new database, db:prepare's schema:load and
 # db:seed happen in the same process as an after_initialize that already fired (and
-# skipped, since the tables didn't exist yet) before schema:load created them — without
+# skipped, since the tables didn't exist yet) before schema:load created them - without
 # this call, the lookups below would raise on a database's very first deploy.
 RbacRegistry.sync!
 
@@ -40,12 +40,12 @@ if Rails.env.local?
 
     if org
       # Account state buckets (total = 30)
-      # 1. unconfirmed (5)            — signed up, never clicked confirm link
-      # 2. confirmed, onboarding stuck (5) — confirmed but never finished onboarding
-      # 3. active — regular user (8) — fully onboarded, app_user role
-      # 4. active — admin (4)        — fully onboarded, app_admin role
-      # 5. locked (4)                — account locked due to failed login attempts
-      # 6. active with 2FA (4)       — fully onboarded + TOTP enabled
+      # 1. unconfirmed (5)            - signed up, never clicked confirm link
+      # 2. confirmed, onboarding stuck (5) - confirmed but never finished onboarding
+      # 3. active - regular user (8) - fully onboarded, app_user role
+      # 4. active - admin (4)        - fully onboarded, app_admin role
+      # 5. locked (4)                - account locked due to failed login attempts
+      # 6. active with 2FA (4)       - fully onboarded + TOTP enabled
 
       states = [
         { count: 5,  label: "unconfirmed" },
@@ -115,6 +115,6 @@ if Rails.env.local?
       puts "SKIP: no org found for #{DEV_OWNER_EMAIL}"
     end
   else
-    puts "SKIP: #{DEV_OWNER_EMAIL} not found — sign up first, then re-run db:seed"
+    puts "SKIP: #{DEV_OWNER_EMAIL} not found - sign up first, then re-run db:seed"
   end
 end

@@ -34,8 +34,8 @@
             <% @permissions.each do |permission| %>
               <tr class="hover:bg-base-200">
                 <td class="font-medium font-mono text-sm"><%= permission.key %></td>
-                <td class="text-base-content/60"><%= permission.description.presence || "—" %></td>
-                <td class="text-base-content/60"><%= permission.roles.map(&:name).join(", ").presence || "—" %></td>
+                <td class="text-base-content/60"><%= permission.description.presence || "-" %></td>
+                <td class="text-base-content/60"><%= permission.roles.map(&:name).join(", ").presence || "-" %></td>
                 <td>
                   <div class="flex justify-end gap-1">
                     <%= link_to admin_permission_path(permission),

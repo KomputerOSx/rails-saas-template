@@ -9,7 +9,7 @@ module Onboarding
       description: "A little context helps us tailor your experience.",
       view: "onboarding/steps/profile"),
     Step.new(key: "team", title: "Invite your team",
-      description: "Bring your teammates along — you can always do this later.",
+      description: "Bring your teammates along - you can always do this later.",
       view: "onboarding/steps/team"),
     Step.new(key: "finish", title: "You're all set",
       description: "You're ready to go.",

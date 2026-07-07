@@ -13,7 +13,7 @@
             <div>
               <dt class="text-xs text-base-content/60 uppercase tracking-wide">Name</dt>
               <dd class="mt-1 font-medium">
-                <%= [ current_user.first_name, current_user.last_name ].compact_blank.join(" ").presence || "—" %>
+                <%= [ current_user.first_name, current_user.last_name ].compact_blank.join(" ").presence || "-" %>
               </dd>
             </div>
             <div data-controller="modal">
@@ -78,7 +78,7 @@
                   <span class=""><%= role.name %></span>
                 <% end %>
               <% else %>
-                <span class="text-base-content/50">—</span>
+                <span class="text-base-content/50">-</span>
               <% end %>
             </dd>
           </div>
@@ -86,7 +86,7 @@
           <div class="px-8 py-4">
             <dt class="text-xs text-base-content/60 uppercase tracking-wide">Last login</dt>
             <dd class="mt-1 font-medium">
-              <%= current_user.last_sign_in_at ? time_ago_in_words(current_user.last_sign_in_at) + " ago" : "—" %>
+              <%= current_user.last_sign_in_at ? time_ago_in_words(current_user.last_sign_in_at) + " ago" : "-" %>
             </dd>
           </div>
 

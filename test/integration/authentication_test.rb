@@ -60,7 +60,7 @@ class AuthenticationTest < ActionDispatch::IntegrationTest
     # Rack::Attack's own "logins/email" throttle (config/initializers/rack_attack.rb)
     # has the same limit (5 per 20 minutes) and has now also been tripped by the
     # attempts above, so it intercepts this request before the controller's own
-    # account-lockout check runs — a real login attempt at this point would be
+    # account-lockout check runs - a real login attempt at this point would be
     # blocked by either layer.
     post login_path, params: { email: users(:one).email, password: "password123" }
     assert_response :too_many_requests

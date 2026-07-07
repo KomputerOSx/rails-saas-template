@@ -50,7 +50,7 @@ module Org
     end
 
     # `authorize` defaults to checking "#{action_name}?" on MembershipPolicy,
-    # i.e. `destroy?`/`promote?`/`demote?` — one method per action, no query needed.
+    # i.e. `destroy?`/`promote?`/`demote?` - one method per action, no query needed.
     def authorize_membership
       authorize @membership
     end
@@ -58,7 +58,7 @@ module Org
     def reject_owner_target
       return unless @membership.has_role?(Role::APP_OWNER, scope: :app)
 
-      # Ownership transfer isn't implemented in this template — see the extension-point
+      # Ownership transfer isn't implemented in this template - see the extension-point
       # comment in MembershipRole#prevent_removing_last_owner for how it would work.
       redirect_to org_settings_path, alert: "Ownership changes aren't supported in this template."
     end

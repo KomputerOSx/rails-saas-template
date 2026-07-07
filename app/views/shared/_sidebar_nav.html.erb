@@ -1,7 +1,7 @@
 <%
   # Single source of truth for sidebar navigation. Rendered in both the desktop
   # sidebar (collapsible via [data-collapsed] on the group/sidebar container)
-  # and the mobile overlay panel (always expanded — no group/sidebar ancestor).
+  # and the mobile overlay panel (always expanded - no group/sidebar ancestor).
   sections = [
     {
       title: "Workspace",
@@ -15,8 +15,8 @@
 
   if Current.organization && current_membership&.roles&.any?
     sections << { title: "Organization", items: [
-      { icon: "hub", label: "Settings", path: org_settings_path },
-      { icon: "star", label: "Features", path: org_features_path }
+      { icon: "toggle_on", label: "Features", path: org_features_path },
+      { icon: "hub", label: "Settings", path: org_settings_path }
     ] }
   end
 

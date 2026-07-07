@@ -81,7 +81,7 @@
 
 
 
-/* Buttons — subtle bordered/shadowed style, still using DaisyUI's btn/btn-primary/
+/* Buttons - subtle bordered/shadowed style, still using DaisyUI's btn/btn-primary/
    btn-secondary/btn-error/btn-ghost/btn-outline semantics. See docs/design.md → Buttons. */
 @layer base {
   button:not(:disabled),
@@ -97,13 +97,13 @@
   transition-timing-function: ease-in-out;
 }
 
-/* Instant (untransitioned) press-down — scale isn't in transition-property above, so it snaps */
+/* Instant (untransitioned) press-down - scale isn't in transition-property above, so it snaps */
 .btn:active:not(.btn-disabled):not(:disabled) {
   transform: scale(0.96);
 }
 
 /* Solid semantic buttons (btn-primary, btn-error, etc.) get a subtly tinted border instead of
-   DaisyUI's flat same-color edge — a faint "rim" rather than a hard line. */
+   DaisyUI's flat same-color edge - a faint "rim" rather than a hard line. */
 .btn-primary,
 .btn-secondary,
 .btn-accent,
@@ -143,7 +143,7 @@
     --btn-inset: 0 0 0 0 oklch(0% 0 0/0);
   }
 }
-/* Badges — soft pill style (replaces DaisyUI's solid badge fill), still using DaisyUI's
+/* Badges - soft pill style (replaces DaisyUI's solid badge fill), still using DaisyUI's
    badge/badge-primary/badge-success/etc. semantics. See docs/design.md → Badges. */
 .badge {
   @apply gap-1 font-medium;
@@ -168,7 +168,7 @@
   border-color: var(--color-base-300);
 }
 
-/* Tables — filled <thead> corner safeguard. The card wrapper's overflow:hidden clips most of
+/* Tables - filled <thead> corner safeguard. The card wrapper's overflow:hidden clips most of
    a filled header's rectangle, but border-collapse can still leave a hairline square corner
    poking past the card's border-radius in Chrome/WebKit. Round the header row's own outer
    corners to match so there's nothing left for the parent clip to miss. */
@@ -180,7 +180,7 @@
   border-top-right-radius: var(--radius-box);
 }
 
-/* Form fields — flat/ringed style (replaces DaisyUI's input/select/textarea/checkbox
+/* Form fields - flat/ringed style (replaces DaisyUI's input/select/textarea/checkbox
    classes app-wide), built on this app's DaisyUI semantic tokens so it's correct in
    both the "dark" and "light" themes. See docs/design.md → Forms & inputs. */
 .input-field,

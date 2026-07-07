@@ -15,7 +15,7 @@ module Admin
       @user = User.find(params[:id])
       @memberships = @user.memberships.includes(:organization, :roles)
       # UserRole only accepts system-scoped roles now (app-scoped roles attach to a
-      # Membership instead) — this grant UI only ever offers system-scope roles.
+      # Membership instead) - this grant UI only ever offers system-scope roles.
       @roles = Role.system.order(:name)
     end
 

@@ -22,7 +22,7 @@ class BackfillPersonalOrganizations < ActiveRecord::Migration[8.1]
   def up
     owner_role = MigrationRole.find_or_create_by!(scope: "app", name: "owner") do |role|
       role.permanent = true
-      role.description = "Organization owner — full control; cannot be removed while sole owner"
+      role.description = "Organization owner - full control; cannot be removed while sole owner"
     end
 
     users_without_membership = MigrationUser.where.not(id: MigrationMembership.select(:user_id))
@@ -46,6 +46,6 @@ class BackfillPersonalOrganizations < ActiveRecord::Migration[8.1]
   end
 
   def down
-    # Data is intentionally left in place — nothing to revert.
+    # Data is intentionally left in place - nothing to revert.
   end
 end

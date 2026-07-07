@@ -13,7 +13,7 @@ class InvitationsController < ApplicationController
         flash.now[:alert] = "This invitation was sent to #{@invitation.email}. Log out and log in with that email to accept it."
         render :mismatched_account
       end
-      # renders :show — a confirm/accept button posting to accept_invitation_path
+      # renders :show - a confirm/accept button posting to accept_invitation_path
     else
       session[:pending_invitation_token] = params[:token]
 

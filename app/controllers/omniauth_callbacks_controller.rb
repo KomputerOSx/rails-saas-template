@@ -39,8 +39,8 @@ class OmniauthCallbacksController < ApplicationController
   private
 
   # Looks up an existing linked identity first. Otherwise falls back to matching
-  # by email — safe because the provider has already verified ownership of that
-  # address — and links a new identity to that account. If neither matches,
+  # by email - safe because the provider has already verified ownership of that
+  # address - and links a new identity to that account. If neither matches,
   # provisions a brand-new user exactly like ConfirmationsController#create does
   # (personal organization + owner role), except confirmation is skipped since
   # the provider already vouches for the email.

@@ -34,7 +34,7 @@ class ProfileController < ApplicationController
     saved_email = current_user.email
 
     ActiveRecord::Base.transaction do
-      # Destroy orgs where this user is the sole owner — the last-owner guard would
+      # Destroy orgs where this user is the sole owner - the last-owner guard would
       # otherwise abort the cascade when memberships are deleted.
       # Orgs with other owners are left intact; the membership cascade handles removal.
       current_user.organizations.each do |org|

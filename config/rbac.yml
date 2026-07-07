@@ -6,7 +6,7 @@ permissions:
   app.members.remove: "Remove members from the organization"
   app.members.promote: "Promote/demote members between admin and user"
   app.organization.manage: "Manage organization settings"
-  app.billing.manage: "Manage billing and subscription (placeholder — no billing gem yet)"
+  app.billing.manage: "Manage billing and subscription (placeholder - no billing gem yet)"
 
 roles:
   system:
@@ -17,13 +17,13 @@ roles:
   app:
     owner:
       permanent: true
-      description: "Organization owner — full control; cannot be removed while sole owner"
+      description: "Organization owner - full control; cannot be removed while sole owner"
       permissions: [app.members.invite, app.members.remove, app.members.promote, app.organization.manage, app.billing.manage]
     admin:
       permanent: false
-      description: "Organization admin — can invite and remove members"
+      description: "Organization admin - can invite and remove members"
       permissions: [app.members.invite, app.members.remove]
     user:
       permanent: false
-      description: "Organization member — standard product access"
+      description: "Organization member - standard product access"
       permissions: []

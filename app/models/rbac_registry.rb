@@ -1,7 +1,7 @@
 # Syncs the baseline Role/Permission/RolePermission catalog from config/rbac.yml into
 # the database. Invoked at boot (config/initializers/rbac_registry.rb) rather than only
 # from db/seeds.rb, since a Kamal deploy's db:prepare only seeds a freshly created
-# database — every later deploy of an existing database would otherwise never pick up
+# database - every later deploy of an existing database would otherwise never pick up
 # new permissions added to the catalog.
 #
 # Baseline permissions are attached to a role only at the moment that role is first
@@ -38,7 +38,7 @@ class RbacRegistry
     )
     attach_baseline_permissions!(role, attrs.fetch("permissions", []))
   rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique
-    # Lost a create race against another process booting at the same time — the
+    # Lost a create race against another process booting at the same time - the
     # winner already attached baseline permissions. Nothing to do.
   end
 

@@ -14,6 +14,6 @@ module AuditLogging
       metadata: { controller: "#{params[:controller]}##{params[:action]}" }.merge(metadata)
     )
   rescue => e
-    Rails.logger.error "[AuditLog] #{e.class}: #{e.message} — event=#{event_type} user=#{user&.id}"
+    Rails.logger.error "[AuditLog] #{e.class}: #{e.message} - event=#{event_type} user=#{user&.id}"
   end
 end

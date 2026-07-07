@@ -34,7 +34,7 @@ class PasswordResetsController < ApplicationController
       consume_reset_timing
     end
 
-    # Always the same redirect/notice regardless of whether the account exists —
+    # Always the same redirect/notice regardless of whether the account exists -
     # prevents user enumeration via response content or timing.
     redirect_to new_password_reset_path, notice: GENERIC_NOTICE
   end

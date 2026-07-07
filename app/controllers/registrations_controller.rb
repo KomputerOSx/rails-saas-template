@@ -14,7 +14,7 @@ class RegistrationsController < ApplicationController
 
     @user = User.new(registration_params)
 
-    # Validate only — no `users` row is created until the confirmation code is entered,
+    # Validate only - no `users` row is created until the confirmation code is entered,
     # so an abandoned signup never blocks the email from being used again.
     if @user.valid?
       code = PendingRegistration.create!(email: @user.email, password_digest: @user.password_digest)

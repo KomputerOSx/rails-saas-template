@@ -7,7 +7,7 @@ module ActiveSupport
     # Run tests in parallel with specified workers
     parallelize(workers: :number_of_processors)
 
-    # Each parallel worker gets its own test database — load the reference-data seeds
+    # Each parallel worker gets its own test database - load the reference-data seeds
     # (system_admin, owner/admin/user roles and their permissions) into each one, once,
     # outside any per-test transaction, so tests exercise the real seeded permission
     # catalog instead of ad-hoc reimplementations of it. Below the parallelization
@@ -22,7 +22,7 @@ module ActiveSupport
     fixtures :all
 
     # Rails.cache is a real (in-memory) store in test (see config/environments/test.rb)
-    # so cache-backed state — PendingRegistration, Rack::Attack's throttle counters —
+    # so cache-backed state - PendingRegistration, Rack::Attack's throttle counters -
     # persists across requests within a test. Without this, repeated login/signup
     # attempts across different test cases in the same worker would accumulate and
     # trip rate limits that have nothing to do with the test being run.

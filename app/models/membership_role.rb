@@ -29,7 +29,7 @@ class MembershipRole < ApplicationRecord
     # Extension point for ownership transfer (NOT implemented in this template):
     # grant the `owner` role to the new owner's Membership FIRST, THEN revoke the
     # previous owner's MembershipRole. This guard's "other_owners" query then finds
-    # the new owner and permits the revoke — no change needed here, just a new
+    # the new owner and permits the revoke - no change needed here, just a new
     # controller action performing the grant-then-revoke pair in one transaction.
   end
 end

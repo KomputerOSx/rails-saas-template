@@ -22,7 +22,7 @@ Rails.application.configure do
   config.consider_all_requests_local = true
 
   # :null_store makes Rails.cache a no-op, which silently breaks anything backed by
-  # it (e.g. PendingRegistration, the throttle counters in Rack::Attack) — tests need
+  # it (e.g. PendingRegistration, the throttle counters in Rack::Attack) - tests need
   # a real (if ephemeral) cache to exercise those flows.
   config.cache_store = :memory_store
 

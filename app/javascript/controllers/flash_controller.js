@@ -5,7 +5,7 @@ import { Controller } from "@hotwired/stimulus"
 // re-execute inline scripts across visits, and may reuse this element across renders rather
 // than replacing it. `xxxValueChanged` fires both on the initial connect AND whenever Turbo
 // morphs the value attributes on a reused node, so it's the single source of truth here
-// (avoid also firing from connect() — that would double-toast on a fresh connect).
+// (avoid also firing from connect() - that would double-toast on a fresh connect).
 export default class extends Controller {
   static values = {
     message: String,

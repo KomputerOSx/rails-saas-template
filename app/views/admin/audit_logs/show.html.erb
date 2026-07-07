@@ -41,13 +41,13 @@
                 <%= @audit_log.user.email %> <span class="text-base-content/60">(#<%= @audit_log.user.id %>)</span>
               <% end %>
             <% else %>
-              <span class="text-base-content/50">—</span>
+              <span class="text-base-content/50">-</span>
             <% end %>
           </dd>
         </div>
         <div class="flex items-center justify-between py-3">
           <dt class="text-xs text-base-content/60 uppercase tracking-wide">Organisation</dt>
-          <dd class="font-medium text-base-content/50">—</dd>
+          <dd class="font-medium text-base-content/50">-</dd>
         </div>
         <div class="flex items-center justify-between py-3">
           <dt class="text-xs text-base-content/60 uppercase tracking-wide">Resource</dt>
@@ -55,17 +55,17 @@
             <% if @audit_log.resource_type %>
               <%= @audit_log.resource_type %> #<%= @audit_log.resource_id %>
             <% else %>
-              <span class="text-base-content/50">—</span>
+              <span class="text-base-content/50">-</span>
             <% end %>
           </dd>
         </div>
         <div class="flex items-center justify-between py-3">
           <dt class="text-xs text-base-content/60 uppercase tracking-wide">IP Address</dt>
-          <dd class="font-medium"><%= @audit_log.ip_address.presence || "—" %></dd>
+          <dd class="font-medium"><%= @audit_log.ip_address.presence || "-" %></dd>
         </div>
         <div class="py-3">
           <dt class="text-xs text-base-content/60 uppercase tracking-wide">User Agent</dt>
-          <dd class="mt-1 break-all text-base-content/80"><%= @audit_log.user_agent.presence || "—" %></dd>
+          <dd class="mt-1 break-all text-base-content/80"><%= @audit_log.user_agent.presence || "-" %></dd>
         </div>
       </dl>
     </div>

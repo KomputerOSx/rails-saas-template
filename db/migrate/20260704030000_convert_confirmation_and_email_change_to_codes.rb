@@ -10,7 +10,7 @@ class ConvertConfirmationAndEmailChangeToCodes < ActiveRecord::Migration[8.1]
       t.remove :email_change_token_old, type: :string
       t.remove :email_change_token_new, type: :string
 
-      # Signup confirmation is now handled entirely via PendingRegistration (Rails.cache) —
+      # Signup confirmation is now handled entirely via PendingRegistration (Rails.cache) -
       # no `users` row exists until the code is confirmed, so no code/attempts columns needed here.
       t.string :email_change_old_code_digest
       t.string :email_change_new_code_digest

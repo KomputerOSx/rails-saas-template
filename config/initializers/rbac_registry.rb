@@ -6,6 +6,6 @@ Rails.application.config.after_initialize do
 
     RbacRegistry.sync!
   rescue ActiveRecord::NoDatabaseError, ActiveRecord::ConnectionNotEstablished => e
-    Rails.logger.warn("RbacRegistry: skipping sync, database not ready — #{e.message}")
+    Rails.logger.warn("RbacRegistry: skipping sync, database not ready - #{e.message}")
   end
 end

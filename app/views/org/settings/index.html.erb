@@ -163,7 +163,7 @@
             <% @pending_invitations.each do |invitation| %>
               <tr class="hover:bg-base-200">
                 <td class="font-medium"><%= invitation.email %></td>
-                <td class="text-base-content/60"><%= invitation.invited_by&.email || "—" %></td>
+                <td class="text-base-content/60"><%= invitation.invited_by&.email || "-" %></td>
                 <td>
                   <div class="flex justify-end">
                     <%= button_to org_invitation_path(invitation), method: :delete,

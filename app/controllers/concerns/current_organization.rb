@@ -8,7 +8,7 @@ module CurrentOrganization
 
   private
 
-  # The current user's Membership in Current.organization — nil if there's no current
+  # The current user's Membership in Current.organization - nil if there's no current
   # organization, or (defensively) if that membership somehow holds no app-scoped role.
   def current_membership
     return nil unless Current.organization && current_user

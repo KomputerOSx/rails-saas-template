@@ -166,7 +166,7 @@ class User < ApplicationRecord
   end
 
   # Step 1: stash the requested new address and send a code to the CURRENT (old) address.
-  # Does not touch `email` itself — only takes effect once both sides confirm. Returns the
+  # Does not touch `email` itself - only takes effect once both sides confirm. Returns the
   # raw code (for the mailer) or nil if validation failed (see #errors).
   def request_email_change!(new_email)
     new_email = new_email.to_s.strip.downcase

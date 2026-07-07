@@ -13,7 +13,7 @@ class PasswordsController < ApplicationController
     end
 
     if current_user.update(password: params[:password], password_confirmation: params[:password_confirmation])
-      # Invalidate all other sessions — keep only the current one
+      # Invalidate all other sessions - keep only the current one
       current_user.sessions.where.not(id: Current.session.id).destroy_all
 
       log_audit(:password_change, metadata: { success: true })

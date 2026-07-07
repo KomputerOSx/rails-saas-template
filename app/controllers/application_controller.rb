@@ -21,7 +21,7 @@ class ApplicationController < ActionController::Base
   private
 
   # The boxed OTP inputs (two-factor Stimulus controller) submit one digit per
-  # `code[]` field — this joins them back into the single code string the rest
+  # `code[]` field - this joins them back into the single code string the rest
   # of the app's verification methods expect.
   def otp_code_param
     Array(params[:code]).join

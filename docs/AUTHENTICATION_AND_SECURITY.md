@@ -1,9 +1,9 @@
-# Authentication & Security Architecture — RxTerminal
+# Authentication & Security Architecture - RxTerminal
 
 A complete reference for the authentication, authorization, 2FA, password-strength, and
 security-hardening systems built in this app, written so the whole system can be ported into
 a fresh Rails 8 project. All code below is copied verbatim from the current codebase (paths
-noted above each block) — treat this file as a snapshot in time, not a substitute for reading
+noted above each block) - treat this file as a snapshot in time, not a substitute for reading
 the live source if it has since changed.
 
 ## Contents
@@ -64,7 +64,7 @@ group :development do
 end
 ```
 
-No `devise` or `devise-two-factor` — this whole system is hand-rolled on top of Rails 8's
+No `devise` or `devise-two-factor` - this whole system is hand-rolled on top of Rails 8's
 built-in "has_secure_password + signed-cookie session" generator pattern.
 
 `config/application.rb` needs an explicit require (some Rails autoloading edge case with these
@@ -108,7 +108,7 @@ create_table "users", force: :cascade do |t|
   t.datetime "pii_redacted_at"
   t.string   "role", default: "staff", null: false
   t.datetime "totp_enabled_at"
-  t.integer  "totp_last_used_at"   # NOTE: integer, not datetime — stores ROTP's verified Unix ts
+  t.integer  "totp_last_used_at"   # NOTE: integer, not datetime - stores ROTP's verified Unix ts
   t.string   "totp_secret"
   t.datetime "updated_at", null: false
   t.string   "username", null: false
@@ -207,14 +207,14 @@ add_foreign_key "audit_logs", "users"
 This app is multi-tenant (`organisation_id` on most tables, plus a `roles` join table tying a
 `manager`/`staff` user to one organisation, and `head_office_roles` tying a `head_office` user
 to several). If porting into a single-tenant project, drop `organisation_id`/`roles` concerns
-and simplify `User#organisation`/`manager_for?`/`staff_for?` accordingly — everything else
+and simplify `User#organisation`/`manager_for?`/`staff_for?` accordingly - everything else
 (sessions, 2FA, password rules, JWT, audit log) is orthogonal to multi-tenancy.
 
 ---
 
 ## 4. Core session authentication (staff/manager/admin)
 
-### 4.1 `Current` — request-scoped attributes
+### 4.1 `Current` - request-scoped attributes
 
 `app/models/current.rb`
 
@@ -264,7 +264,7 @@ class Session < ApplicationRecord
 end
 ```
 
-### 4.3 `Authentication` concern — session resumption, cookie, expiry
+### 4.3 `Authentication` concern - session resumption, cookie, expiry
 
 `app/controllers/concerns/authentication.rb`
 
@@ -393,16 +393,16 @@ end
 ```
 
 Key design points:
-- The cookie is **signed, not encrypted** — it only carries a numeric `session.id`, so tamper-proofing
+- The cookie is **signed, not encrypted** - it only carries a numeric `session.id`, so tamper-proofing
   is sufficient; the real session state (user, expiry) lives server-side.
 - Session lookup uses `.active` scope (`expires_at > now`) so an expired row is invisible to
-  `resume_session` even before the explicit `check_session_expiry` runs — two layers of the same check.
+  `resume_session` even before the explicit `check_session_expiry` runs - two layers of the same check.
 - `last_seen_at` is throttled to update at most once per minute via `update_column` (bypasses
   validations/callbacks) to avoid a DB write on every request.
-- 12-hour fixed window from creation (not sliding) — enforced both by the cookie's `expires:` and the
+- 12-hour fixed window from creation (not sliding) - enforced both by the cookie's `expires:` and the
   DB row's `expires_at`.
 
-### 4.4 `SessionsController` — login, logout, 2FA orchestration, timing-attack mitigation, lockout
+### 4.4 `SessionsController` - login, logout, 2FA orchestration, timing-attack mitigation, lockout
 
 `app/controllers/sessions_controller.rb`
 
@@ -602,7 +602,7 @@ class SessionsController < ApplicationController
     dashboard_path
   end
 
-  # Hook point — currently unconditional, but kept as a method so a future
+  # Hook point - currently unconditional, but kept as a method so a future
   # per-role/per-org 2FA policy can be added without touching call sites.
   def two_factor_required_for?(user)
     true
@@ -622,7 +622,7 @@ class SessionsController < ApplicationController
     code = delivery_method == "email" ? format("%06d", SecureRandom.random_number(1_000_000)) : nil
     challenge_id = SecureRandom.urlsafe_base64(24)
     clear_two_factor_challenge
-    reset_session   # regenerate session id — defends against session fixation
+    reset_session   # regenerate session id - defends against session fixation
     session[:two_factor_challenge_id] = challenge_id
     AdminTwoFactorChallenge.create!(
       user: user,
@@ -773,7 +773,7 @@ class SessionsController < ApplicationController
 end
 ```
 
-### 4.5 Account lockout — `User` model excerpt
+### 4.5 Account lockout - `User` model excerpt
 
 ```ruby
 MAX_LOGIN_ATTEMPTS = 5
@@ -817,7 +817,7 @@ def unlock!
 end
 ```
 
-This is a **second, independent** brute-force layer from Rack::Attack (§13.3) — Rack::Attack
+This is a **second, independent** brute-force layer from Rack::Attack (§13.3) - Rack::Attack
 throttles by IP/username at the HTTP layer and resets after its time window regardless of
 outcome; this lockout is persistent per-account and only resets on a *successful* login.
 
@@ -825,14 +825,14 @@ outcome; this lockout is persistent per-account and only resets on a *successful
 
 ## 5. Two-factor authentication (TOTP + email fallback)
 
-**2FA is mandatory for every login**, for every role — `two_factor_required_for?` in
+**2FA is mandatory for every login**, for every role - `two_factor_required_for?` in
 `SessionsController` (§4.4) is a hardcoded `true`. What's actually optional is *which* second
 factor: if the user has enrolled an authenticator app (`user.totp_enabled?`), TOTP is used;
 otherwise the system automatically falls back to a one-time 6-digit **email** code. There is no
 path that skips the second factor. An admin/staff account with no email and no TOTP enrolled
-literally cannot log in — this is treated as a deliberate hard-fail, not a bug.
+literally cannot log in - this is treated as a deliberate hard-fail, not a bug.
 
-### 5.1 `User` model — TOTP secret, verification, replay protection
+### 5.1 `User` model - TOTP secret, verification, replay protection
 
 ```ruby
 TOTP_ISSUER = "RxTerminal"
@@ -884,13 +884,13 @@ end
 ```
 
 - **Replay protection**: `verify_totp!` passes `after: totp_last_used_at` into ROTP's `verify`,
-  then persists the timestamp ROTP returns — this stops the *same* 30-second code being accepted
+  then persists the timestamp ROTP returns - this stops the *same* 30-second code being accepted
   twice, even from a different request/IP.
 - **Drift window**: `drift_behind: 30, drift_ahead: 30` (seconds) tolerates ~1 time-step of clock skew.
-- `totp_last_used_at` is an **integer** column (Unix timestamp from ROTP), not a `datetime` —
+- `totp_last_used_at` is an **integer** column (Unix timestamp from ROTP), not a `datetime` -
   intentional, matches what `ROTP::TOTP#verify` returns.
 
-### 5.2 `AdminTwoFactorChallenge` model — persisted login-time challenge
+### 5.2 `AdminTwoFactorChallenge` model - persisted login-time challenge
 
 `app/models/admin_two_factor_challenge.rb`
 
@@ -914,13 +914,13 @@ end
 
 Despite the "Admin" in the class name (legacy from when only admins had 2FA), this is used for
 **every** role. The session only stores the opaque `challenge_id` (`session[:two_factor_challenge_id]`)
-— the code digest, delivery method, attempt counter, and expiry all live server-side in this row,
+- the code digest, delivery method, attempt counter, and expiry all live server-side in this row,
 so a stolen session cookie mid-challenge reveals nothing usable and the challenge survives a
 server restart. Email codes are HMAC-SHA256-digested before storage (raw code never persisted);
 comparison uses `ActiveSupport::SecurityUtils.secure_compare` (constant-time). Max 5 attempts
-(`TWO_FACTOR_MAX_ATTEMPTS`), 10-minute expiry (`TWO_FACTOR_EXPIRY`) — see full flow in §4.4.
+(`TWO_FACTOR_MAX_ATTEMPTS`), 10-minute expiry (`TWO_FACTOR_EXPIRY`) - see full flow in §4.4.
 
-### 5.3 TOTP enrollment/disable — `ProfileController`
+### 5.3 TOTP enrollment/disable - `ProfileController`
 
 `app/controllers/profile_controller.rb`
 
@@ -1020,16 +1020,16 @@ class ProfileController < ApplicationController
 end
 ```
 
-Both enrollment and disable require re-entering the **current password** — 2FA state changes
+Both enrollment and disable require re-entering the **current password** - 2FA state changes
 are treated as sensitive as a password change.
 
 ### 5.4 Views (structure to replicate)
 
-- `app/views/profile/new_totp.html.erb` — renders the QR SVG via `sanitize(@totp_qr_svg, tags: %w[svg path rect g], attributes: %w[xmlns viewBox width height d fill id class version shape-rendering transform])` (RQRCode's raw SVG is untrusted-shaped output, so it's sanitized before inlining), plus the raw base32 secret as a manual-entry fallback, plus a form for current password + 6-digit code.
-- `app/views/profile/show.html.erb` — "Security" card: password expiry countdown, TOTP status + Set Up/Disable button (disable is a small inline form re-asking for the password), Sign out button.
-- `app/views/sessions/two_factor.html.erb` — single 6-digit code input (`inputmode: "numeric"`, `autocomplete: "one-time-code"`, `pattern: "[0-9]{6}"`), a "Trust this device for 24 hours" checkbox, and a context-sensitive secondary link (TOTP users see "Email me a code instead"; email-code users see "Send a new code").
+- `app/views/profile/new_totp.html.erb` - renders the QR SVG via `sanitize(@totp_qr_svg, tags: %w[svg path rect g], attributes: %w[xmlns viewBox width height d fill id class version shape-rendering transform])` (RQRCode's raw SVG is untrusted-shaped output, so it's sanitized before inlining), plus the raw base32 secret as a manual-entry fallback, plus a form for current password + 6-digit code.
+- `app/views/profile/show.html.erb` - "Security" card: password expiry countdown, TOTP status + Set Up/Disable button (disable is a small inline form re-asking for the password), Sign out button.
+- `app/views/sessions/two_factor.html.erb` - single 6-digit code input (`inputmode: "numeric"`, `autocomplete: "one-time-code"`, `pattern: "[0-9]{6}"`), a "Trust this device for 24 hours" checkbox, and a context-sensitive secondary link (TOTP users see "Email me a code instead"; email-code users see "Send a new code").
 
-### 5.5 Email-code delivery — `TwoFactorMailer`
+### 5.5 Email-code delivery - `TwoFactorMailer`
 
 `app/mailers/two_factor_mailer.rb`
 
@@ -1067,7 +1067,7 @@ Already shown in full in §4.4 (`trusted_two_factor_device?`, `trust_two_factor_
 `[user.id, user.password_digest, user_agent]`, so **changing the password automatically
 invalidates every trusted-device cookie** with zero extra bookkeeping.
 
-### 5.7 Known gap — no static backup/recovery codes
+### 5.7 Known gap - no static backup/recovery codes
 
 There are no pre-generated backup codes for a lost authenticator device. Recovery relies on
 `email_two_factor_fallback` (a live, single-use, HMAC-digested code to the user's registered
@@ -1078,7 +1078,7 @@ at 2FA time, consider adding static one-time backup codes as well.
 
 ## 6. Password strength & lifecycle
 
-All in the `User` model — no separate `app/validators/` class, no `zxcvbn`-style entropy
+All in the `User` model - no separate `app/validators/` class, no `zxcvbn`-style entropy
 scoring, purely regex/pattern-based.
 
 ```ruby
@@ -1240,7 +1240,7 @@ class PasswordHistory < ApplicationRecord
 end
 ```
 
-### 6.2 Changing your own password — `PasswordsController`
+### 6.2 Changing your own password - `PasswordsController`
 
 `app/controllers/passwords_controller.rb`
 
@@ -1328,11 +1328,11 @@ module PasswordResetEnforcement
 end
 ```
 
-Included in `ApplicationController` alongside `Authentication` (§13.1) — locks a user with a
+Included in `ApplicationController` alongside `Authentication` (§13.1) - locks a user with a
 temporary/admin-reset password down to only the password-change page and logout, everywhere
 else in the app.
 
-### 6.4 Expiry warning notifications — `PasswordExpiryNotificationJob`
+### 6.4 Expiry warning notifications - `PasswordExpiryNotificationJob`
 
 `app/jobs/password_expiry_notification_job.rb`
 
@@ -1372,7 +1372,7 @@ end
 
 Run this on a recurring schedule (e.g. daily via Solid Queue recurring tasks / `cron`). Porting
 without the in-app `Notifications::Sender` system: swap the notification call for an email or
-whatever your target project's notification mechanism is — the querying/dedup logic (exact-day
+whatever your target project's notification mechanism is - the querying/dedup logic (exact-day
 match on `password_expires_at`, dedup on `days_remaining` in metadata) is the reusable part.
 
 ---
@@ -1442,7 +1442,7 @@ class PasswordResetToken < ApplicationRecord
 end
 ```
 
-Only an HMAC digest of the raw token is ever persisted — the raw token exists only in memory
+Only an HMAC digest of the raw token is ever persisted - the raw token exists only in memory
 and in the outbound email.
 
 ### 7.2 `PasswordResetsController`
@@ -1484,7 +1484,7 @@ class PasswordResetsController < ApplicationController
       consume_reset_timing
     end
 
-    # Always the same redirect/notice regardless of whether the account exists —
+    # Always the same redirect/notice regardless of whether the account exists -
     # prevents user enumeration via response content or timing.
     redirect_to new_password_reset_path, notice: GENERIC_NOTICE
   end
@@ -1626,9 +1626,9 @@ end
 
 ## 8. The `/profile` route
 
-`resource :profile, only: [ :show, :edit, :update ], controller: "profile"` — a **singular**
+`resource :profile, only: [ :show, :edit, :update ], controller: "profile"` - a **singular**
 resource, always operating on `current_user` (no id in the URL). Full controller is in §5.3;
-`show`/`edit`/`update` only touch `first_name`, `last_name`, `email` — username, role, and
+`show`/`edit`/`update` only touch `first_name`, `last_name`, `email` - username, role, and
 password are deliberately **not** editable from this form (password changes go through the
 separate `resource :password` / `PasswordsController`, §6.2).
 
@@ -1636,13 +1636,13 @@ What's on the page (`app/views/profile/show.html.erb`):
 - **Personal Details card**: first/last name, username (read-only), email, role badge, last
   sign-in (`time_ago_in_words`).
 - **Security card**: password expiry countdown (amber warning at ≤14 days, red "Expired" at
-  ≤0 — reusing `current_user.days_until_password_expires`), TOTP status + Set Up/Disable,
+  ≤0 - reusing `current_user.days_until_password_expires`), TOTP status + Set Up/Disable,
   Sign out button.
 
 What's deliberately **not** in `/profile`: no session/device list, no self-service audit-log
 view, no self-service account deletion (that's admin/job-driven only via a PII-redaction
 service). If the target project wants those, they're natural additions on top of this
-structure — `current_user.sessions` and `current_user.audit_logs` are already available
+structure - `current_user.sessions` and `current_user.audit_logs` are already available
 relations, just not surfaced in a view yet.
 
 ---
@@ -1734,13 +1734,13 @@ end
 
 Namespace is derived from the controller path (`params[:controller].split("/").first`), so
 `Admin::UsersController` → `"admin"`, `Manager::ServicesController` → `"manager"`, etc. Admin
-and head-office users don't have one fixed organisation — they pick one via
+and head-office users don't have one fixed organisation - they pick one via
 `session[:admin_organisation_id]` (the "organisation picker"), which is how an admin
 impersonates/enters a specific tenant's manager or staff portal. `check_organisation_active!`
 terminates the session outright if the selected org has been disabled mid-session.
 
 Note: the `else` branch (`@kiosk&.authenticated?`) is a no-op guard left over from before kiosk
-auth was split into its own `KioskAuthentication` concern (§10) — `@kiosk` is never actually set
+auth was split into its own `KioskAuthentication` concern (§10) - `@kiosk` is never actually set
 anywhere. Worth cleaning up rather than porting verbatim.
 
 ### 9.1 Base controllers wiring, per namespace
@@ -1774,14 +1774,14 @@ end
 ```
 
 The public-facing booking/check-in namespace has its own `Public::BaseController` that does
-**not** include `RoleAuthentication` at all — it's unauthenticated, and resolves its
+**not** include `RoleAuthentication` at all - it's unauthenticated, and resolves its
 organisation from a URL slug instead of session state.
 
 ---
 
 ## 10. Kiosk device authentication (JWT)
 
-Kiosks authenticate as **devices**, not users — no `User`/session involved at all.
+Kiosks authenticate as **devices**, not users - no `User`/session involved at all.
 
 ### 10.1 `Device` model
 
@@ -1845,7 +1845,7 @@ end
 Secret comes from Rails credentials (`rails credentials:edit` → add `jwt_secret_key: <random>`),
 never from an env var or hardcoded constant.
 
-### 10.3 `KioskAuthentication` concern — per-request validation + `token_version` revocation
+### 10.3 `KioskAuthentication` concern - per-request validation + `token_version` revocation
 
 `app/controllers/concerns/kiosk_authentication.rb`
 
@@ -2026,7 +2026,7 @@ end
 blocklist/deny-list, every issued token embeds the device's `token_version` at issuance time.
 Every request re-checks it against the device's *current* `token_version` column. Bumping that
 integer (on key regeneration or revocation) instantly invalidates every previously issued token
-for that device — no token storage, no blocklist table, just an integer compare. Device/org
+for that device - no token storage, no blocklist table, just an integer compare. Device/org
 `active?` are also re-checked on **every** request (not just at issuance), so disabling a device
 mid-session takes effect immediately.
 
@@ -2110,11 +2110,11 @@ end
 ```
 
 CSRF is explicitly skipped here (it's a token/JSON API endpoint, no cookie-based session to
-protect) — this is the **only** place in the app where `verify_authenticity_token` is skipped.
+protect) - this is the **only** place in the app where `verify_authenticity_token` is skipped.
 
 ### 10.5 Browser-based kiosk setup (device stores its own credentials)
 
-`app/controllers/kiosk/setup_controller.rb` — lets a physical kiosk tablet store its
+`app/controllers/kiosk/setup_controller.rb` - lets a physical kiosk tablet store its
 `device_id`/`api_key`/`ods_code` in encrypted, 1-year cookies, then re-authenticate against
 those stored credentials to mint a fresh JWT without re-typing them. Full source:
 
@@ -2283,7 +2283,7 @@ end
 ```
 
 Note the one-way door: once a device is `revoked`, it can never be reactivated (`set_status`
-explicitly blocks that transition) — a revoked device must be re-provisioned as a new device
+explicitly blocks that transition) - a revoked device must be re-provisioned as a new device
 record.
 
 ---
@@ -2376,15 +2376,15 @@ class Staff::WaitingViewController < Staff::BaseController
 end
 ```
 
-Uses `ActiveSupport::MessageVerifier` — a **third, distinct** crypto primitive from the session
-cookie and the device JWT — namespaced by the purpose string `"waiting_display"` so a token
+Uses `ActiveSupport::MessageVerifier` - a **third, distinct** crypto primitive from the session
+cookie and the device JWT - namespaced by the purpose string `"waiting_display"` so a token
 minted for one purpose can never be replayed against a different verifier-purpose elsewhere in
 the app, even though they all derive from the same `secret_key_base`. The token is deliberately
 re-scoped to `Organisation.active` on every load, so disabling the org invalidates the display
 immediately without needing to track/revoke the token itself.
 
 This pattern generalizes to: **"long-lived unattended device auth that piggybacks on a
-one-time authenticated stamping step"** — reusable anywhere you need a kiosk/display/TV screen
+one-time authenticated stamping step"** - reusable anywhere you need a kiosk/display/TV screen
 that a staff member configures once and then should keep working indefinitely without repeat
 logins.
 
@@ -2392,7 +2392,7 @@ logins.
 
 ## 12. Audit logging
 
-Not application-wide middleware — the concern is included per-controller-base-class where
+Not application-wide middleware - the concern is included per-controller-base-class where
 needed (`Admin::BaseController`, `Manager::BaseController`, `Staff::BaseController`), and
 security-critical events additionally call `AuditLog.create!` directly from concerns/models that
 don't have access to the concern (e.g. `Authentication`, `SessionsController`, `User`,
@@ -2443,7 +2443,7 @@ end
 ```
 
 Every call is wrapped in `rescue` so a logging failure (e.g. a DB blip) never breaks the
-request it's trying to audit — audit logging is best-effort, never load-bearing for the
+request it's trying to audit - audit logging is best-effort, never load-bearing for the
 request's success.
 
 ### 12.2 `AuditLog` model
@@ -2484,7 +2484,7 @@ class AuditLog < ApplicationRecord
     password_reset_completed: "password_reset_completed",
     password_reset_failed: "password_reset_failed",
     # ... plus ~50 more business-event types (organisation/service/device/notification CRUD,
-    # queue/appointment events, subject-access-request events) — see live enum for full list.
+    # queue/appointment events, subject-access-request events) - see live enum for full list.
     rate_limit_triggered: "rate_limit_triggered",
     admin_access_blocked: "admin_access_blocked"
   }
@@ -2504,11 +2504,11 @@ class AuditLog < ApplicationRecord
 end
 ```
 
-Design notes for porting: `event_type` is a plain string-backed enum kept in one central place —
+Design notes for porting: `event_type` is a plain string-backed enum kept in one central place -
 add new event names here as new sensitive actions are introduced. `resource_type`/`resource_id`
 form a lightweight polymorphic pointer (not a real `belongs_to :resource, polymorphic: true`,
 just two plain columns) to whatever record the action affected, without requiring that record's
-class to declare an inverse association. `metadata` is a serialized JSON text column — flexible
+class to declare an inverse association. `metadata` is a serialized JSON text column - flexible
 schema per event type, at the cost of not being queryable by field without `LIKE`/JSON functions
 (see the `LIKE` dedup query in `PasswordExpiryNotificationJob`, §6.4, as an example of that
 tradeoff in practice).
@@ -2517,7 +2517,7 @@ tradeoff in practice).
 
 ## 13. General security hardening
 
-### 13.1 `ApplicationController` — top-level wiring
+### 13.1 `ApplicationController` - top-level wiring
 
 `app/controllers/application_controller.rb`
 
@@ -2562,19 +2562,19 @@ end
 ```
 
 `protect_from_forgery with: :exception` is the strict Rails default (raises on a missing/invalid
-CSRF token) — the **only** place it's skipped anywhere in the codebase is the device-auth JSON
+CSRF token) - the **only** place it's skipped anywhere in the codebase is the device-auth JSON
 API endpoint (§10.4), which is a deliberate, narrow exception, not a broad policy.
 
 **Admin IP allowlisting is layered twice**: once here at the controller level (any request from
 an admin *user*, any path) and again at the Rack::Attack middleware level (any request to
-`/admin*`, regardless of whether it resolves to a user yet) — see §13.3. Belt-and-braces: the
+`/admin*`, regardless of whether it resolves to a user yet) - see §13.3. Belt-and-braces: the
 middleware layer blocks before Rails routing even runs; the controller layer catches an admin
 user hitting a non-`/admin`-prefixed route (e.g. `/dashboard`) from a disallowed IP.
 
 ### 13.2 Active Record Encryption
 
 No explicit key configuration beyond Rails 8 defaults (`config.load_defaults 8.0` in
-`config/application.rb`) — encryption keys (`active_record_encryption.primary_key`,
+`config/application.rb`) - encryption keys (`active_record_encryption.primary_key`,
 `deterministic_key`, `key_derivation_salt`) live in Rails credentials
 (`rails credentials:edit`), never in plain env vars or source.
 
@@ -2584,10 +2584,10 @@ encrypts :first_name
 encrypts :last_name
 encrypts :email, deterministic: true    # deterministic → uniqueness/find_by still work
 encrypts :username, deterministic: true
-encrypts :totp_secret                   # non-deterministic — no lookups needed on this field
+encrypts :totp_secret                   # non-deterministic - no lookups needed on this field
 ```
 
-`ServiceRequest` similarly encrypts `first_name`, `last_name`, `dob` (deterministic —
+`ServiceRequest` similarly encrypts `first_name`, `last_name`, `dob` (deterministic -
 searchable), `postcode`, `description`. Rule of thumb: **deterministic** encryption only where a
 DB-level uniqueness constraint or a `find_by` lookup is required on that field; everything else
 uses non-deterministic (randomized IV) encryption for stronger confidentiality.
@@ -2601,7 +2601,7 @@ existing unencrypted dataset:
 # config.active_record.encryption.support_unencrypted_data = true
 ```
 
-### 13.3 Rack::Attack — request throttling & IP blocklisting
+### 13.3 Rack::Attack - request throttling & IP blocklisting
 
 `config/initializers/rack_attack.rb`
 
@@ -2635,7 +2635,7 @@ class Rack::Attack
 
   # ... several more per-route throttles for kiosk/public-portal/contact-form endpoints ...
 
-  # Key on IP — req.session is not decrypted at Rack middleware level so user_id is never present there
+  # Key on IP - req.session is not decrypted at Rack middleware level so user_id is never present there
   throttle("password_changes/ip", limit: 5, period: 15.minutes) do |req|
     req.ip if req.path == "/password" && req.patch?
   end
@@ -2692,7 +2692,7 @@ end
 ```
 
 Every throttle/blocklist hit is both logged (`Rails.logger.warn`) **and** written to the same
-`AuditLog` table used everywhere else — one unified security event stream, regardless of whether
+`AuditLog` table used everywhere else - one unified security event stream, regardless of whether
 the block happened in a controller or in Rack middleware.
 
 Registered in `config/application.rb`:
@@ -2740,7 +2740,7 @@ Rails.application.configure do
 end
 ```
 
-(Trim the `analytics.strixon.co.uk` / `cdn.jsdelivr.net` allowances shown in the live file —
+(Trim the `analytics.strixon.co.uk` / `cdn.jsdelivr.net` allowances shown in the live file -
 those are project-specific third-party origins, not part of the reusable pattern.)
 
 `config/initializers/permissions_policy.rb`:
@@ -2778,7 +2778,7 @@ config.assume_ssl = true
 config.force_ssl = true
 ```
 
-`config/initializers/filter_parameter_logging.rb` — scrub sensitive params from logs (partial
+`config/initializers/filter_parameter_logging.rb` - scrub sensitive params from logs (partial
 match, so `otp` also catches params like `totp_code`):
 
 ```ruby
@@ -2787,7 +2787,7 @@ Rails.application.config.filter_parameters += [
 ]
 ```
 
-### 13.6 Housekeeping job — expired session cleanup
+### 13.6 Housekeeping job - expired session cleanup
 
 `app/jobs/cleanup_expired_sessions_job.rb`
 
@@ -2805,12 +2805,12 @@ end
 ```
 
 Not the primary enforcement mechanism (that's `Session.active` scoping + `check_session_expiry`,
-§4.3/4.4, which act on every request) — this is a periodic GC pass, schedule it daily/hourly via
+§4.3/4.4, which act on every request) - this is a periodic GC pass, schedule it daily/hourly via
 Solid Queue recurring tasks or cron.
 
 ### 13.7 Static analysis
 
-`brakeman` runs with **zero suppressions** (no `.brakeman.ignore` file) — any finding surfaces on
+`brakeman` runs with **zero suppressions** (no `.brakeman.ignore` file) - any finding surfaces on
 every scan. Run it as part of CI, not just ad hoc.
 
 ---
@@ -2852,7 +2852,7 @@ post  "kiosk/setup/authenticate", to: "kiosk/setup#authenticate"
 match "kiosk/setup/clear",      to: "kiosk/setup#clear",  via: [ :get, :post ]
 match "kiosk/setup/logout",     to: "kiosk/setup#logout", via: [ :get, :post ]
 
-# Namespaced portals — each with role-checked resources
+# Namespaced portals - each with role-checked resources
 namespace :admin do
   resources :devices do
     member { post :regenerate_key; post :clear_ip; post :set_status }
@@ -2869,7 +2869,7 @@ namespace :staff do
   # ... queue, appointments, waiting_view
 end
 
-# Public multi-tenant portal — placed LAST so reserved namespace words never
+# Public multi-tenant portal - placed LAST so reserved namespace words never
 # get swallowed by the slug wildcard.
 scope "/:organisation_slug",
   constraints: { organisation_slug: /(?!admin|manager|staff|kiosk|api|health|assets|packs|demo|login|logout|blog)[a-z0-9][a-z0-9\-]*[a-z0-9]/ },
@@ -2902,7 +2902,7 @@ end
    `PasswordResetsController`, `ProfileController`. If porting kiosk: `KioskAuthentication`,
    `JwtService`, `Api::V1::DeviceAuthController`, `Kiosk::SetupController`.
 6. **Mailers**: `TwoFactorMailer`, `PasswordResetMailer` (adapt sender name/branding).
-7. **Jobs**: `CleanupExpiredSessionsJob`, `PasswordExpiryNotificationJob` — wire into your
+7. **Jobs**: `CleanupExpiredSessionsJob`, `PasswordExpiryNotificationJob` - wire into your
    scheduler (Solid Queue recurring tasks, `whenever`, or plain cron).
 8. **Initializers**: `rack_attack.rb` (adjust routes/limits to your app's actual endpoints),
    `content_security_policy.rb`, `permissions_policy.rb`, `session_store.rb`,
@@ -2914,7 +2914,7 @@ end
     manual key + password/code form), password edit form, password-reset request/edit forms.
 11. **Env vars**: `ADMIN_ALLOWED_IPS` (optional, comma-separated) if using the admin IP
     allowlist.
-12. **Verify end-to-end** once ported: register a user, log in (should hit 2FA — email fallback
+12. **Verify end-to-end** once ported: register a user, log in (should hit 2FA - email fallback
     if TOTP not yet enrolled), enroll TOTP from `/profile`, log out, log back in with a TOTP
     code, trigger account lockout with 5 bad passwords, request + complete a password reset,
     trigger the 90-day/history/complexity password validations by trying to reuse or weaken a

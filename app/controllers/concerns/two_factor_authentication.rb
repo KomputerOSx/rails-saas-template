@@ -15,7 +15,7 @@ module TwoFactorAuthentication
 
     pending_invitation_token = session[:pending_invitation_token]
     clear_two_factor_challenge
-    reset_session # regenerate session id — defends against session fixation
+    reset_session # regenerate session id - defends against session fixation
     session[:pending_invitation_token] = pending_invitation_token if pending_invitation_token
     session[:two_factor_challenge_id] = challenge_id
 
@@ -73,7 +73,7 @@ module TwoFactorAuthentication
       value: { user_id: user.id, verifier: trusted_two_factor_verifier(user), expires_at: expires_at.iso8601 }.to_json,
       expires: expires_at,
       httponly: true,
-      # :lax, not :strict — this cookie is also read from OmniauthCallbacksController#create,
+      # :lax, not :strict - this cookie is also read from OmniauthCallbacksController#create,
       # which runs on the cross-site-initiated redirect landing from the OAuth provider (see
       # the same reasoning in Authentication#start_new_session_for).
       same_site: :lax,

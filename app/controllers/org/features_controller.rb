@@ -9,7 +9,7 @@ module Org
     def update
       authorize Current.organization, :update?, policy_class: OrganizationPolicy
 
-      # Only ever writes keys this org is actually granted (tiers 1+2) — a member can't
+      # Only ever writes keys this org is actually granted (tiers 1+2) - a member can't
       # use a crafted request to write arbitrary keys into the features JSON column.
       available_keys = Feature.available_to_organization(Current.organization).pluck(:key)
       submitted = params.fetch(:features, {}).to_unsafe_h

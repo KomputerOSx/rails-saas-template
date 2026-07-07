@@ -51,7 +51,7 @@
                   <% end %>
                 </td>
                 <td><span class="badge badge-outline badge-sm"><%= role.scope %></span></td>
-                <td class="text-base-content/60"><%= role.permissions.map(&:key).join(", ").presence || "—" %></td>
+                <td class="text-base-content/60"><%= role.permissions.map(&:key).join(", ").presence || "-" %></td>
                 <td>
                   <div class="flex justify-end gap-1">
                     <%= link_to admin_role_path(role),

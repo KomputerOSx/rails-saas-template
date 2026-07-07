@@ -33,7 +33,7 @@
         </div>
         <div class="py-3">
           <dt class="text-xs text-base-content/60">Description</dt>
-          <dd class="mt-1"><%= @role.description.presence || "—" %></dd>
+          <dd class="mt-1"><%= @role.description.presence || "-" %></dd>
         </div>
         <div class="py-3">
           <dt class="text-xs text-base-content/60">Permissions</dt>
@@ -43,7 +43,7 @@
                 <%= link_to permission.key, admin_permission_path(permission), class: "badge badge-outline hover:badge-primary" %>
               <% end %>
             <% else %>
-              <span class="text-base-content/50">—</span>
+              <span class="text-base-content/50">-</span>
             <% end %>
           </dd>
         </div>
