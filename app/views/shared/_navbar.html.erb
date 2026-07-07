@@ -37,12 +37,9 @@
       <span class="material-symbols-outlined !text-[20px]" data-theme-target="icon">light_mode</span>
     </button>
     <% if authenticated? %>
-      <% unread_count = current_user.unread_notification_count %>
       <%= link_to notification_recipients_path, class: "btn btn-ghost btn-square btn-sm", aria: { label: "Notifications" } do %>
         <div class="indicator">
-          <% if unread_count > 0 %>
-            <span class="indicator-item badge badge-primary badge-xs"><%= unread_count %></span>
-          <% end %>
+          <%= render "shared/notification_badge", unread_count: current_user.unread_notification_count %>
           <span class="material-symbols-outlined !text-[20px]">notifications</span>
         </div>
       <% end %>

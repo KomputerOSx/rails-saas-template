@@ -11,17 +11,33 @@ module Admin
 
     def edit
       @organizations = Organization.order(:name)
+      render partial: "edit_frame"
     end
 
     def update
       if @feature.update(feature_params)
         sync_organization_access!
         log_audit(:feature_updated, resource: @feature, metadata: { key: @feature.key, enabled: @feature.enabled })
-        redirect_to admin_features_path, notice: "Feature updated."
+        respond_to do |format|
+          format.turbo_stream do
+            flash.now[:toast] = { message: "Feature updated.", type: "success" }
+            render turbo_stream: [
+              turbo_stream.replace(dom_id(@feature), partial: "admin/features/row", locals: { feature: @feature }),
+              turbo_stream.replace("flash_messages", partial: "shared/flash")
+            ]
+          end
+          format.html { redirect_to admin_features_path, notice: "Feature updated." }
+        end
       else
         @organizations = Organization.order(:name)
         flash.now[:alert] = @feature.errors.full_messages.join(", ")
-        render :edit, status: :unprocessable_entity
+        respond_to do |format|
+          format.turbo_stream do
+            render turbo_stream: turbo_stream.replace(dom_id(@feature, :edit_frame), partial: "edit_frame"),
+                   status: :unprocessable_entity
+          end
+          format.html { render partial: "edit_frame", status: :unprocessable_entity }
+        end
       end
     end
 

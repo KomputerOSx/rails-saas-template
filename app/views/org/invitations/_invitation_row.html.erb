@@ -1,0 +1,18 @@
+<tr id="<%= dom_id(invitation) %>" class="hover:bg-base-200">
+  <td class="font-medium"><%= invitation.email %></td>
+  <td class="text-base-content/60"><%= invitation.invited_by&.email || "-" %></td>
+  <td>
+    <div class="flex justify-end">
+      <%= button_to org_invitation_path(invitation), method: :delete,
+            data: {
+              controller: "confirm-modal",
+              action: "click->confirm-modal#confirm",
+              confirm_modal_message_value: "Revoke invite for #{invitation.email}?"
+            },
+            class: "btn btn-ghost btn-xs btn-square text-error",
+            title: "Revoke invitation" do %>
+        <span class="material-symbols-outlined" style="font-size:18px">cancel</span>
+      <% end %>
+    </div>
+  </td>
+</tr>

@@ -14,36 +14,7 @@
   </div>
 
   <div class="mt-6 flex flex-wrap items-center gap-2">
-    <div data-controller="modal">
-      <button data-action="click->modal#open" class="btn btn-sm btn-outline">Edit</button>
-      <dialog data-modal-target="dialog" class="modal"<%= " open".html_safe if @user.errors.any? %>>
-        <div class="modal-box">
-          <form method="dialog"><button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" data-action="click->modal#close">✕</button></form>
-          <h3 class="font-bold text-lg mb-4">Edit user</h3>
-          <%= form_with model: @user, url: admin_user_path(@user), method: :patch, html: { class: "space-y-4" } do |f| %>
-            <div class="form-control">
-              <%= f.label :first_name, class: "label" do %><span class="label-text">First name</span><% end %>
-              <%= f.text_field :first_name, class: error_class_for(@user, :first_name, "input-field w-full") %>
-              <%= field_errors(@user, :first_name) %>
-            </div>
-            <div class="form-control">
-              <%= f.label :last_name, class: "label" do %><span class="label-text">Last name</span><% end %>
-              <%= f.text_field :last_name, class: error_class_for(@user, :last_name, "input-field w-full") %>
-              <%= field_errors(@user, :last_name) %>
-            </div>
-            <div class="form-control">
-              <%= f.label :email, class: "label" do %><span class="label-text">Email</span><% end %>
-              <%= f.email_field :email, class: error_class_for(@user, :email, "input-field w-full") %>
-              <%= field_errors(@user, :email) %>
-            </div>
-            <div class="form-control mt-2">
-              <%= f.submit "Save", class: "btn btn-primary w-full" %>
-            </div>
-          <% end %>
-        </div>
-        <form method="dialog" class="modal-backdrop"><button>close</button></form>
-      </dialog>
-    </div>
+    <%= render "admin/users/info_editor", user: @user %>
 
     <%= button_to "Send reset link", send_reset_link_admin_user_path(@user), method: :post,
           class: "btn btn-sm btn-outline" %>
@@ -79,15 +50,7 @@
         </div>
         <div class="flex items-center justify-between px-8 py-4">
           <dt class="text-xs text-base-content/60 uppercase tracking-wide">Account Status</dt>
-          <dd>
-            <% if @user.disabled? %>
-              <span class="badge badge-error badge-sm">Disabled</span>
-            <% elsif @user.locked? %>
-              <span class="badge badge-warning badge-sm">Locked</span>
-            <% else %>
-              <span class="badge badge-success badge-sm">Active</span>
-            <% end %>
-          </dd>
+          <%= render "admin/users/status_badge", user: @user %>
         </div>
         <div class="flex items-center justify-between px-8 py-4">
           <dt class="text-xs text-base-content/60 uppercase tracking-wide">Last Sign In</dt>
@@ -158,30 +121,7 @@
 
     <div class="card mt-4 border border-base-300">
       <div class="card-body">
-        <ul class="divide-y divide-base-300 max-w-md">
-          <% @user.roles.each do |role| %>
-            <li class="py-3 flex items-center justify-between gap-4">
-              <span class=""><%= role.name %> (<%= role.scope%>)</span>
-              <%= button_to "Revoke", admin_user_user_role_path(@user, role_id: role.id), method: :delete,
-                    data: { turbo_confirm: "Revoke #{role.name} from #{@user.email}?" }, class: "btn btn-xs btn-error btn-outline" %>
-            </li>
-          <% end %>
-        </ul>
-
-        <% grantable_roles = @roles - @user.roles %>
-        <% if grantable_roles.any? %>
-          <%= form_with url: admin_user_user_role_path(@user), method: :post, html: { class: "mt-6 flex items-end gap-2" } do %>
-            <div class="form-control">
-              <label class="label"><span class="label-text">Grant role</span></label>
-              <select name="role_id" class="select-field">
-                <% grantable_roles.each do |role| %>
-                  <option value="<%= role.id %>"><%= role.name %> (<%= role.scope %>)</option>
-                <% end %>
-              </select>
-            </div>
-            <%= submit_tag "Grant", class: "btn btn-sm btn-primary" %>
-          <% end %>
-        <% end %>
+        <%= render "admin/users/system_roles_panel", user: @user, roles: @roles %>
       </div>
     </div>
   </div>
@@ -192,28 +132,7 @@
 
     <div class="card mt-4 border border-error">
       <div class="card-body p-0">
-        <div class="flex items-center justify-between gap-4 px-8 py-4">
-          <div>
-            <% if @user.disabled? %>
-              <p class="font-medium text-error">Re-enable account</p>
-              <p class="text-sm text-base-content/60 mt-1">Restores login access for <%= @user.email %>.</p>
-            <% else %>
-              <p class="font-medium text-error">Disable account</p>
-              <p class="text-sm text-base-content/60 mt-1">
-                The user will be signed out everywhere and unable to log in until re-enabled. This does not delete their data.
-              </p>
-            <% end %>
-          </div>
-          <% if @user.disabled? %>
-            <%= button_to "Enable Account", enable_admin_user_path(@user), method: :patch,
-                  class: "btn btn-outline btn-sm shrink-0" %>
-          <% else %>
-            <%= button_to "Disable", disable_admin_user_path(@user), method: :patch,
-                  data: { controller: "confirm-modal", action: "click->confirm-modal#confirm",
-                          confirm_modal_message_value: "Disable #{@user.email}? They will be signed out everywhere and unable to log in." },
-                  class: "btn btn-error btn-outline btn-sm shrink-0" %>
-          <% end %>
-        </div>
+        <%= render "admin/users/danger_zone", user: @user %>
       </div>
     </div>
   </div>

@@ -6,70 +6,49 @@
     <%= link_to "New notification", new_admin_notification_path, class: "btn btn-primary btn-sm" %>
   </div>
 
-  <%= form_with url: admin_notifications_path, method: :get, html: { class: "mt-6 flex flex-wrap items-end gap-2" } do %>
-    <div class="form-control">
-      <label class="label"><span class="label-text text-xs">Search</span></label>
-      <input type="text" name="q" value="<%= @q %>" placeholder="Title" class="input-field w-56">
-    </div>
-    <div class="form-control">
-      <label class="label"><span class="label-text text-xs">Status</span></label>
-      <select name="status" class="select-field">
-        <option value="">All statuses</option>
-        <option value="active" <%= "selected" if @status == "active" %>>Active</option>
-        <option value="withdrawn" <%= "selected" if @status == "withdrawn" %>>Withdrawn</option>
-      </select>
-    </div>
-    <%= submit_tag "Filter", class: "btn btn-sm btn-primary" %>
-    <% if @q.present? || @status.present? %>
-      <%= link_to "Clear", admin_notifications_path, class: "btn btn-sm btn-ghost" %>
+  <%= turbo_frame_tag "admin_notifications_index_frame" do %>
+    <%= form_with url: admin_notifications_path, method: :get, html: { class: "mt-6 flex flex-wrap items-end gap-2" } do %>
+      <div class="form-control">
+        <label class="label"><span class="label-text text-xs">Search</span></label>
+        <input type="text" name="q" value="<%= @q %>" placeholder="Title" class="input-field w-56">
+      </div>
+      <div class="form-control">
+        <label class="label"><span class="label-text text-xs">Status</span></label>
+        <select name="status" class="select-field">
+          <option value="">All statuses</option>
+          <option value="active" <%= "selected" if @status == "active" %>>Active</option>
+          <option value="withdrawn" <%= "selected" if @status == "withdrawn" %>>Withdrawn</option>
+        </select>
+      </div>
+      <%= submit_tag "Filter", class: "btn btn-sm btn-primary" %>
+      <% if @q.present? || @status.present? %>
+        <%= link_to "Clear", admin_notifications_path, class: "btn btn-sm btn-ghost" %>
+      <% end %>
     <% end %>
-  <% end %>
 
-  <div class="card mt-4 border border-base-300">
-    <div class="card-body p-0">
-      <div class="overflow-x-auto">
-        <table class="table table-sm">
-          <thead class="text-sm font-semibold text-base-content bg-base-200">
-            <tr class="border-b border-base-300">
-              <th>Title</th>
-              <th>Created by</th>
-              <th>Recipients</th>
-              <th>Status</th>
-              <th>Created at</th>
-              <th class="text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% @notifications.each do |notification| %>
-              <tr class="hover:bg-base-200">
-                <td class="font-medium"><%= notification.title %></td>
-                <td class="text-base-content/60"><%= notification.created_by&.email || "System" %></td>
-                <td><%= notification.notification_recipients.size %></td>
-                <td>
-                  <% if notification.withdrawn? %>
-                    <span class="badge badge-neutral badge-sm">Withdrawn</span>
-                  <% else %>
-                    <span class="badge badge-success badge-sm">Active</span>
-                  <% end %>
-                </td>
-                <td class="text-base-content/60"><%= time_ago_in_words(notification.created_at) %> ago</td>
-                <td>
-                  <div class="flex justify-end">
-                    <% unless notification.withdrawn? %>
-                      <%= button_to "Withdraw", withdraw_admin_notification_path(notification), method: :patch,
-                            data: { turbo_confirm: "Withdraw this notification for all recipients? This cannot be undone." },
-                            class: "btn btn-xs btn-error btn-outline" %>
-                    <% end %>
-                  </div>
-                </td>
+    <div class="card mt-4 border border-base-300">
+      <div class="card-body p-0">
+        <div class="overflow-x-auto">
+          <table class="table table-sm">
+            <thead class="text-sm font-semibold text-base-content bg-base-200">
+              <tr class="border-b border-base-300">
+                <th>Title</th>
+                <th>Created by</th>
+                <th>Recipients</th>
+                <th>Status</th>
+                <th>Created at</th>
+                <th class="text-right">Actions</th>
               </tr>
-            <% end %>
-          </tbody>
-        </table>
-        <% if @notifications.none? %>
-          <p class="px-8 py-6 text-sm text-base-content/60">No notifications match your search.</p>
-        <% end %>
+            </thead>
+            <tbody>
+              <%= render partial: "admin/notifications/row", collection: @notifications, as: :notification %>
+            </tbody>
+          </table>
+          <% if @notifications.none? %>
+            <p class="px-8 py-6 text-sm text-base-content/60">No notifications match your search.</p>
+          <% end %>
+        </div>
       </div>
     </div>
-  </div>
+  <% end %>
 </section>

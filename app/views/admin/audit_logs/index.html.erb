@@ -2,59 +2,61 @@
   <p class="text-sm font-medium text-base-content/60">Admin</p>
   <h1 class="mt-3 text-4xl font-semibold tracking-normal">Audit Logs</h1>
 
-  <%= form_with url: admin_audit_logs_path, method: :get, html: { class: "mt-6 flex flex-wrap items-end gap-2" } do %>
-    <div class="form-control">
-      <label class="label"><span class="label-text text-xs">Search</span></label>
-      <input type="text" name="q" value="<%= @q %>" placeholder="Email or IP" class="input-field w-56">
-    </div>
-    <div class="form-control">
-      <label class="label"><span class="label-text text-xs">Event</span></label>
-      <select name="event_type" class="select-field">
-        <option value="">All events</option>
-        <% AuditLog.event_types.keys.sort.each do |event_type| %>
-          <option value="<%= event_type %>" <%= "selected" if @event_type == event_type %>><%= event_type.humanize %></option>
-        <% end %>
-      </select>
-    </div>
-    <%= submit_tag "Filter", class: "btn btn-sm btn-primary" %>
-    <% if @q.present? || @event_type.present? %>
-      <%= link_to "Clear", admin_audit_logs_path, class: "btn btn-sm btn-ghost" %>
+  <%= turbo_frame_tag "admin_audit_logs_index_frame" do %>
+    <%= form_with url: admin_audit_logs_path, method: :get, html: { class: "mt-6 flex flex-wrap items-end gap-2" } do %>
+      <div class="form-control">
+        <label class="label"><span class="label-text text-xs">Search</span></label>
+        <input type="text" name="q" value="<%= @q %>" placeholder="Email or IP" class="input-field w-56">
+      </div>
+      <div class="form-control">
+        <label class="label"><span class="label-text text-xs">Event</span></label>
+        <select name="event_type" class="select-field">
+          <option value="">All events</option>
+          <% AuditLog.event_types.keys.sort.each do |event_type| %>
+            <option value="<%= event_type %>" <%= "selected" if @event_type == event_type %>><%= event_type.humanize %></option>
+          <% end %>
+        </select>
+      </div>
+      <%= submit_tag "Filter", class: "btn btn-sm btn-primary" %>
+      <% if @q.present? || @event_type.present? %>
+        <%= link_to "Clear", admin_audit_logs_path, class: "btn btn-sm btn-ghost" %>
+      <% end %>
     <% end %>
-  <% end %>
 
-  <div class="card mt-4 border border-base-300">
-    <div class="card-body p-0">
-      <div class="overflow-x-auto">
-        <table class="table table-sm">
-          <thead class="text-sm font-semibold text-base-content bg-base-200">
-            <tr class="border-b border-base-300">
-              <th>Event</th>
-              <th>User</th>
-              <th>IP</th>
-              <th>When</th>
-              <th class="text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% @audit_logs.each do |log| %>
-              <tr class="hover:bg-base-200">
-                <td class="font-medium"><%= log.event_type&.humanize || "Unknown" %></td>
-                <td><%= log.user&.email || "-" %></td>
-                <td class="text-base-content/60"><%= log.ip_address %></td>
-                <td class="text-base-content/60"><%= time_ago_in_words(log.created_at) %> ago</td>
-                <td>
-                  <div class="flex justify-end">
-                    <%= link_to "View", admin_audit_log_path(log), class: "link link-primary" %>
-                  </div>
-                </td>
+    <div class="card mt-4 border border-base-300">
+      <div class="card-body p-0">
+        <div class="overflow-x-auto">
+          <table class="table table-sm">
+            <thead class="text-sm font-semibold text-base-content bg-base-200">
+              <tr class="border-b border-base-300">
+                <th>Event</th>
+                <th>User</th>
+                <th>IP</th>
+                <th>When</th>
+                <th class="text-right">Actions</th>
               </tr>
-            <% end %>
-          </tbody>
-        </table>
-        <% if @audit_logs.none? %>
-          <p class="px-8 py-6 text-sm text-base-content/60">No audit logs match your search.</p>
-        <% end %>
+            </thead>
+            <tbody>
+              <% @audit_logs.each do |log| %>
+                <tr class="hover:bg-base-200">
+                  <td class="font-medium"><%= log.event_type&.humanize || "Unknown" %></td>
+                  <td><%= log.user&.email || "-" %></td>
+                  <td class="text-base-content/60"><%= log.ip_address %></td>
+                  <td class="text-base-content/60"><%= time_ago_in_words(log.created_at) %> ago</td>
+                  <td>
+                    <div class="flex justify-end">
+                      <%= link_to "View", admin_audit_log_path(log), class: "link link-primary" %>
+                    </div>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+          <% if @audit_logs.none? %>
+            <p class="px-8 py-6 text-sm text-base-content/60">No audit logs match your search.</p>
+          <% end %>
+        </div>
       </div>
     </div>
-  </div>
+  <% end %>
 </section>

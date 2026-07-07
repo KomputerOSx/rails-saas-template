@@ -1,0 +1,22 @@
+<tr id="<%= dom_id(notification) %>" class="hover:bg-base-200">
+  <td class="font-medium"><%= notification.title %></td>
+  <td class="text-base-content/60"><%= notification.created_by&.email || "System" %></td>
+  <td><%= notification.notification_recipients.size %></td>
+  <td>
+    <% if notification.withdrawn? %>
+      <span class="badge badge-neutral badge-sm">Withdrawn</span>
+    <% else %>
+      <span class="badge badge-success badge-sm">Active</span>
+    <% end %>
+  </td>
+  <td class="text-base-content/60"><%= time_ago_in_words(notification.created_at) %> ago</td>
+  <td>
+    <div class="flex justify-end">
+      <% unless notification.withdrawn? %>
+        <%= button_to "Withdraw", withdraw_admin_notification_path(notification), method: :patch,
+              data: { turbo_confirm: "Withdraw this notification for all recipients? This cannot be undone." },
+              class: "btn btn-xs btn-error btn-outline" %>
+      <% end %>
+    </div>
+  </td>
+</tr>

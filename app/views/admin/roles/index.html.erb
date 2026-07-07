@@ -7,71 +7,73 @@
     <%= link_to "New role", new_admin_role_path, class: "btn btn-primary btn-sm shrink-0" %>
   </div>
 
-  <%= form_with url: admin_roles_path, method: :get, html: { class: "mt-6 flex flex-wrap items-end gap-2" } do %>
-    <div class="form-control">
-      <label class="label"><span class="label-text text-xs">Search</span></label>
-      <input type="text" name="q" value="<%= @q %>" placeholder="Name" class="input-field w-56">
-    </div>
-    <div class="form-control">
-      <label class="label"><span class="label-text text-xs">Scope</span></label>
-      <select name="scope" class="select-field">
-        <option value="">All scopes</option>
-        <% Role.scopes.each_key do |scope| %>
-          <option value="<%= scope %>" <%= "selected" if @scope == scope %>><%= scope %></option>
-        <% end %>
-      </select>
-    </div>
-    <%= submit_tag "Filter", class: "btn btn-sm btn-primary" %>
-    <% if @q.present? || @scope.present? %>
-      <%= link_to "Clear", admin_roles_path, class: "btn btn-sm btn-ghost" %>
+  <%= turbo_frame_tag "admin_roles_index_frame" do %>
+    <%= form_with url: admin_roles_path, method: :get, html: { class: "mt-6 flex flex-wrap items-end gap-2" } do %>
+      <div class="form-control">
+        <label class="label"><span class="label-text text-xs">Search</span></label>
+        <input type="text" name="q" value="<%= @q %>" placeholder="Name" class="input-field w-56">
+      </div>
+      <div class="form-control">
+        <label class="label"><span class="label-text text-xs">Scope</span></label>
+        <select name="scope" class="select-field">
+          <option value="">All scopes</option>
+          <% Role.scopes.each_key do |scope| %>
+            <option value="<%= scope %>" <%= "selected" if @scope == scope %>><%= scope %></option>
+          <% end %>
+        </select>
+      </div>
+      <%= submit_tag "Filter", class: "btn btn-sm btn-primary" %>
+      <% if @q.present? || @scope.present? %>
+        <%= link_to "Clear", admin_roles_path, class: "btn btn-sm btn-ghost" %>
+      <% end %>
     <% end %>
-  <% end %>
 
-  <div class="card mt-4 border border-base-300">
-    <div class="card-body p-0">
-      <div class="overflow-x-auto">
-        <table class="table table-sm">
-          <thead class="text-sm font-semibold text-base-content bg-base-200">
-            <tr class="border-b border-base-300">
-              <th>Name</th>
-              <th>Scope</th>
-              <th>Permissions</th>
-              <th class="text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% @roles.each do |role| %>
-              <tr class="hover:bg-base-200">
-                <td class="font-medium">
-                  <% if role.permanent? %>
-
-                    <div class="text-primary"><%= role.name %></div>
-                  <% else %>
-                    <%= role.name %>
-                  <% end %>
-                </td>
-                <td><span class="badge badge-outline badge-sm"><%= role.scope %></span></td>
-                <td class="text-base-content/60"><%= role.permissions.map(&:key).join(", ").presence || "-" %></td>
-                <td>
-                  <div class="flex justify-end gap-1">
-                    <%= link_to admin_role_path(role),
-                          class: "btn btn-ghost btn-xs btn-square tooltip", data: { tip: "View" }, aria: { label: "View" } do %>
-                      <span class="material-symbols-outlined !text-[18px]">visibility</span>
-                    <% end %>
-                    <%= link_to edit_admin_role_path(role),
-                          class: "btn btn-ghost btn-xs btn-square tooltip", data: { tip: "Edit" }, aria: { label: "Edit" } do %>
-                      <span class="material-symbols-outlined !text-[18px]">edit</span>
-                    <% end %>
-                  </div>
-                </td>
+    <div class="card mt-4 border border-base-300">
+      <div class="card-body p-0">
+        <div class="overflow-x-auto">
+          <table class="table table-sm">
+            <thead class="text-sm font-semibold text-base-content bg-base-200">
+              <tr class="border-b border-base-300">
+                <th>Name</th>
+                <th>Scope</th>
+                <th>Permissions</th>
+                <th class="text-right">Actions</th>
               </tr>
-            <% end %>
-          </tbody>
-        </table>
-        <% if @roles.none? %>
-          <p class="px-8 py-6 text-sm text-base-content/60">No roles match your search.</p>
-        <% end %>
+            </thead>
+            <tbody>
+              <% @roles.each do |role| %>
+                <tr class="hover:bg-base-200">
+                  <td class="font-medium">
+                    <% if role.permanent? %>
+
+                      <div class="text-primary"><%= role.name %></div>
+                    <% else %>
+                      <%= role.name %>
+                    <% end %>
+                  </td>
+                  <td><span class="badge badge-outline badge-sm"><%= role.scope %></span></td>
+                  <td class="text-base-content/60"><%= role.permissions.map(&:key).join(", ").presence || "-" %></td>
+                  <td>
+                    <div class="flex justify-end gap-1">
+                      <%= link_to admin_role_path(role),
+                            class: "btn btn-ghost btn-xs btn-square tooltip", data: { tip: "View" }, aria: { label: "View" } do %>
+                        <span class="material-symbols-outlined !text-[18px]">visibility</span>
+                      <% end %>
+                      <%= link_to edit_admin_role_path(role),
+                            class: "btn btn-ghost btn-xs btn-square tooltip", data: { tip: "Edit" }, aria: { label: "Edit" } do %>
+                        <span class="material-symbols-outlined !text-[18px]">edit</span>
+                      <% end %>
+                    </div>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+          <% if @roles.none? %>
+            <p class="px-8 py-6 text-sm text-base-content/60">No roles match your search.</p>
+          <% end %>
+        </div>
       </div>
     </div>
-  </div>
+  <% end %>
 </section>

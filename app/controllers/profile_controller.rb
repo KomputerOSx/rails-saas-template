@@ -4,10 +4,27 @@ class ProfileController < ApplicationController
 
   def update
     if current_user.update(profile_params)
-      flash[:toast] = { message: "Profile updated successfully.", type: "success" }
-      redirect_to profile_path
+      respond_to do |format|
+        format.turbo_stream do
+          flash.now[:toast] = { message: "Profile updated successfully.", type: "success" }
+          render turbo_stream: [
+            turbo_stream.replace(dom_id(current_user, :name_editor), partial: "profile/name_editor"),
+            turbo_stream.replace("flash_messages", partial: "shared/flash")
+          ]
+        end
+        format.html do
+          flash[:toast] = { message: "Profile updated successfully.", type: "success" }
+          redirect_to profile_path
+        end
+      end
     else
-      render :show, status: :unprocessable_entity
+      respond_to do |format|
+        format.turbo_stream do
+          render turbo_stream: turbo_stream.replace(dom_id(current_user, :name_editor), partial: "profile/name_editor"),
+                 status: :unprocessable_entity
+        end
+        format.html { render :show, status: :unprocessable_entity }
+      end
     end
   end
 

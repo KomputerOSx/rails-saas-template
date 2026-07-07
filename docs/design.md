@@ -332,6 +332,79 @@ action is one "Edit member" icon button. Inside that modal:
 
 <!-- TODO: fill in. -->
 
+## Interactivity: Turbo Frames & Streams
+
+The app uses Hotwire (`turbo-rails` + `stimulus-rails` + `importmap-rails`) for all no-page-reload
+interactions - **not** htmx, and no SPA framework. Every mutating controller action should keep a
+`format.html` fallback that reproduces its old full-page `redirect_to`/`render` behavior (for direct
+links, no-JS clients, and so existing request tests keep passing unchanged) and add a
+`format.turbo_stream` branch for the in-place update. Don't add a Turbo conversion to an action that
+doesn't need one - a rarely-used, low-traffic form (e.g. one-off admin CRUD pages) is fine as a plain
+full-page redirect.
+
+**Choosing Frame vs Stream vs plain redirect:**
+- **Plain `redirect_to`** - whole-page navigation (e.g. login -> dashboard), or a full-page CRUD form
+  that's simple/infrequent enough that a reload is a non-issue.
+- **Turbo Frame** (`turbo_frame_tag`) - a self-contained region that re-fetches itself on
+  navigation/filter/sort inside it (e.g. a table with a filter form and sortable columns). No
+  controller changes needed - Turbo just extracts the matching `<turbo-frame id="...">` from the
+  otherwise-normal HTML response. Reference: the members table frame in
+  `app/views/org/settings/index.html.erb` and the filter+table frames in `app/views/admin/*/index.html.erb`.
+- **Turbo Stream** - a mutation (create/update/destroy) that should patch one or more specific spots
+  (a row, a badge, a flash message) without reloading the rest of the page. Reference:
+  `Org::OrganizationsController#update`, `Org::MembersController#promote/#demote/#destroy`.
+
+**`dom_id` everywhere:** `ApplicationController` includes `ActionView::RecordIdentifier`, so `dom_id`
+is available in every controller (not just views) for building Turbo Stream targets -
+`turbo_stream.replace(dom_id(@user, :editor), ...)`. Use the two-arg form (`dom_id(record, :suffix)`)
+whenever a record has more than one independently-targetable region (e.g. a user has both an
+`:editor` dialog and a `:status_badge`).
+
+**Conventions (established across `org`, `admin`, and `profile`; follow these for new work):**
+
+1. **Flash/toast container.** The layout wraps `shared/_flash` in `<div id="flash_messages">`
+   (`app/views/layouts/application.html.erb`). Any stream response that should show a toast does
+   `flash.now[:toast] = { message: "...", type: "success" }` then
+   `turbo_stream.replace("flash_messages", partial: "shared/flash")`. `flash_controller.js` needs no
+   changes - a full node replace re-triggers its `messageValueChanged` connect callback.
+2. **Inline-edit-via-modal.** For "a small dialog that edits one record and lives on the page it's
+   submitted from" (org name, profile name, admin user info, admin feature flags): extract the
+   trigger-button + `<dialog>` into its own partial with one wrapping id
+   (`dom_id(record, :editor)`). Both the success and validation-failure branches
+   `turbo_stream.replace` that same id with that same partial - a fresh (unopened) `<dialog>` lands on
+   success, which is what closes the modal, with zero JS changes; on failure the partial re-renders
+   with the model's errors and the dialog's existing `<%= " open" if record.errors.any? %>` re-opens
+   it inline. No changes needed to `modal_controller.js`.
+3. **`dom_id`-keyed row partials.** For any list where a single record's row must be patched/removed
+   (org members, org invitations, admin notifications, admin features, notification recipients):
+   extract the `<tr>`/`<li>` into its own partial, id'd `dom_id(record)`, rendered by both the index
+   loop (`render partial: "...", collection: ..., as: :record`) and by the controller's
+   `turbo_stream.replace`/`turbo_stream.remove` calls.
+4. **List container with empty-state.** Where a section toggles between a populated `<table>`/`<ul>`
+   and a "No X" message (org pending invitations, notification inbox), wrap the *whole* toggling
+   region in one container id (e.g. `#pending_invitations_section`, `#notifications_inbox`) and always
+   replace that whole container on create/destroy, rather than conditionally branching between
+   `append`/`remove` and a full replace depending on whether the action crosses the 0-item boundary.
+   The extra query cost is trivial for these list sizes and it keeps the controller action simple.
+5. **Cross-page badges.** A stream response can update DOM anywhere in the current page, not just
+   where the triggering element was - e.g. `notification_recipients` actions also replace the navbar's
+   `#notification_unread_badge` (`shared/_notification_badge` partial) since that badge is present in
+   the layout on every authenticated page.
+6. **Lazy-loaded frame inside a repeated-row modal.** When an edit form is too complex to duplicate
+   inline per-row (admin features), give each row's modal a nested
+   `turbo_frame_tag dom_id(record, :edit_frame), src: edit_path(record)` with a "Loading..." placeholder;
+   the `edit` action renders *only* a partial wrapping the same frame id (`layout` is skipped
+   automatically since it's a partial render, not a full template render) - mirrors the existing
+   `email_changes` frame precedent (`app/views/email_changes/_frame.html.erb`).
+7. **Stimulus compatibility.** `confirm_modal_controller.js` and `auto_submit_controller.js` need no
+   changes for any of the above - both just call `form.requestSubmit()`, and Turbo's format
+   negotiation happens transparently regardless of what triggered the submit.
+
+Prefer building a `turbo_stream: [...]` array directly in the controller action (as in the examples
+above) over a separate `*.turbo_stream.erb` view file, unless the stream response is only ever
+rendered by implicit template lookup with no branching - keeping the stream actions next to the logic
+that produced them is easier to follow than hopping to another file for a one-off response.
+
 ## Third-party component usage
 
 - **Shoelace** (`<sl-*>`): <!-- TODO: which components, and why Shoelace instead of DaisyUI here

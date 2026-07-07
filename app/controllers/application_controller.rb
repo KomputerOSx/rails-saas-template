@@ -5,6 +5,7 @@ class ApplicationController < ActionController::Base
   include Pundit::Authorization
   include AuditLogging
   include CurrentOrganization
+  include ActionView::RecordIdentifier
 
   protect_from_forgery with: :exception
 

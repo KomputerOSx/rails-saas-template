@@ -9,7 +9,17 @@ module Org
       )
       OrganizationInvitationMailer.invite(invitation, raw_token).deliver_later
       log_audit(:organization_invitation_sent, resource: Current.organization, metadata: { email: invitation.email })
-      redirect_to org_settings_path, notice: "Invitation sent to #{invitation.email}."
+      respond_to do |format|
+        format.turbo_stream do
+          flash.now[:toast] = { message: "Invitation sent to #{invitation.email}.", type: "success" }
+          render turbo_stream: [
+            turbo_stream.replace("pending_invitations_section", partial: "org/invitations/section",
+                                  locals: { pending_invitations: pending_invitations }),
+            turbo_stream.replace("flash_messages", partial: "shared/flash")
+          ]
+        end
+        format.html { redirect_to org_settings_path, notice: "Invitation sent to #{invitation.email}." }
+      end
     end
 
     def destroy
@@ -18,7 +28,23 @@ module Org
 
       invitation.revoke!
       log_audit(:organization_invitation_revoked, resource: Current.organization, metadata: { email: invitation.email })
-      redirect_to org_settings_path, notice: "Invitation revoked."
+      respond_to do |format|
+        format.turbo_stream do
+          flash.now[:toast] = { message: "Invitation revoked.", type: "success" }
+          render turbo_stream: [
+            turbo_stream.replace("pending_invitations_section", partial: "org/invitations/section",
+                                  locals: { pending_invitations: pending_invitations }),
+            turbo_stream.replace("flash_messages", partial: "shared/flash")
+          ]
+        end
+        format.html { redirect_to org_settings_path, notice: "Invitation revoked." }
+      end
+    end
+
+    private
+
+    def pending_invitations
+      Current.organization.organization_invitations.outstanding.includes(:role, :invited_by)
     end
   end
 end

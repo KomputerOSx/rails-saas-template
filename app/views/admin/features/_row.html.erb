@@ -1,0 +1,30 @@
+<tr id="<%= dom_id(feature) %>" class="hover:bg-base-200">
+  <td class="font-medium font-mono text-sm"><%= feature.key %></td>
+  <td class="text-base-content/60"><%= feature.name %></td>
+  <td>
+    <% if feature.enabled? %>
+      <span class="badge badge-success badge-sm">On</span>
+    <% else %>
+      <span class="badge badge-ghost badge-sm">Off</span>
+    <% end %>
+  </td>
+  <td class="text-base-content/60"><%= feature.manager_activation_required? ? "Yes" : "No" %></td>
+  <td class="text-base-content/60"><%= feature.feature_organization_accesses.enabled.count %></td>
+  <td>
+    <div class="flex justify-end">
+      <div data-controller="modal">
+        <button data-action="click->modal#open" class="link link-primary">Edit</button>
+        <dialog data-modal-target="dialog" class="modal">
+          <div class="modal-box">
+            <form method="dialog"><button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" data-action="click->modal#close">✕</button></form>
+            <h3 class="font-bold text-lg mb-4"><%= feature.name %></h3>
+            <%= turbo_frame_tag dom_id(feature, :edit_frame), src: edit_admin_feature_path(feature) do %>
+              <p class="text-center py-8 text-sm text-base-content/60">Loading…</p>
+            <% end %>
+          </div>
+          <form method="dialog" class="modal-backdrop"><button>close</button></form>
+        </dialog>
+      </div>
+    </div>
+  </td>
+</tr>

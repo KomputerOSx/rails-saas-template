@@ -1,0 +1,9 @@
+<dd id="<%= dom_id(user, :status_badge) %>">
+  <% if user.disabled? %>
+    <span class="badge badge-error badge-sm">Disabled</span>
+  <% elsif user.locked? %>
+    <span class="badge badge-warning badge-sm">Locked</span>
+  <% else %>
+    <span class="badge badge-success badge-sm">Active</span>
+  <% end %>
+</dd>

@@ -39,7 +39,16 @@ module Admin
       notification = Notification.active.find(params[:id])
       notification.withdraw!
       log_audit(:notification_withdrawn, resource: notification)
-      redirect_to admin_notifications_path, notice: "Notification withdrawn."
+      respond_to do |format|
+        format.turbo_stream do
+          flash.now[:toast] = { message: "Notification withdrawn.", type: "success" }
+          render turbo_stream: [
+            turbo_stream.replace(dom_id(notification), partial: "admin/notifications/row", locals: { notification: notification }),
+            turbo_stream.replace("flash_messages", partial: "shared/flash")
+          ]
+        end
+        format.html { redirect_to admin_notifications_path, notice: "Notification withdrawn." }
+      end
     end
   end
 end

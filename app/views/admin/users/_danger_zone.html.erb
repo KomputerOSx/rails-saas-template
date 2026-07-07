@@ -1,0 +1,22 @@
+<div id="<%= dom_id(user, :danger_zone) %>" class="flex items-center justify-between gap-4 px-8 py-4">
+  <div>
+    <% if user.disabled? %>
+      <p class="font-medium text-error">Re-enable account</p>
+      <p class="text-sm text-base-content/60 mt-1">Restores login access for <%= user.email %>.</p>
+    <% else %>
+      <p class="font-medium text-error">Disable account</p>
+      <p class="text-sm text-base-content/60 mt-1">
+        The user will be signed out everywhere and unable to log in until re-enabled. This does not delete their data.
+      </p>
+    <% end %>
+  </div>
+  <% if user.disabled? %>
+    <%= button_to "Enable Account", enable_admin_user_path(user), method: :patch,
+          class: "btn btn-outline btn-sm shrink-0" %>
+  <% else %>
+    <%= button_to "Disable", disable_admin_user_path(user), method: :patch,
+          data: { controller: "confirm-modal", action: "click->confirm-modal#confirm",
+                  confirm_modal_message_value: "Disable #{user.email}? They will be signed out everywhere and unable to log in." },
+          class: "btn btn-error btn-outline btn-sm shrink-0" %>
+  <% end %>
+</div>

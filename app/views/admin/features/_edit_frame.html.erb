@@ -1,0 +1,5 @@
+<%= turbo_frame_tag dom_id(@feature, :edit_frame) do %>
+  <%= form_with model: @feature, url: admin_feature_path(@feature), method: :patch, html: { class: "space-y-4" } do |f| %>
+    <%= render "form", f: f %>
+  <% end %>
+<% end %>

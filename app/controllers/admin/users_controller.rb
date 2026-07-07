@@ -27,12 +27,27 @@ module Admin
 
       if @user.update(user_params)
         log_audit(:user_updated, user: @user, metadata: { changes: changes }) if changes.any?
-        redirect_to admin_user_path(@user), notice: "User updated."
+        respond_to do |format|
+          format.turbo_stream do
+            flash.now[:toast] = { message: "User updated.", type: "success" }
+            render turbo_stream: [
+              turbo_stream.replace(dom_id(@user, :editor), partial: "admin/users/info_editor", locals: { user: @user }),
+              turbo_stream.replace("flash_messages", partial: "shared/flash")
+            ]
+          end
+          format.html { redirect_to admin_user_path(@user), notice: "User updated." }
+        end
       else
         @memberships = @user.memberships.includes(:organization, :roles)
         @roles = Role.system.order(:name)
         flash.now[:alert] = @user.errors.full_messages.join(", ")
-        render :show, status: :unprocessable_entity
+        respond_to do |format|
+          format.turbo_stream do
+            render turbo_stream: turbo_stream.replace(dom_id(@user, :editor), partial: "admin/users/info_editor", locals: { user: @user }),
+                   status: :unprocessable_entity
+          end
+          format.html { render :show, status: :unprocessable_entity }
+        end
       end
     end
 
@@ -40,14 +55,34 @@ module Admin
       @user = User.find(params[:id])
       @user.disable!
       log_audit(:user_disabled, user: @user)
-      redirect_to admin_user_path(@user), notice: "#{@user.email} has been disabled and signed out everywhere."
+      respond_to do |format|
+        format.turbo_stream do
+          flash.now[:toast] = { message: "#{@user.email} has been disabled and signed out everywhere.", type: "success" }
+          render turbo_stream: [
+            turbo_stream.replace(dom_id(@user, :status_badge), partial: "admin/users/status_badge", locals: { user: @user }),
+            turbo_stream.replace(dom_id(@user, :danger_zone), partial: "admin/users/danger_zone", locals: { user: @user }),
+            turbo_stream.replace("flash_messages", partial: "shared/flash")
+          ]
+        end
+        format.html { redirect_to admin_user_path(@user), notice: "#{@user.email} has been disabled and signed out everywhere." }
+      end
     end
 
     def enable
       @user = User.find(params[:id])
       @user.enable!
       log_audit(:user_enabled, user: @user)
-      redirect_to admin_user_path(@user), notice: "#{@user.email} has been re-enabled."
+      respond_to do |format|
+        format.turbo_stream do
+          flash.now[:toast] = { message: "#{@user.email} has been re-enabled.", type: "success" }
+          render turbo_stream: [
+            turbo_stream.replace(dom_id(@user, :status_badge), partial: "admin/users/status_badge", locals: { user: @user }),
+            turbo_stream.replace(dom_id(@user, :danger_zone), partial: "admin/users/danger_zone", locals: { user: @user }),
+            turbo_stream.replace("flash_messages", partial: "shared/flash")
+          ]
+        end
+        format.html { redirect_to admin_user_path(@user), notice: "#{@user.email} has been re-enabled." }
+      end
     end
 
     def send_reset_link
@@ -56,7 +91,13 @@ module Admin
       request_details = { ip_address: request.remote_ip, user_agent: request.user_agent, requested_at: Time.current.iso8601 }
       PasswordResetMailer.reset_link(@user, raw_token, request_details: request_details).deliver_later
       log_audit(:password_reset_link_sent, user: @user, metadata: { email: @user.email, admin_triggered: true })
-      redirect_to admin_user_path(@user), notice: "Password reset link sent to #{@user.email}."
+      respond_to do |format|
+        format.turbo_stream do
+          flash.now[:toast] = { message: "Password reset link sent to #{@user.email}.", type: "success" }
+          render turbo_stream: turbo_stream.replace("flash_messages", partial: "shared/flash")
+        end
+        format.html { redirect_to admin_user_path(@user), notice: "Password reset link sent to #{@user.email}." }
+      end
     end
 
     private

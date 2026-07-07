@@ -63,7 +63,7 @@
 
         <main class="flex w-full flex-col items-center px-4 py-8 lg:px-8">
           <%= render "shared/toast_container" %>
-          <%= render "shared/flash" %>
+          <div id="flash_messages"><%= render "shared/flash" %></div>
           <%= yield %>
         </main>
       </div>

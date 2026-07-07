@@ -1,0 +1,16 @@
+<div id="notifications_inbox">
+  <div class="flex items-center justify-between mb-4">
+    <h2 class="card-title text-xl font-semibold">Inbox</h2>
+    <% if notification_recipients.any? { |r| r.read_at.nil? } %>
+      <%= button_to "Mark all read", mark_all_read_notification_recipients_path, method: :patch, class: "btn btn-xs btn-outline" %>
+    <% end %>
+  </div>
+
+  <% if notification_recipients.any? %>
+    <ul class="divide-y divide-base-300/30">
+      <%= render partial: "notification_recipients/recipient", collection: notification_recipients, as: :recipient %>
+    </ul>
+  <% else %>
+    <p class="text-base-content/60 text-sm">No notifications.</p>
+  <% end %>
+</div>

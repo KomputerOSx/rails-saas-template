@@ -1,0 +1,26 @@
+<div id="<%= dom_id(user, :system_roles_panel) %>">
+  <ul class="divide-y divide-base-300 max-w-md">
+    <% user.roles.each do |role| %>
+      <li class="py-3 flex items-center justify-between gap-4">
+        <span class=""><%= role.name %> (<%= role.scope%>)</span>
+        <%= button_to "Revoke", admin_user_user_role_path(user, role_id: role.id), method: :delete,
+              data: { turbo_confirm: "Revoke #{role.name} from #{user.email}?" }, class: "btn btn-xs btn-error btn-outline" %>
+      </li>
+    <% end %>
+  </ul>
+
+  <% grantable_roles = roles - user.roles %>
+  <% if grantable_roles.any? %>
+    <%= form_with url: admin_user_user_role_path(user), method: :post, html: { class: "mt-6 flex items-end gap-2" } do %>
+      <div class="form-control">
+        <label class="label"><span class="label-text">Grant role</span></label>
+        <select name="role_id" class="select-field">
+          <% grantable_roles.each do |role| %>
+            <option value="<%= role.id %>"><%= role.name %> (<%= role.scope %>)</option>
+          <% end %>
+        </select>
+      </div>
+      <%= submit_tag "Grant", class: "btn btn-sm btn-primary" %>
+    <% end %>
+  <% end %>
+</div>

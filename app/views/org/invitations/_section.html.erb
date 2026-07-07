@@ -1,0 +1,35 @@
+<div id="pending_invitations_section" class="mt-10">
+  <h2 class="text-lg font-semibold">Pending invitations</h2>
+  <p class="mt-0.5 text-sm text-base-content/60">Invites waiting to be accepted.</p>
+
+  <% if pending_invitations.any? %>
+    <div class="card mt-4 border border-base-300">
+      <div class="card-body p-0">
+      <div class="overflow-x-auto">
+      <table class="table table-sm">
+        <thead class="text-sm font-semibold text-base-content bg-base-200">
+          <tr class="border-b border-base-300">
+            <th>Email</th>
+            <th>Invited by</th>
+            <th class="text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <%= render partial: "org/invitations/invitation_row", collection: pending_invitations, as: :invitation %>
+        </tbody>
+      </table>
+      </div>
+      </div>
+    </div>
+  <% else %>
+    <p class="mt-4 text-sm text-base-content/60">No pending invitations.</p>
+  <% end %>
+
+  <%= form_with url: org_invitations_path, method: :post, html: { class: "mt-6 flex items-end gap-2" } do %>
+    <div class="form-control">
+      <label class="label"><span class="label-text">Invite by email</span></label>
+      <input type="email" name="email" required class="input-field">
+    </div>
+    <%= submit_tag "Invite", class: "btn btn-sm btn-primary" %>
+  <% end %>
+</div>

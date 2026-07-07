@@ -7,20 +7,44 @@ module Admin
       role = Role.find(params[:role_id])
       @user.grant_role!(role, granted_by: current_user)
       log_audit(:role_granted, user: @user, resource: role, metadata: { role: role.name })
-      redirect_to admin_user_path(@user), notice: "Granted #{role.name} to #{@user.email}."
+      respond_to do |format|
+        format.turbo_stream do
+          flash.now[:toast] = { message: "Granted #{role.name} to #{@user.email}.", type: "success" }
+          render turbo_stream: [
+            turbo_stream.replace(dom_id(@user, :system_roles_panel), partial: "admin/users/system_roles_panel",
+                                  locals: { user: @user, roles: system_roles }),
+            turbo_stream.replace("flash_messages", partial: "shared/flash")
+          ]
+        end
+        format.html { redirect_to admin_user_path(@user), notice: "Granted #{role.name} to #{@user.email}." }
+      end
     end
 
     def destroy
       role = Role.find(params[:role_id])
       @user.revoke_role!(role)
       log_audit(:role_revoked, user: @user, resource: role, metadata: { role: role.name })
-      redirect_to admin_user_path(@user), notice: "Revoked #{role.name} from #{@user.email}."
+      respond_to do |format|
+        format.turbo_stream do
+          flash.now[:toast] = { message: "Revoked #{role.name} from #{@user.email}.", type: "success" }
+          render turbo_stream: [
+            turbo_stream.replace(dom_id(@user, :system_roles_panel), partial: "admin/users/system_roles_panel",
+                                  locals: { user: @user, roles: system_roles }),
+            turbo_stream.replace("flash_messages", partial: "shared/flash")
+          ]
+        end
+        format.html { redirect_to admin_user_path(@user), notice: "Revoked #{role.name} from #{@user.email}." }
+      end
     end
 
     private
 
     def set_user
       @user = User.find(params[:user_id])
+    end
+
+    def system_roles
+      Role.system.order(:name)
     end
   end
 end

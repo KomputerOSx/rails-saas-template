@@ -2,74 +2,76 @@
   <p class="text-sm font-medium text-base-content/60">Admin</p>
   <h1 class="mt-3 text-4xl font-semibold tracking-normal">Users</h1>
 
-  <%= form_with url: admin_users_path, method: :get, html: { class: "mt-6 flex flex-wrap items-end gap-2" } do %>
-    <div class="form-control">
-      <label class="label"><span class="label-text text-xs">Search</span></label>
-      <input type="text" name="q" value="<%= @q %>" placeholder="Email" class="input-field w-56">
-    </div>
-    <div class="form-control">
-      <label class="label"><span class="label-text text-xs">Role</span></label>
-      <select name="role" class="select-field">
-        <option value="">All roles</option>
-        <% @roles.each do |role| %>
-          <option value="<%= role.name %>" <%= "selected" if @role == role.name %>><%= role.name %></option>
-        <% end %>
-      </select>
-    </div>
-    <%= submit_tag "Filter", class: "btn btn-sm btn-primary" %>
-    <% if @q.present? || @role.present? %>
-      <%= link_to "Clear", admin_users_path, class: "btn btn-sm btn-ghost" %>
+  <%= turbo_frame_tag "admin_users_index_frame" do %>
+    <%= form_with url: admin_users_path, method: :get, html: { class: "mt-6 flex flex-wrap items-end gap-2" } do %>
+      <div class="form-control">
+        <label class="label"><span class="label-text text-xs">Search</span></label>
+        <input type="text" name="q" value="<%= @q %>" placeholder="Email" class="input-field w-56">
+      </div>
+      <div class="form-control">
+        <label class="label"><span class="label-text text-xs">Role</span></label>
+        <select name="role" class="select-field">
+          <option value="">All roles</option>
+          <% @roles.each do |role| %>
+            <option value="<%= role.name %>" <%= "selected" if @role == role.name %>><%= role.name %></option>
+          <% end %>
+        </select>
+      </div>
+      <%= submit_tag "Filter", class: "btn btn-sm btn-primary" %>
+      <% if @q.present? || @role.present? %>
+        <%= link_to "Clear", admin_users_path, class: "btn btn-sm btn-ghost" %>
+      <% end %>
     <% end %>
-  <% end %>
 
-  <div class="card mt-4 border border-base-300">
-    <div class="card-body p-0">
-      <div class="overflow-x-auto">
-        <table class="table table-sm">
-          <thead class="text-sm font-semibold text-base-content bg-base-200">
-            <tr class="border-b border-base-300">
-              <th>Email</th>
-              <th>Roles</th>
-              <th>Status</th>
-              <th class="text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% @users.each do |user| %>
-              <tr class="hover:bg-base-200">
-                <td class="font-medium"><%= user.email %></td>
-                <td>
-                  <div class="flex flex-wrap gap-1">
-                    <% user.roles.each do |role| %>
-                      <span><%= role.name %> (<%= role.scope %>) </span>
-                    <% end %>
-                  </div>
-                </td>
-                <td>
-                  <% if user.disabled? %>
-                    <span class="badge badge-error badge-sm">Disabled</span>
-                  <% elsif user.locked? %>
-                    <span class="badge badge-warning badge-sm">Locked</span>
-                  <% else %>
-                    <span class="badge badge-success badge-sm">Active</span>
-                  <% end %>
-                </td>
-                <td>
-                  <div class="flex justify-end">
-                    <%= link_to admin_user_path(user),
-                          class: "btn btn-ghost btn-xs btn-square tooltip", data: { tip: "View" }, aria: { label: "View" } do %>
-                      <span class="material-symbols-outlined !text-[18px]">visibility</span>
-                    <% end %>
-                  </div>
-                </td>
+    <div class="card mt-4 border border-base-300">
+      <div class="card-body p-0">
+        <div class="overflow-x-auto">
+          <table class="table table-sm">
+            <thead class="text-sm font-semibold text-base-content bg-base-200">
+              <tr class="border-b border-base-300">
+                <th>Email</th>
+                <th>Roles</th>
+                <th>Status</th>
+                <th class="text-right">Actions</th>
               </tr>
-            <% end %>
-          </tbody>
-        </table>
-        <% if @users.none? %>
-          <p class="px-8 py-6 text-sm text-base-content/60">No users match your search.</p>
-        <% end %>
+            </thead>
+            <tbody>
+              <% @users.each do |user| %>
+                <tr class="hover:bg-base-200">
+                  <td class="font-medium"><%= user.email %></td>
+                  <td>
+                    <div class="flex flex-wrap gap-1">
+                      <% user.roles.each do |role| %>
+                        <span><%= role.name %> (<%= role.scope %>) </span>
+                      <% end %>
+                    </div>
+                  </td>
+                  <td>
+                    <% if user.disabled? %>
+                      <span class="badge badge-error badge-sm">Disabled</span>
+                    <% elsif user.locked? %>
+                      <span class="badge badge-warning badge-sm">Locked</span>
+                    <% else %>
+                      <span class="badge badge-success badge-sm">Active</span>
+                    <% end %>
+                  </td>
+                  <td>
+                    <div class="flex justify-end">
+                      <%= link_to admin_user_path(user),
+                            class: "btn btn-ghost btn-xs btn-square tooltip", data: { tip: "View" }, aria: { label: "View" } do %>
+                        <span class="material-symbols-outlined !text-[18px]">visibility</span>
+                      <% end %>
+                    </div>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+          <% if @users.none? %>
+            <p class="px-8 py-6 text-sm text-base-content/60">No users match your search.</p>
+          <% end %>
+        </div>
       </div>
     </div>
-  </div>
+  <% end %>
 </section>
