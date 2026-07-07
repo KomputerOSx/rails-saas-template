@@ -27,94 +27,105 @@ if Rails.env.local? && ENV["SYSTEM_ADMIN_EMAIL"].present?
   end
 end
 
-if Rails.env.local?
+if Rails.env.development?
   require "faker"
 
-  # Seed 30 dev users into the same org as the primary dev account
-  DEV_OWNER_EMAIL = "ramyarburhan26@gmail.com"
+  # Seed 30 dev users into the same org as a generic dev owner account, creating
+  # that account (and its personal org) on first run so a fresh database doesn't
+  # need a manual sign-up before seeding.
+  dev_owner_email = "admin@mail.com"
 
-  if (owner = User.find_by(email: DEV_OWNER_EMAIL))
-    org = owner.memberships.joins(:membership_roles => :role)
-               .where(roles: { name: Role::APP_OWNER, scope: :app })
-               .first&.organization
+  owner = User.find_by(email: dev_owner_email)
 
-    if org
-      # Account state buckets (total = 30)
-      # 1. unconfirmed (5)            - signed up, never clicked confirm link
-      # 2. confirmed, onboarding stuck (5) - confirmed but never finished onboarding
-      # 3. active - regular user (8) - fully onboarded, app_user role
-      # 4. active - admin (4)        - fully onboarded, app_admin role
-      # 5. locked (4)                - account locked due to failed login attempts
-      # 6. active with 2FA (4)       - fully onboarded + TOTP enabled
+  if owner.nil?
+    owner = User.create!(
+      email: dev_owner_email,
+      password: "SuperKey99!",
+      first_name: "Admin",
+      last_name: "User",
+      confirmed_at: Time.current
+    )
+    Organization.create_personal_for!(owner)
+  end
 
-      states = [
-        { count: 5,  label: "unconfirmed" },
-        { count: 5,  label: "onboarding_stuck" },
-        { count: 8,  label: "active_user" },
-        { count: 4,  label: "active_admin" },
-        { count: 4,  label: "locked" },
-        { count: 4,  label: "active_2fa" }
-      ]
+  org = owner.memberships.joins(membership_roles: :role)
+             .where(roles: { name: Role::APP_OWNER, scope: :app })
+             .first&.organization
 
-      states.each do |bucket|
-        bucket[:count].times do
-          first = Faker::Name.first_name
-          last  = Faker::Name.last_name
-          email = Faker::Internet.unique.email(name: "#{first} #{last}")
+  if org
+    # Account state buckets (total = 30)
+    # 1. unconfirmed (5)            - signed up, never clicked confirm link
+    # 2. confirmed, onboarding stuck (5) - confirmed but never finished onboarding
+    # 3. active - regular user (8) - fully onboarded, app_user role
+    # 4. active - admin (4)        - fully onboarded, app_admin role
+    # 5. locked (4)                - account locked due to failed login attempts
+    # 6. active with 2FA (4)       - fully onboarded + TOTP enabled
 
-          next if User.exists?(email: email)
+    states = [
+      { count: 5,  label: "unconfirmed" },
+      { count: 5,  label: "onboarding_stuck" },
+      { count: 8,  label: "active_user" },
+      { count: 4,  label: "active_admin" },
+      { count: 4,  label: "locked" },
+      { count: 4,  label: "active_2fa" }
+    ]
 
-          attrs = {
-            email:      email,
-            password:   "T5!fH8@zM3#bW6$",
-            first_name: first,
-            last_name:  last
-          }
+    states.each do |bucket|
+      bucket[:count].times do
+        first = Faker::Name.first_name
+        last  = Faker::Name.last_name
+        email = Faker::Internet.unique.email(name: "#{first} #{last}")
 
-          case bucket[:label]
-          when "unconfirmed"
-            attrs[:confirmed_at] = nil
+        next if User.exists?(email: email)
 
-          when "onboarding_stuck"
-            attrs[:confirmed_at]           = Faker::Time.between(from: 30.days.ago, to: 7.days.ago)
-            attrs[:onboarding_step]        = %w[welcome profile team].sample
-            attrs[:onboarding_completed_at] = nil
+        attrs = {
+          email:      email,
+          password:   "T5!fH8@zM3#bW6$",
+          first_name: first,
+          last_name:  last
+        }
 
-          when "active_user", "active_admin", "locked", "active_2fa"
-            attrs[:confirmed_at]            = Faker::Time.between(from: 60.days.ago, to: 14.days.ago)
-            attrs[:onboarding_step]         = "finish"
-            attrs[:onboarding_completed_at] = Faker::Time.between(from: 55.days.ago, to: 13.days.ago)
-            attrs[:last_sign_in_at]         = Faker::Time.between(from: 10.days.ago, to: 1.day.ago)
-          end
+        case bucket[:label]
+        when "unconfirmed"
+          attrs[:confirmed_at] = nil
 
-          if bucket[:label] == "locked"
-            attrs[:failed_login_attempts] = 5
-            attrs[:locked_until]          = rand(1..72).hours.from_now
-          end
+        when "onboarding_stuck"
+          attrs[:confirmed_at]           = Faker::Time.between(from: 30.days.ago, to: 7.days.ago)
+          attrs[:onboarding_step]        = %w[welcome profile team].sample
+          attrs[:onboarding_completed_at] = nil
 
-          if bucket[:label] == "active_2fa"
-            attrs[:totp_secret]     = ROTP::Base32.random
-            attrs[:totp_enabled_at] = Faker::Time.between(from: 30.days.ago, to: 7.days.ago)
-          end
-
-          user = User.create!(attrs)
-
-          membership = org.memberships.find_or_create_by!(user: user)
-
-          role = case bucket[:label]
-                 when "active_admin" then admin_role
-                 else user_role
-                 end
-
-          membership.grant_role!(role)
+        when "active_user", "active_admin", "locked", "active_2fa"
+          attrs[:confirmed_at]            = Faker::Time.between(from: 60.days.ago, to: 14.days.ago)
+          attrs[:onboarding_step]         = "finish"
+          attrs[:onboarding_completed_at] = Faker::Time.between(from: 55.days.ago, to: 13.days.ago)
+          attrs[:last_sign_in_at]         = Faker::Time.between(from: 10.days.ago, to: 1.day.ago)
         end
-      end
 
-      puts "Seeded 30 dev users into org '#{org.name}' (#{DEV_OWNER_EMAIL})"
-    else
-      puts "SKIP: no org found for #{DEV_OWNER_EMAIL}"
+        if bucket[:label] == "locked"
+          attrs[:failed_login_attempts] = 5
+          attrs[:locked_until]          = rand(1..72).hours.from_now
+        end
+
+        if bucket[:label] == "active_2fa"
+          attrs[:totp_secret]     = ROTP::Base32.random
+          attrs[:totp_enabled_at] = Faker::Time.between(from: 30.days.ago, to: 7.days.ago)
+        end
+
+        user = User.create!(attrs)
+
+        membership = org.memberships.find_or_create_by!(user: user)
+
+        role = case bucket[:label]
+        when "active_admin" then admin_role
+        else user_role
+        end
+
+        membership.grant_role!(role)
+      end
     end
+
+    puts "Seeded 30 dev users into org '#{org.name}' (#{dev_owner_email})"
   else
-    puts "SKIP: #{DEV_OWNER_EMAIL} not found - sign up first, then re-run db:seed"
+    puts "SKIP: no org found for #{dev_owner_email}"
   end
 end

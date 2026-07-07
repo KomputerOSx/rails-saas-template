@@ -12,15 +12,15 @@ module Org
       base = Current.organization.memberships.includes(:user, :roles)
 
       @memberships = case @sort
-                     when "email"
+      when "email"
                        base.joins(:user).order("users.email #{@direction.upcase}")
-                     when "role"
+      when "role"
                        role_priority = { Role::APP_OWNER => 0, Role::APP_ADMIN => 1, Role::APP_USER => 2 }
                        base.to_a.sort_by do |m|
                          pri = m.roles.map { |r| role_priority[r.name] || 99 }.min || 99
                          @direction == "asc" ? pri : -pri
                        end
-                     end
+      end
 
       @pending_invitations = Current.organization.organization_invitations.outstanding.includes(:role, :invited_by)
     end

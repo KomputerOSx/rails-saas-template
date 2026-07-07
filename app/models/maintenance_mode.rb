@@ -1,8 +1,7 @@
 class MaintenanceMode
   def self.file_path
     if Rails.env.test?
-      warn "DEBUG file_path worker=#{ENV["TEST_ENV_NUMBER"].inspect} pid=#{Process.pid} thread=#{Thread.current.object_id}"
-      Rails.root.join("tmp", "maintenance_mode#{ENV["TEST_ENV_NUMBER"]}.json")
+      Rails.root.join("tmp", "maintenance_mode#{ActiveSupport::TestCase.parallel_worker_id}.json")
     else
       Rails.root.join("storage", "maintenance_mode.json")
     end

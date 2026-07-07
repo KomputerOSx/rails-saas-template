@@ -1,39 +1,45 @@
 require "test_helper"
 
 class AuthenticationTest < ActionDispatch::IntegrationTest
+  include ActiveJob::TestHelper
+
   test "home page shows authentication links" do
     get root_path
 
     assert_response :success
     assert_select "a", text: "Login"
     assert_select "a", text: "Sign up"
-    assert_select "h1", text: "Build Your SaaS App At Warp Speed"
+    assert_select "h1", text: "Build your SaaS at warp speed"
   end
 
   test "user can sign up, confirm, and sign in" do
-    post registration_path, params: {
-      user: {
-        email: "new@example.com",
-        password: "Tr8kMvln52",
-        password_confirmation: "Tr8kMvln52"
+    perform_enqueued_jobs do
+      post registration_path, params: {
+        user: {
+          email: "new@example.com",
+          password: "Tr8kMvln52",
+          password_confirmation: "Tr8kMvln52"
+        }
       }
-    }
+    end
 
-    assert_redirected_to login_path
+    assert_redirected_to new_confirmation_path
 
     user = User.find_by(email: "new@example.com")
-    assert user.present?
-    assert_not user.confirmed?
+    assert_nil user
 
-    get confirm_email_path(token: user.confirmation_token)
-    assert_redirected_to login_path
-    assert user.reload.confirmed?
-
-    post login_path, params: { email: user.email, password: "Tr8kMvln52" }
+    code = ActionMailer::Base.deliveries.last.body.encoded[/(\d{6})/, 1]
+    post confirmations_path, params: { code: code.chars }
 
     assert_redirected_to dashboard_path
+    user = User.find_by(email: "new@example.com")
+    assert user.present?
+    assert user.confirmed?
+
+    # A brand-new user hasn't completed onboarding yet, so dashboard_path itself
+    # redirects to the onboarding flow.
     follow_redirect!
-    assert_select "button", text: "Logout"
+    assert_redirected_to onboarding_path
   end
 
   test "user can sign in and sign out" do
@@ -41,7 +47,7 @@ class AuthenticationTest < ActionDispatch::IntegrationTest
 
     assert_redirected_to dashboard_path
     follow_redirect!
-    assert_select "button", text: "Logout"
+    assert_select "button", text: /Logout/
 
     delete session_path
 

@@ -13,7 +13,7 @@ module Onboarding
       view: "onboarding/steps/team"),
     Step.new(key: "finish", title: "You're all set",
       description: "You're ready to go.",
-      view: "onboarding/steps/finish"),
+      view: "onboarding/steps/finish")
   ].freeze
 
   module_function

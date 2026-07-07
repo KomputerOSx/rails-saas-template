@@ -76,20 +76,30 @@
   <!-- Footer: account menu -->
   <div class="border-t border-base-300 p-3 group-data-[collapsed]/sidebar:p-2">
     <div class="dropdown dropdown-top w-full">
+      <%# data-controller="tooltip" is added/removed by sidebar_controller.js, so the
+          email tooltip only appears while the sidebar is collapsed (email hidden). %>
       <div tabindex="0" role="button"
            class="flex w-full cursor-pointer items-center gap-2 rounded-lg p-2 hover:bg-base-300 group-data-[collapsed]/sidebar:justify-center"
-           aria-label="Account menu" title="Account">
+           aria-label="Account menu"
+           data-tooltip-content="<%= current_user.email %>"
+           data-tooltip-placement-value="right"
+           data-tooltip-arrow="true"
+           data-tooltip-animation-value="fade origin"
+           data-tooltip-size-value="small">
         <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-primary/25 bg-primary/10 text-xs font-semibold text-primary"><%= user_initials(current_user) %></div>
         <span class="min-w-0 flex-1 truncate text-sm font-medium text-base-content/80 group-data-[collapsed]/sidebar:hidden"><%= current_user.email %></span>
         <span class="material-symbols-outlined shrink-0 text-base-content/50 !text-[18px] group-data-[collapsed]/sidebar:!hidden">unfold_more</span>
       </div>
-      <div tabindex="0" class="dropdown-content z-50 mb-2 w-full rounded-lg border border-base-300 bg-base-100 p-1">
+      <%# When collapsed, the aside's overflow-hidden would clip a full-width panel;
+          fixed positioning escapes that clip (the aside has no transform), so the
+          menu keeps its full size next to the rail. %>
+      <div tabindex="0" class="dropdown-content z-50 mb-2 w-full rounded-lg border border-base-300 bg-base-100 p-1 group-data-[collapsed]/sidebar:fixed group-data-[collapsed]/sidebar:bottom-14 group-data-[collapsed]/sidebar:left-2 group-data-[collapsed]/sidebar:w-56">
         <%= button_to session_path, method: :delete, form: { class: "w-full" }, title: "Logout",
-              class: "flex h-9 w-full items-center gap-2 rounded-lg px-2 text-sm text-error hover:bg-base-200 group-data-[collapsed]/sidebar:justify-center group-data-[collapsed]/sidebar:px-0" do %>
+              class: "flex h-9 w-full items-center gap-2 rounded-lg px-2 text-sm text-error hover:bg-base-200" do %>
           <span class="flex w-6 shrink-0 items-center justify-center">
             <span class="material-symbols-outlined !text-[20px]">logout</span>
           </span>
-          <span class="truncate group-data-[collapsed]/sidebar:hidden">Logout</span>
+          <span class="truncate">Logout</span>
         <% end %>
       </div>
     </div>
