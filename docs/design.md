@@ -366,3 +366,6 @@ text, flash messages, Ruby/JS comments, and this design doc itself.
 - ❌ Don't add shadow classes (`shadow`, `shadow-sm`, `shadow-lg`, etc.) to cards.
 - ✅ Do use a plain hyphen `-` wherever you'd reach for a dash - in UI text, comments, anywhere.
 - ❌ Don't use an em dash (`—`), ever, in code, comments, or UI copy - no exceptions.
+- ✅ Do use `!hidden` (not plain `hidden`) when conditionally hiding a `material-symbols-outlined`
+  span - Google's icon stylesheet loads after the app CSS in every layout and its
+  `display: inline-block` wins over an equal-specificity `hidden` utility.

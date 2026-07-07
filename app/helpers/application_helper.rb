@@ -1,4 +1,11 @@
 module ApplicationHelper
+  # Initials for the avatar circle: first letters of first/last name,
+  # falling back to the first letter of the email.
+  def user_initials(user)
+    initials = [ user.first_name, user.last_name ].compact_blank.map { |n| n[0] }.join
+    (initials.presence || user.email[0]).upcase
+  end
+
   # Sortable column header link.
   # Toggles direction when already sorting by this column; defaults to asc on first click.
   def sort_link(label, column, current_sort:, current_dir:)
