@@ -40,4 +40,16 @@ class AdminAuthorizationTest < ActionDispatch::IntegrationTest
     end
     assert_equal 1, AuditLog.where(event_type: :role_revoked).count
   end
+
+  test "system_admin cannot revoke their own role when they are the last system admin" do
+    admin_role = Role.find_or_create_by!(scope: :system, name: Role::SYSTEM_ADMIN) { |r| r.permanent = true }
+    users(:one).grant_role!(admin_role)
+
+    post login_path, params: { email: users(:one).email, password: "password123" }
+
+    assert_no_difference -> { users(:one).roles.count } do
+      delete admin_user_user_role_path(users(:one), role_id: admin_role.id)
+    end
+    assert_equal 1, AuditLog.where(event_type: :system_admin_revocation_blocked).count
+  end
 end

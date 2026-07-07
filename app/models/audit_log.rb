@@ -41,6 +41,7 @@ class AuditLog < ApplicationRecord
     organization_invitation_accepted: "organization_invitation_accepted",
     organization_invitation_revoked: "organization_invitation_revoked",
     owner_removal_blocked: "owner_removal_blocked",
+    system_admin_revocation_blocked: "system_admin_revocation_blocked",
     organization_updated: "organization_updated",
     notification_created: "notification_created",
     notification_withdrawn: "notification_withdrawn",
@@ -67,5 +68,5 @@ class AuditLog < ApplicationRecord
   scope :recent, -> { order(created_at: :desc) }
   scope :for_user, ->(user) { where(user: user) }
   scope :for_resource, ->(type, id) { where(resource_type: type, resource_id: id) }
-  scope :security_events, -> { where(event_type: %w[login_failure account_locked rate_limit_triggered password_reset_requested password_reset_failed authorization_denied owner_removal_blocked]) }
+  scope :security_events, -> { where(event_type: %w[login_failure account_locked rate_limit_triggered password_reset_requested password_reset_failed authorization_denied owner_removal_blocked system_admin_revocation_blocked]) }
 end
