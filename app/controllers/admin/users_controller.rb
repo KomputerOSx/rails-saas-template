@@ -29,6 +29,7 @@ module Admin
         log_audit(:user_updated, user: @user, metadata: { changes: changes }) if changes.any?
         redirect_to admin_user_path(@user), notice: "User updated."
       else
+        @memberships = @user.memberships.includes(:organization, :roles)
         @roles = Role.system.order(:name)
         flash.now[:alert] = @user.errors.full_messages.join(", ")
         render :show, status: :unprocessable_entity
