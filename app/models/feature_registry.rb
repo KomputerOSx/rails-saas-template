@@ -16,7 +16,7 @@ class FeatureRegistry
       Feature.find_or_create_by!(key: key) do |f|
         f.name = attrs.fetch("name")
         f.description = attrs["description"]
-        f.manager_activation_required = attrs.fetch("manager_activation_required", true)
+        f.org_opt_in_required = attrs.fetch("org_opt_in_required", true)
         f.enabled = false
       end
     end

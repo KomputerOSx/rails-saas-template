@@ -9,14 +9,23 @@ class Feature < ApplicationRecord
   validates :name, presence: true
 
   scope :available, -> { where(enabled: true) }
+  # Uses an EXISTS OR rather than an inner join so a feature with
+  # applies_to_all_organizations set still matches organizations that have no
+  # FeatureOrganizationAccess row at all (e.g. ones created after the flag was turned on).
   scope :available_to_organization, ->(organization) {
-    available
-      .joins(:feature_organization_accesses)
-      .where(feature_organization_accesses: { organization_id: organization.id, enabled: true })
-      .distinct
+    available.where(
+      "features.applies_to_all_organizations = ? OR EXISTS (
+        SELECT 1 FROM feature_organization_accesses
+        WHERE feature_organization_accesses.feature_id = features.id
+        AND feature_organization_accesses.organization_id = ?
+        AND feature_organization_accesses.enabled = ?
+      )", true, organization.id, true
+    )
   }
 
   def available_to_organization?(organization)
-    enabled? && feature_organization_accesses.enabled.exists?(organization_id: organization.id)
+    return false unless enabled?
+
+    applies_to_all_organizations? || feature_organization_accesses.enabled.exists?(organization_id: organization.id)
   end
 end

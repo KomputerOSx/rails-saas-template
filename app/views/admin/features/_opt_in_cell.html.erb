@@ -1,1 +1,11 @@
-<td id="<%= dom_id(feature, :opt_in_cell) %>" class="text-base-content/60"><%= feature.manager_activation_required? ? "Yes" : "No" %></td>
+<td id="<%= dom_id(feature, :opt_in_cell) %>">
+  <%= form_with url: admin_feature_path(feature), method: :patch, html: { data: { controller: "auto-submit" } } do %>
+    <input type="hidden" name="feature[org_opt_in_required]" value="0">
+    <label class="label cursor-pointer justify-start gap-2">
+      <input type="checkbox" name="feature[org_opt_in_required]" value="1" class="checkbox-field"
+             data-action="change->auto-submit#submit"
+             <%= "checked" if feature.org_opt_in_required? %>>
+      <span class="label-text text-xs"><%= feature.org_opt_in_required? ? "Yes" : "No" %></span>
+    </label>
+  <% end %>
+</td>

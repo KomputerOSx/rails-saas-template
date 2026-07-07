@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_06_010200) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_07_020100) do
   create_table "audit_logs", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "event_type", null: false
@@ -40,12 +40,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_06_010200) do
   end
 
   create_table "features", force: :cascade do |t|
+    t.boolean "applies_to_all_organizations", default: false, null: false
     t.datetime "created_at", null: false
     t.text "description"
     t.boolean "enabled", default: false, null: false
     t.string "key", null: false
-    t.boolean "manager_activation_required", default: true, null: false
     t.string "name", null: false
+    t.boolean "org_opt_in_required", default: true, null: false
     t.datetime "updated_at", null: false
     t.index ["key"], name: "index_features_on_key", unique: true
   end

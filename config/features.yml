@@ -5,5 +5,5 @@
 # example_widget:
 #   name: "Example Widget"
 #   description: "Illustrative feature - delete once real features are added."
-#   manager_activation_required: true
+#   org_opt_in_required: true
 {}

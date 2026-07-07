@@ -3,7 +3,7 @@ require "test_helper"
 class FeatureToggleableTest < ActiveSupport::TestCase
   setup do
     @organization = Organization.create!(name: "Acme", slug: "acme-#{SecureRandom.hex(4)}")
-    @feature = Feature.create!(key: "widget_beta", name: "Widget Beta", manager_activation_required: true)
+    @feature = Feature.create!(key: "widget_beta", name: "Widget Beta", org_opt_in_required: true)
   end
 
   test "all three gates true means the feature is enabled" do
@@ -32,17 +32,25 @@ class FeatureToggleableTest < ActiveSupport::TestCase
     assert_not @organization.feature_enabled?(:widget_beta)
   end
 
-  test "tier 3 opt-in false is required when manager_activation_required is true" do
+  test "tier 3 opt-in false is required when org_opt_in_required is true" do
     @feature.update!(enabled: true)
     @feature.feature_organization_accesses.create!(organization: @organization, enabled: true)
 
     assert_not @organization.feature_enabled?(:widget_beta)
   end
 
-  test "manager_activation_required false ignores tier 3 entirely" do
-    @feature.update!(enabled: true, manager_activation_required: false)
+  test "org_opt_in_required false ignores tier 3 entirely" do
+    @feature.update!(enabled: true, org_opt_in_required: false)
     @feature.feature_organization_accesses.create!(organization: @organization, enabled: true)
 
+    assert @organization.feature_enabled?(:widget_beta)
+  end
+
+  test "applies_to_all_organizations satisfies tier 2 with no access row" do
+    @feature.update!(enabled: true, applies_to_all_organizations: true)
+    @organization.update_feature!(:widget_beta, enabled: true)
+
+    assert_equal 0, @feature.feature_organization_accesses.where(organization: @organization).count
     assert @organization.feature_enabled?(:widget_beta)
   end
 

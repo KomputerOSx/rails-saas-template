@@ -1,1 +1,7 @@
-<td id="<%= dom_id(feature, :org_count_cell) %>" class="text-base-content/60"><%= feature.feature_organization_accesses.enabled.count %></td>
+<td id="<%= dom_id(feature, :org_count_cell) %>" class="text-base-content/60">
+  <% if feature.applies_to_all_organizations? %>
+    <span class="badge badge-info badge-sm">All organizations</span>
+  <% else %>
+    <%= feature.feature_organization_accesses.enabled.count %>
+  <% end %>
+</td>

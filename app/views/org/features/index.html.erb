@@ -18,7 +18,7 @@
                   <p class="font-medium"><%= feature.name %></p>
                   <p class="text-sm text-base-content/60"><%= feature.description %></p>
                 </div>
-                <% if feature.manager_activation_required? %>
+                <% if feature.org_opt_in_required? %>
                   <label class="label cursor-pointer gap-2">
                     <input type="hidden" name="features[<%= feature.key %>][enabled]" value="0">
                     <input type="checkbox" name="features[<%= feature.key %>][enabled]" value="1"

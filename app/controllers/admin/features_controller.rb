@@ -16,7 +16,7 @@ module Admin
 
     def update
       if @feature.update(feature_params)
-        sync_organization_access!
+        sync_organization_access! if params[:feature].key?(:organization_ids)
         log_audit(:feature_updated, resource: @feature, metadata: { key: @feature.key, enabled: @feature.enabled })
         @organizations = Organization.order(:name)
         respond_to do |format|
@@ -52,7 +52,7 @@ module Admin
     end
 
     def feature_params
-      params.require(:feature).permit(:enabled, :manager_activation_required)
+      params.require(:feature).permit(:enabled, :org_opt_in_required, :applies_to_all_organizations)
     end
 
     def like(term)
@@ -62,7 +62,18 @@ module Admin
     # Submitted organization_ids is the full desired "granted" set. Never deletes
     # FeatureOrganizationAccess rows - flips enabled true/false instead, so access
     # history is preserved rather than lost.
+    #
+    # Only invoked when the request actually carried organization_ids (see #update) -
+    # the inline enabled/org_opt_in_required table toggles never submit that key, so
+    # they never reach here and can't be misread as "revoke every organization."
+    #
+    # Skips entirely while applies_to_all_organizations is on: those per-org rows aren't
+    # consulted by Feature#available_to_organization? in that state, so syncing them
+    # would just be dead writes - and skipping preserves whatever fine-grained selection
+    # existed before the flag was turned on, for if it's ever turned back off.
     def sync_organization_access!
+      return if @feature.applies_to_all_organizations?
+
       submitted_ids = Array(params[:feature][:organization_ids]).reject(&:blank?).map(&:to_i)
 
       Organization.where(id: submitted_ids).find_each do |organization|

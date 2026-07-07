@@ -1,7 +1,11 @@
 <td id="<%= dom_id(feature, :enabled_cell) %>">
-  <% if feature.enabled? %>
-    <span class="badge badge-success badge-sm">On</span>
-  <% else %>
-    <span class="badge badge-ghost badge-sm">Off</span>
+  <%= form_with url: admin_feature_path(feature), method: :patch, html: { data: { controller: "auto-submit" } } do %>
+    <input type="hidden" name="feature[enabled]" value="0">
+    <label class="label cursor-pointer justify-start gap-2">
+      <input type="checkbox" name="feature[enabled]" value="1" class="checkbox-field"
+             data-action="change->auto-submit#submit"
+             <%= "checked" if feature.enabled? %>>
+      <span class="label-text text-xs"><%= feature.enabled? ? "On" : "Off" %></span>
+    </label>
   <% end %>
 </td>

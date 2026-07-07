@@ -8,21 +8,13 @@
 
 <div class="form-control">
   <label class="label cursor-pointer justify-start gap-2">
-    <%= f.check_box :enabled, class: "checkbox-field" %>
-    <span class="label-text">Enabled globally</span>
+    <%= f.check_box :applies_to_all_organizations, class: "checkbox-field" %>
+    <span class="label-text">Apply to all organizations (including ones created in the future)</span>
   </label>
   <p class="mt-1 text-xs text-base-content/60">
-    The global kill switch. Even organizations granted access below stay off while this is unchecked.
-  </p>
-</div>
-
-<div class="form-control">
-  <label class="label cursor-pointer justify-start gap-2">
-    <%= f.check_box :manager_activation_required, class: "checkbox-field" %>
-    <span class="label-text">Requires org opt-in</span>
-  </label>
-  <p class="mt-1 text-xs text-base-content/60">
-    If checked, an organization granted access below must also opt in themselves (in Org Settings) before it's on for them.
+    When checked, every organization gets access automatically - including ones that don't exist
+    yet. The list below is ignored (and left untouched, in case this is turned off later) while
+    this is on.
   </p>
 </div>
 
@@ -33,8 +25,8 @@
       <% if @organizations.any? %>
         <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
           <%= f.collection_check_boxes :organization_ids, @organizations, :id, :name do |b| %>
-            <label class="label cursor-pointer justify-start gap-2">
-              <%= b.check_box(class: "checkbox-field") %>
+            <label class="label cursor-pointer justify-start gap-2 <%= "opacity-50" if @feature.applies_to_all_organizations? %>">
+              <%= b.check_box(class: "checkbox-field", disabled: @feature.applies_to_all_organizations?) %>
               <span class="label-text"><%= b.text %></span>
             </label>
           <% end %>

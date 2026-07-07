@@ -9,7 +9,7 @@ module FeatureToggleable
     feature = Feature.find_by(key: key.to_s)
     return false unless feature&.available_to_organization?(self)
 
-    !feature.manager_activation_required? || feature_org_setting_enabled?(key)
+    !feature.org_opt_in_required? || feature_org_setting_enabled?(key)
   end
 
   def feature_available?(key)
