@@ -1,5 +1,7 @@
 module Admin
   class UsersController < BaseController
+    before_action { authorize :system, :manage_users?, policy_class: SystemPolicy }
+
     def index
       @q    = params[:q].to_s.strip
       @role = params[:role].to_s.strip

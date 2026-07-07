@@ -107,6 +107,13 @@ class User < ApplicationRecord
     end
   end
 
+  # Any system-scoped role (system_admin, system_user, ...) is enough to enter the
+  # Admin:: namespace at all - individual controllers then gate specific actions
+  # behind specific system.* permissions via SystemPolicy.
+  def system_operator?
+    roles.system.exists?
+  end
+
   def system_admin?
     has_role?(Role::SYSTEM_ADMIN, scope: :system)
   end

@@ -1,5 +1,7 @@
 module Admin
   class AuditLogsController < BaseController
+    before_action { authorize :system, :view_audit_logs?, policy_class: SystemPolicy }
+
     def index
       @q          = params[:q].to_s.strip
       @event_type = params[:event_type].to_s.strip

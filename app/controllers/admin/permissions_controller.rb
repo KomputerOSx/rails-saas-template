@@ -1,5 +1,6 @@
 module Admin
   class PermissionsController < BaseController
+    before_action { authorize :system, :manage_roles?, policy_class: SystemPolicy }
     before_action :set_permission, only: [ :show, :edit, :update, :destroy ]
 
     def index

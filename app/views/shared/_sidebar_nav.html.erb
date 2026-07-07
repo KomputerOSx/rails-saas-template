@@ -27,17 +27,17 @@
     ] }
   end
 
-  if authenticated? && current_user.system_admin?
-    sections << { title: "Admin", items: [
-      { icon: "space_dashboard", label: "Dashboard",      path: admin_root_path },
-      { icon: "group",           label: "Users",          path: admin_users_path },
-      { icon: "shield_person",   label: "Roles",          path: admin_roles_path },
-      { icon: "key",             label: "Permissions",    path: admin_permissions_path },
-      { icon: "toggle_on",       label: "Features",       path: admin_features_path },
-      { icon: "history",         label: "Audit Logs",     path: admin_audit_logs_path },
-      { icon: "campaign",        label: "Notifications",  path: admin_notifications_path },
-      { icon: "engineering",     label: "Maintenance", path: edit_admin_maintenance_mode_path }
-    ] }
+  if authenticated? && current_user.system_operator?
+    admin_items = [ { icon: "space_dashboard", label: "Dashboard", path: admin_root_path } ]
+    admin_items << { icon: "group",         label: "Users",       path: admin_users_path }       if current_user.has_permission?("system.users.manage")
+    admin_items << { icon: "shield_person", label: "Roles",       path: admin_roles_path }       if current_user.has_permission?("system.roles.manage")
+    admin_items << { icon: "key",           label: "Permissions", path: admin_permissions_path } if current_user.has_permission?("system.roles.manage")
+    admin_items << { icon: "toggle_on",     label: "Features",    path: admin_features_path }
+    admin_items << { icon: "history",       label: "Audit Logs",  path: admin_audit_logs_path }  if current_user.has_permission?("system.audit_logs.view")
+    admin_items << { icon: "campaign",      label: "Notifications", path: admin_notifications_path }
+    admin_items << { icon: "engineering",   label: "Maintenance", path: edit_admin_maintenance_mode_path }
+
+    sections << { title: "Admin", items: admin_items }
   end
 
   row_classes = "flex h-10 items-center gap-3 rounded-lg px-2"

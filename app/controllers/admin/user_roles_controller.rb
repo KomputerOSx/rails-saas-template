@@ -1,5 +1,6 @@
 module Admin
   class UserRolesController < BaseController
+    before_action { authorize :system, :manage_users?, policy_class: SystemPolicy }
     before_action :set_user
 
     def create
