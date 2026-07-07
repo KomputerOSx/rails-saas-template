@@ -18,9 +18,25 @@
         <% end %>
       <% elsif !membership.has_role?(Role::APP_OWNER, scope: :app) %>
         <div data-controller="modal">
-          <button data-action="click->modal#open" class="btn btn-ghost btn-xs btn-square" title="Edit member">
-            <span class="material-symbols-outlined" style="font-size:18px">edit</span>
-          </button>
+          <div class="dropdown dropdown-end">
+            <button tabindex="0" type="button" class="btn btn-ghost btn-xs btn-square" title="Actions">
+              <span class="material-symbols-outlined" style="font-size:18px">more_vert</span>
+            </button>
+            <ul tabindex="0" class="dropdown-content menu bg-base-200 border border-base-300 rounded-box z-10 w-40 p-2 shadow-lg">
+              <li>
+                <button type="button" data-action="click->modal#open">Edit role</button>
+              </li>
+              <li>
+                <%= button_to "Remove", org_member_path(membership), method: :delete,
+                      data: {
+                        controller: "confirm-modal",
+                        action: "click->confirm-modal#confirm",
+                        confirm_modal_message_value: "Remove #{membership.user.email} from #{Current.organization.name}?"
+                      },
+                      class: "w-full text-left text-error" %>
+              </li>
+            </ul>
+          </div>
 
           <dialog id="<%= dom_id(membership, :dialog) %>" data-modal-target="dialog" class="modal">
             <%= render "org/members/edit_dialog_content", membership: membership %>

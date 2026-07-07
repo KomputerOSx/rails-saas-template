@@ -387,12 +387,16 @@ whenever a record has more than one independently-targetable region (e.g. a user
    with it, permanently breaking `window.toast` for the rest of the page's lifetime with no visible
    error. This was hard to diagnose because the stream update itself still succeeds and renders
    correctly; only the toast silently never appears. Keeping the `<dialog>` node itself stable across
-   every render sidesteps the whole failure class. **Known residual gap:** actions that must remove
-   the row entirely (e.g. `Org::MembersController#destroy`, triggered from inside that same row's
-   "Edit member" dialog) still destroy the dialog by necessity - if the toast host happens to be
-   parked there when that fires, that one toast can silently fail to show even though the removal
-   itself succeeds. Not worth fighting with more JS timing hacks for a single low-frequency action;
-   flagged here so it isn't mistaken for a regression later.
+   every render sidesteps the whole failure class.
+
+   Also keep genuinely-destructive actions (remove/delete a row) out of the *same* dialog as an edit
+   action - e.g. org members' row menu is a dropdown with two separate items, "Edit role" (opens the
+   stable edit dialog above) and "Remove" (a plain `button_to` wired straight to `confirm-modal`, not
+   nested inside any per-row dialog). If a destructive action's own confirm step were nested inside an
+   editable-record's dialog, removing the row would need to destroy that dialog too - re-triggering the
+   exact toast-host-destruction problem this convention exists to avoid, since there'd be no way to
+   "keep the dialog stable" for a row that's being deleted. Reference:
+   `app/views/org/members/_membership_row.html.erb`.
 3. **`dom_id`-keyed row partials.** For any list where a single record's row must be patched/removed
    (org members, org invitations, admin notifications, admin features, notification recipients):
    extract the `<tr>`/`<li>` into its own partial, id'd `dom_id(record)`, rendered by both the index
