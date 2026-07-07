@@ -408,10 +408,22 @@ whenever a record has more than one independently-targetable region (e.g. a user
    replace that whole container on create/destroy, rather than conditionally branching between
    `append`/`remove` and a full replace depending on whether the action crosses the 0-item boundary.
    The extra query cost is trivial for these list sizes and it keeps the controller action simple.
-5. **Cross-page badges.** A stream response can update DOM anywhere in the current page, not just
-   where the triggering element was - e.g. `notification_recipients` actions also replace the navbar's
-   `#notification_unread_badge` (`shared/_notification_badge` partial) since that badge is present in
-   the layout on every authenticated page.
+5. **Cross-page elements (layout chrome).** A stream response can update DOM anywhere in the current
+   page, not just where the triggering element was - but only if that element was given a stable id in
+   the first place. This is easy to forget for anything rendered once in the layout: it's plain
+   server-rendered markup from page-load time, so unless a stream response explicitly targets it by id,
+   it silently goes stale until the next full page render - there's no error, the rest of the update
+   just quietly doesn't include it. Two examples already fixed this way:
+   - `notification_recipients` actions replace the navbar's `#notification_unread_badge`
+     (`shared/_notification_badge` partial) since that badge is present in the layout on every
+     authenticated page.
+   - `Org::OrganizationsController#update` replaces the navbar org-switcher's label
+     (`shared/_org_nav_label`, id `dom_id(organization, :nav_label)`) and its entry in the switcher's
+     dropdown list (`shared/_org_nav_item_label`), so renaming the current org updates the switcher
+     immediately instead of only after the next navigation. When adding a stream response for
+     anything editable that also has a "second, glanceable copy" of its name/state elsewhere in the
+     layout (nav, sidebar, breadcrumb), give that copy an id too and update it in the same response -
+     don't assume it'll refresh on its own.
 6. **Lazy-loaded frame inside a repeated-row modal.** When an edit form is too complex to duplicate
    inline per-row (admin features), give each row's modal a nested
    `turbo_frame_tag dom_id(record, :edit_frame), src: edit_path(record)` with a "Loading..." placeholder;

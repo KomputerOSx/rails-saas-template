@@ -11,15 +11,15 @@
       <%= form_with url: org_switch_path, method: :post, data: { controller: "org-switch" } do %>
         <%= hidden_field_tag :organization_id, selected_org&.id, data: { org_switch_target: "input" } %>
         <div class="dropdown">
-          <div tabindex="0" role="button" class="btn btn-ghost text-lg font-normal normal-case gap-1" data-org-switch-target="button">
-            <%= selected_org&.name %>
+          <div tabindex="0" role="button" class="btn btn-ghost text-lg font-normal normal-case gap-1">
+            <%= render "shared/org_nav_label", organization: selected_org %>
             <span class="material-symbols-outlined !text-[18px]">expand_more</span>
           </div>
           <ul tabindex="0" class="dropdown-content menu bg-base-200 border border-base-300 rounded-box z-10 w-56 p-2 shadow-lg">
             <% current_user.organizations.each do |o| %>
               <li>
                 <a data-action="click->org-switch#select" data-org-switch-id-param="<%= o.id %>" data-org-switch-name-param="<%= o.name %>">
-                  <%= o.name %>
+                  <%= render "shared/org_nav_item_label", organization: o %>
                 </a>
               </li>
             <% end %>

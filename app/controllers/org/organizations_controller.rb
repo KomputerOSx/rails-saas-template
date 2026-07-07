@@ -11,6 +11,8 @@ module Org
             render turbo_stream: [
               turbo_stream.replace(dom_id(Current.organization, :name_display), partial: "org/settings/name_display"),
               turbo_stream.update(dom_id(Current.organization, :dialog), partial: "org/settings/name_dialog_content"),
+              turbo_stream.replace(dom_id(Current.organization, :nav_label), partial: "shared/org_nav_label", locals: { organization: Current.organization }),
+              turbo_stream.replace(dom_id(Current.organization, :nav_item_label), partial: "shared/org_nav_item_label", locals: { organization: Current.organization }),
               turbo_stream.update("flash_messages", partial: "shared/flash")
             ]
           end

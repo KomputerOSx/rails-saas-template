@@ -1,12 +1,12 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = ["button", "input"]
+  static targets = ["input", "label"]
 
   select(event) {
     const { id, name } = event.params
     this.inputTarget.value = id
-    this.buttonTarget.firstChild.textContent = name
+    this.labelTarget.textContent = name
     document.activeElement?.blur()
     this.element.requestSubmit()
   }
