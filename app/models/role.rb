@@ -1,5 +1,6 @@
 class Role < ApplicationRecord
   SYSTEM_ADMIN = "system_admin"
+  SYSTEM_USER = "system_user"
   APP_OWNER = "owner"
   APP_ADMIN = "admin"
   APP_USER = "user"
