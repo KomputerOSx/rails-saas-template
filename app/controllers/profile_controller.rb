@@ -8,8 +8,9 @@ class ProfileController < ApplicationController
         format.turbo_stream do
           flash.now[:toast] = { message: "Profile updated successfully.", type: "success" }
           render turbo_stream: [
-            turbo_stream.replace(dom_id(current_user, :name_editor), partial: "profile/name_editor"),
-            turbo_stream.replace("flash_messages", partial: "shared/flash")
+            turbo_stream.replace(dom_id(current_user, :name_display), partial: "profile/name_display"),
+            turbo_stream.update(dom_id(current_user, :dialog), partial: "profile/name_dialog_content"),
+            turbo_stream.update("flash_messages", partial: "shared/flash")
           ]
         end
         format.html do
@@ -20,7 +21,7 @@ class ProfileController < ApplicationController
     else
       respond_to do |format|
         format.turbo_stream do
-          render turbo_stream: turbo_stream.replace(dom_id(current_user, :name_editor), partial: "profile/name_editor"),
+          render turbo_stream: turbo_stream.update(dom_id(current_user, :dialog), partial: "profile/name_dialog_content"),
                  status: :unprocessable_entity
         end
         format.html { render :show, status: :unprocessable_entity }

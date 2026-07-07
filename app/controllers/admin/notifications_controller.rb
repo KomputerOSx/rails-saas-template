@@ -44,7 +44,7 @@ module Admin
           flash.now[:toast] = { message: "Notification withdrawn.", type: "success" }
           render turbo_stream: [
             turbo_stream.replace(dom_id(notification), partial: "admin/notifications/row", locals: { notification: notification }),
-            turbo_stream.replace("flash_messages", partial: "shared/flash")
+            turbo_stream.update("flash_messages", partial: "shared/flash")
           ]
         end
         format.html { redirect_to admin_notifications_path, notice: "Notification withdrawn." }

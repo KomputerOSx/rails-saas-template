@@ -1,20 +1,14 @@
 <tr id="<%= dom_id(feature) %>" class="hover:bg-base-200">
   <td class="font-medium font-mono text-sm"><%= feature.key %></td>
   <td class="text-base-content/60"><%= feature.name %></td>
-  <td>
-    <% if feature.enabled? %>
-      <span class="badge badge-success badge-sm">On</span>
-    <% else %>
-      <span class="badge badge-ghost badge-sm">Off</span>
-    <% end %>
-  </td>
-  <td class="text-base-content/60"><%= feature.manager_activation_required? ? "Yes" : "No" %></td>
-  <td class="text-base-content/60"><%= feature.feature_organization_accesses.enabled.count %></td>
+  <%= render "admin/features/enabled_cell", feature: feature %>
+  <%= render "admin/features/opt_in_cell", feature: feature %>
+  <%= render "admin/features/org_count_cell", feature: feature %>
   <td>
     <div class="flex justify-end">
       <div data-controller="modal">
         <button data-action="click->modal#open" class="link link-primary">Edit</button>
-        <dialog data-modal-target="dialog" class="modal">
+        <dialog id="<%= dom_id(feature, :dialog) %>" data-modal-target="dialog" class="modal">
           <div class="modal-box">
             <form method="dialog"><button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" data-action="click->modal#close">✕</button></form>
             <h3 class="font-bold text-lg mb-4"><%= feature.name %></h3>

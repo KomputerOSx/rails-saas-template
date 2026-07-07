@@ -15,7 +15,7 @@ module Org
           render turbo_stream: [
             turbo_stream.replace("pending_invitations_section", partial: "org/invitations/section",
                                   locals: { pending_invitations: pending_invitations }),
-            turbo_stream.replace("flash_messages", partial: "shared/flash")
+            turbo_stream.update("flash_messages", partial: "shared/flash")
           ]
         end
         format.html { redirect_to org_settings_path, notice: "Invitation sent to #{invitation.email}." }
@@ -34,7 +34,7 @@ module Org
           render turbo_stream: [
             turbo_stream.replace("pending_invitations_section", partial: "org/invitations/section",
                                   locals: { pending_invitations: pending_invitations }),
-            turbo_stream.replace("flash_messages", partial: "shared/flash")
+            turbo_stream.update("flash_messages", partial: "shared/flash")
           ]
         end
         format.html { redirect_to org_settings_path, notice: "Invitation revoked." }

@@ -1,0 +1,7 @@
+<td id="<%= dom_id(feature, :enabled_cell) %>">
+  <% if feature.enabled? %>
+    <span class="badge badge-success badge-sm">On</span>
+  <% else %>
+    <span class="badge badge-ghost badge-sm">Off</span>
+  <% end %>
+</td>

@@ -1,0 +1,9 @@
+<td id="<%= dom_id(membership, :role_badge) %>">
+  <% if membership.has_role?(Role::APP_OWNER, scope: :app) %>
+    <span class="badge badge-outline rounded-none badge-sm">Owner</span>
+  <% else %>
+    <span class="badge badge-outline rounded-none badge-sm">
+      <%= membership.has_role?(Role::APP_ADMIN, scope: :app) ? "Admin" : "User" %>
+    </span>
+  <% end %>
+</td>

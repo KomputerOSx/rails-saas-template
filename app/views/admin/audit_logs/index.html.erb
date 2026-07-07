@@ -45,7 +45,7 @@
                   <td class="text-base-content/60"><%= time_ago_in_words(log.created_at) %> ago</td>
                   <td>
                     <div class="flex justify-end">
-                      <%= link_to "View", admin_audit_log_path(log), class: "link link-primary" %>
+                      <%= link_to "View", admin_audit_log_path(log), class: "link link-primary", data: { turbo_frame: "_top" } %>
                     </div>
                   </td>
                 </tr>

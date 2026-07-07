@@ -13,7 +13,7 @@ module Admin
           render turbo_stream: [
             turbo_stream.replace(dom_id(@user, :system_roles_panel), partial: "admin/users/system_roles_panel",
                                   locals: { user: @user, roles: system_roles }),
-            turbo_stream.replace("flash_messages", partial: "shared/flash")
+            turbo_stream.update("flash_messages", partial: "shared/flash")
           ]
         end
         format.html { redirect_to admin_user_path(@user), notice: "Granted #{role.name} to #{@user.email}." }
@@ -30,7 +30,7 @@ module Admin
           render turbo_stream: [
             turbo_stream.replace(dom_id(@user, :system_roles_panel), partial: "admin/users/system_roles_panel",
                                   locals: { user: @user, roles: system_roles }),
-            turbo_stream.replace("flash_messages", partial: "shared/flash")
+            turbo_stream.update("flash_messages", partial: "shared/flash")
           ]
         end
         format.html { redirect_to admin_user_path(@user), notice: "Revoked #{role.name} from #{@user.email}." }

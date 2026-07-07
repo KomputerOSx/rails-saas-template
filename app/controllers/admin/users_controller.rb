@@ -31,8 +31,12 @@ module Admin
           format.turbo_stream do
             flash.now[:toast] = { message: "User updated.", type: "success" }
             render turbo_stream: [
-              turbo_stream.replace(dom_id(@user, :editor), partial: "admin/users/info_editor", locals: { user: @user }),
-              turbo_stream.replace("flash_messages", partial: "shared/flash")
+              turbo_stream.replace(dom_id(@user, :full_name_heading), partial: "admin/users/full_name_heading", locals: { user: @user }),
+              turbo_stream.replace(dom_id(@user, :email_display), partial: "admin/users/email_display", locals: { user: @user }),
+              turbo_stream.replace(dom_id(@user, :first_name_display), partial: "admin/users/first_name_display", locals: { user: @user }),
+              turbo_stream.replace(dom_id(@user, :last_name_display), partial: "admin/users/last_name_display", locals: { user: @user }),
+              turbo_stream.update(dom_id(@user, :dialog), partial: "admin/users/info_dialog_content", locals: { user: @user }),
+              turbo_stream.update("flash_messages", partial: "shared/flash")
             ]
           end
           format.html { redirect_to admin_user_path(@user), notice: "User updated." }
@@ -43,7 +47,7 @@ module Admin
         flash.now[:alert] = @user.errors.full_messages.join(", ")
         respond_to do |format|
           format.turbo_stream do
-            render turbo_stream: turbo_stream.replace(dom_id(@user, :editor), partial: "admin/users/info_editor", locals: { user: @user }),
+            render turbo_stream: turbo_stream.update(dom_id(@user, :dialog), partial: "admin/users/info_dialog_content", locals: { user: @user }),
                    status: :unprocessable_entity
           end
           format.html { render :show, status: :unprocessable_entity }
@@ -61,7 +65,7 @@ module Admin
           render turbo_stream: [
             turbo_stream.replace(dom_id(@user, :status_badge), partial: "admin/users/status_badge", locals: { user: @user }),
             turbo_stream.replace(dom_id(@user, :danger_zone), partial: "admin/users/danger_zone", locals: { user: @user }),
-            turbo_stream.replace("flash_messages", partial: "shared/flash")
+            turbo_stream.update("flash_messages", partial: "shared/flash")
           ]
         end
         format.html { redirect_to admin_user_path(@user), notice: "#{@user.email} has been disabled and signed out everywhere." }
@@ -78,7 +82,7 @@ module Admin
           render turbo_stream: [
             turbo_stream.replace(dom_id(@user, :status_badge), partial: "admin/users/status_badge", locals: { user: @user }),
             turbo_stream.replace(dom_id(@user, :danger_zone), partial: "admin/users/danger_zone", locals: { user: @user }),
-            turbo_stream.replace("flash_messages", partial: "shared/flash")
+            turbo_stream.update("flash_messages", partial: "shared/flash")
           ]
         end
         format.html { redirect_to admin_user_path(@user), notice: "#{@user.email} has been re-enabled." }
@@ -94,7 +98,7 @@ module Admin
       respond_to do |format|
         format.turbo_stream do
           flash.now[:toast] = { message: "Password reset link sent to #{@user.email}.", type: "success" }
-          render turbo_stream: turbo_stream.replace("flash_messages", partial: "shared/flash")
+          render turbo_stream: turbo_stream.update("flash_messages", partial: "shared/flash")
         end
         format.html { redirect_to admin_user_path(@user), notice: "Password reset link sent to #{@user.email}." }
       end

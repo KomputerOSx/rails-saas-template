@@ -368,13 +368,31 @@ whenever a record has more than one independently-targetable region (e.g. a user
    `turbo_stream.replace("flash_messages", partial: "shared/flash")`. `flash_controller.js` needs no
    changes - a full node replace re-triggers its `messageValueChanged` connect callback.
 2. **Inline-edit-via-modal.** For "a small dialog that edits one record and lives on the page it's
-   submitted from" (org name, profile name, admin user info, admin feature flags): extract the
-   trigger-button + `<dialog>` into its own partial with one wrapping id
-   (`dom_id(record, :editor)`). Both the success and validation-failure branches
-   `turbo_stream.replace` that same id with that same partial - a fresh (unopened) `<dialog>` lands on
-   success, which is what closes the modal, with zero JS changes; on failure the partial re-renders
-   with the model's errors and the dialog's existing `<%= " open" if record.errors.any? %>` re-opens
-   it inline. No changes needed to `modal_controller.js`.
+   submitted from" (org name, profile name, admin user info, admin feature flags, org member
+   promote/demote): **never target the `<dialog>` element itself with `turbo_stream.replace`** - only
+   `turbo_stream.update` its content, or replace pieces *inside* it. Concretely: give the `<dialog>` a
+   stable id (`dom_id(record, :dialog)`) that's never re-issued once rendered; split its markup into a
+   `_dialog_content` partial that `update` replaces on both success and validation failure; give the
+   record's read-only display (e.g. an `<h1>` or `<dd>`) its own id and `replace` that separately on
+   success. Close the modal by adding `data: { action: "turbo:submit-end->modal#closeOnSuccess" }` to
+   the form (`modal_controller.js#closeOnSuccess` checks `event.detail.success` before calling
+   `dialogTarget.close()`) - **not** by replacing the dialog wrapper with a fresh unopened one.
+   Reference: `app/views/org/settings/_name_editor.html.erb` +
+   `app/views/org/settings/_name_dialog_content.html.erb` + `Org::OrganizationsController#update`.
+
+   This matters beyond style: `app/javascript/controllers/toast_controller.js` physically reparents
+   the global toast host into whichever `<dialog>` is currently open (so a toast stacks above it in the
+   browser's top layer). If a Turbo Stream `replace` destroys that `<dialog>` - which is what
+   "replace the whole wrapper to close the modal for free" does - it destroys the toast host along
+   with it, permanently breaking `window.toast` for the rest of the page's lifetime with no visible
+   error. This was hard to diagnose because the stream update itself still succeeds and renders
+   correctly; only the toast silently never appears. Keeping the `<dialog>` node itself stable across
+   every render sidesteps the whole failure class. **Known residual gap:** actions that must remove
+   the row entirely (e.g. `Org::MembersController#destroy`, triggered from inside that same row's
+   "Edit member" dialog) still destroy the dialog by necessity - if the toast host happens to be
+   parked there when that fires, that one toast can silently fail to show even though the removal
+   itself succeeds. Not worth fighting with more JS timing hacks for a single low-frequency action;
+   flagged here so it isn't mistaken for a regression later.
 3. **`dom_id`-keyed row partials.** For any list where a single record's row must be patched/removed
    (org members, org invitations, admin notifications, admin features, notification recipients):
    extract the `<tr>`/`<li>` into its own partial, id'd `dom_id(record)`, rendered by both the index
@@ -395,7 +413,10 @@ whenever a record has more than one independently-targetable region (e.g. a user
    `turbo_frame_tag dom_id(record, :edit_frame), src: edit_path(record)` with a "Loading..." placeholder;
    the `edit` action renders *only* a partial wrapping the same frame id (`layout` is skipped
    automatically since it's a partial render, not a full template render) - mirrors the existing
-   `email_changes` frame precedent (`app/views/email_changes/_frame.html.erb`).
+   `email_changes` frame precedent (`app/views/email_changes/_frame.html.erb`). The frame lives
+   *inside* the row's `<dialog>` (per convention #2, given its own stable id and never replaced) - only
+   the frame's content gets `replace`d on success/failure, and the row's read-only cells (each with
+   their own id) are updated separately; the modal closes via `modal#closeOnSuccess`, same as #2.
 7. **Stimulus compatibility.** `confirm_modal_controller.js` and `auto_submit_controller.js` need no
    changes for any of the above - both just call `form.requestSubmit()`, and Turbo's format
    negotiation happens transparently regardless of what triggered the submit.

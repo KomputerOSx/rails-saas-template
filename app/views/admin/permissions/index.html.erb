@@ -40,11 +40,11 @@
                   <td>
                     <div class="flex justify-end gap-1">
                       <%= link_to admin_permission_path(permission),
-                            class: "btn btn-ghost btn-xs btn-square tooltip", data: { tip: "View" }, aria: { label: "View" } do %>
+                            class: "btn btn-ghost btn-xs btn-square tooltip", data: { tip: "View", turbo_frame: "_top" }, aria: { label: "View" } do %>
                         <span class="material-symbols-outlined !text-[18px]">visibility</span>
                       <% end %>
                       <%= link_to edit_admin_permission_path(permission),
-                            class: "btn btn-ghost btn-xs btn-square tooltip", data: { tip: "Edit" }, aria: { label: "Edit" } do %>
+                            class: "btn btn-ghost btn-xs btn-square tooltip", data: { tip: "Edit", turbo_frame: "_top" }, aria: { label: "Edit" } do %>
                         <span class="material-symbols-outlined !text-[18px]">edit</span>
                       <% end %>
                     </div>

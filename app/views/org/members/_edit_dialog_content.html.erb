@@ -1,0 +1,38 @@
+<div class="modal-box">
+  <form method="dialog"><button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" data-action="click->modal#close">✕</button></form>
+
+  <h3 class="font-bold text-lg">Edit member</h3>
+  <p class="mt-1 text-sm text-base-content/60"><%= membership.user.email %></p>
+
+  <fieldset class="form-control mt-4">
+    <label class="label"><span class="label-text">Role</span></label>
+    <%= form_with url: demote_org_member_path(membership), method: :patch,
+          html: { class: "space-y-2", data: { controller: "auto-submit", action: "turbo:submit-end->modal#closeOnSuccess" } } do %>
+      <label class="flex items-center gap-2.5 cursor-pointer">
+        <input type="radio" name="role" value="user" class="radio-field"
+               data-action="change->auto-submit#submit"
+               data-auto-submit-url-param="<%= demote_org_member_path(membership) %>"
+               <%= "checked" if membership.has_role?(Role::APP_USER, scope: :app) %>>
+        <span class="text-sm font-medium">User</span>
+      </label>
+      <label class="flex items-center gap-2.5 cursor-pointer">
+        <input type="radio" name="role" value="admin" class="radio-field"
+               data-action="change->auto-submit#submit"
+               data-auto-submit-url-param="<%= promote_org_member_path(membership) %>"
+               <%= "checked" if membership.has_role?(Role::APP_ADMIN, scope: :app) %>>
+        <span class="text-sm font-medium">Admin</span>
+      </label>
+    <% end %>
+  </fieldset>
+
+  <div class="divider my-4"></div>
+
+  <%= button_to "Remove from organization", org_member_path(membership), method: :delete,
+        data: {
+          controller: "confirm-modal",
+          action: "click->confirm-modal#confirm",
+          confirm_modal_message_value: "Remove #{membership.user.email} from #{Current.organization.name}?"
+        },
+        class: "btn btn-error btn-outline btn-sm w-full" %>
+</div>
+<form method="dialog" class="modal-backdrop"><button>close</button></form>

@@ -18,12 +18,16 @@ module Admin
       if @feature.update(feature_params)
         sync_organization_access!
         log_audit(:feature_updated, resource: @feature, metadata: { key: @feature.key, enabled: @feature.enabled })
+        @organizations = Organization.order(:name)
         respond_to do |format|
           format.turbo_stream do
             flash.now[:toast] = { message: "Feature updated.", type: "success" }
             render turbo_stream: [
-              turbo_stream.replace(dom_id(@feature), partial: "admin/features/row", locals: { feature: @feature }),
-              turbo_stream.replace("flash_messages", partial: "shared/flash")
+              turbo_stream.replace(dom_id(@feature, :enabled_cell), partial: "admin/features/enabled_cell", locals: { feature: @feature }),
+              turbo_stream.replace(dom_id(@feature, :opt_in_cell), partial: "admin/features/opt_in_cell", locals: { feature: @feature }),
+              turbo_stream.replace(dom_id(@feature, :org_count_cell), partial: "admin/features/org_count_cell", locals: { feature: @feature }),
+              turbo_stream.replace(dom_id(@feature, :edit_frame), partial: "edit_frame"),
+              turbo_stream.update("flash_messages", partial: "shared/flash")
             ]
           end
           format.html { redirect_to admin_features_path, notice: "Feature updated." }

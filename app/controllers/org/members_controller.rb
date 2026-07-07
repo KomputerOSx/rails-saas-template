@@ -14,7 +14,7 @@ module Org
             flash.now[:toast] = { message: "Member removed.", type: "success" }
             render turbo_stream: [
               turbo_stream.remove(membership_dom_id),
-              turbo_stream.replace("flash_messages", partial: "shared/flash")
+              turbo_stream.update("flash_messages", partial: "shared/flash")
             ]
           end
           format.html { redirect_to org_settings_path, notice: "Member removed." }
@@ -24,7 +24,7 @@ module Org
         respond_to do |format|
           format.turbo_stream do
             flash.now[:toast] = { message: "Cannot remove the organization's last owner.", type: "error" }
-            render turbo_stream: turbo_stream.replace("flash_messages", partial: "shared/flash")
+            render turbo_stream: turbo_stream.update("flash_messages", partial: "shared/flash")
           end
           format.html { redirect_to org_settings_path, alert: "Cannot remove the organization's last owner." }
         end
@@ -54,8 +54,9 @@ module Org
         format.turbo_stream do
           flash.now[:toast] = { message: "Member promoted to admin.", type: "success" }
           render turbo_stream: [
-            turbo_stream.replace(dom_id(@membership), partial: "org/members/membership_row", locals: { membership: @membership }),
-            turbo_stream.replace("flash_messages", partial: "shared/flash")
+            turbo_stream.replace(dom_id(@membership, :role_badge), partial: "org/members/role_badge", locals: { membership: @membership }),
+            turbo_stream.update(dom_id(@membership, :dialog), partial: "org/members/edit_dialog_content", locals: { membership: @membership }),
+            turbo_stream.update("flash_messages", partial: "shared/flash")
           ]
         end
         format.html { redirect_to org_settings_path, notice: "Member promoted to admin." }
@@ -70,8 +71,9 @@ module Org
         format.turbo_stream do
           flash.now[:toast] = { message: "Member demoted to user.", type: "success" }
           render turbo_stream: [
-            turbo_stream.replace(dom_id(@membership), partial: "org/members/membership_row", locals: { membership: @membership }),
-            turbo_stream.replace("flash_messages", partial: "shared/flash")
+            turbo_stream.replace(dom_id(@membership, :role_badge), partial: "org/members/role_badge", locals: { membership: @membership }),
+            turbo_stream.update(dom_id(@membership, :dialog), partial: "org/members/edit_dialog_content", locals: { membership: @membership }),
+            turbo_stream.update("flash_messages", partial: "shared/flash")
           ]
         end
         format.html { redirect_to org_settings_path, notice: "Member demoted to user." }
