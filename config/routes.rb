@@ -33,6 +33,7 @@ Rails.application.routes.draw do
     end
     resource :currency, only: [ :update ], controller: "billing/currencies"
     resource :billing_address, only: [ :update ], controller: "billing/billing_addresses"
+    resource :promo_code, only: [ :create, :destroy ], controller: "billing/promo_codes"
   end
   get    "profile/totp/new",     to: "profile#new_totp",          as: :new_profile_totp
   post   "profile/totp",         to: "profile#create_totp",       as: :profile_totp

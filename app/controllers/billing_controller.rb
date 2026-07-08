@@ -17,6 +17,8 @@ class BillingController < ApplicationController
     @on_grace_period = @subscription&.active? && @subscription.on_grace_period?
     @on_trial = !@on_grace_period && @subscription&.active? && @subscription.on_trial?
     @pending_plan = Current.organization.pending_plan
+    @promo_code_id = session[:promo_code_id]
+    @promo_code_display = session[:promo_code_display]
     # For "you'll keep X until <date>" copy on downgrade confirms - synced locally by Pay, so
     # no Stripe API call happens on page view; nil just softens the copy.
     @current_period_end = @subscription&.current_period_end

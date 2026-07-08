@@ -181,27 +181,35 @@ class Organization < ApplicationRecord
 
   # Moves the org onto `plan` under the policy above. Returns :created, :trial_started,
   # :upgraded, or :downgrade_scheduled so callers can pick the right audit event/message.
-  def change_plan!(plan)
+  #
+  # `promotion_code` (a Stripe promotion code id, e.g. "promo_..." - resolved from a
+  # human-entered code by Billing::PromoCodesController) only applies on subscribe/upgrade,
+  # which invoice immediately - a scheduled downgrade has no invoice to discount right now, so
+  # it's silently not passed through there; the code stays available in the session for the
+  # caller to use on a future subscribe/upgrade instead.
+  def change_plan!(plan, promotion_code: nil)
     payment_method = payment_processor.default_payment_method
     raise ArgumentError, "no payment method on file" unless payment_method
 
     price_id = plan.resolved_stripe_price_id(billing_currency)
+    discount_options = promotion_code.present? ? { discounts: [ { promotion_code: promotion_code } ] } : {}
 
     if current_plan.free?
       if trial_eligible?(plan)
         payment_processor.subscribe(plan: price_id, default_payment_method: payment_method.processor_id,
-          quantity: 1, trial_period_days: TRIAL_DAYS)
+          quantity: 1, trial_period_days: TRIAL_DAYS, **discount_options)
         update!(trial_used_at: Time.current)
         :trial_started
       else
-        payment_processor.subscribe(plan: price_id, default_payment_method: payment_method.processor_id, quantity: 1)
+        payment_processor.subscribe(plan: price_id, default_payment_method: payment_method.processor_id,
+          quantity: 1, **discount_options)
         :created
       end
     elsif plan.price_cents(billing_currency) > current_plan.price_cents(billing_currency)
       # A subscription managed by a schedule rejects direct updates - release any pending
       # downgrade before swapping.
       cancel_scheduled_downgrade! if scheduled_downgrade?
-      payment_processor.subscription.swap(price_id, proration_behavior: "always_invoice")
+      payment_processor.subscription.swap(price_id, proration_behavior: "always_invoice", **discount_options)
       :upgraded
     else
       schedule_downgrade!(plan)

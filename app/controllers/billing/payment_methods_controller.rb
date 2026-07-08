@@ -61,6 +61,11 @@ module Billing
       params.permit(billing_address: [ :line1, :line2, :city, :state, :postal_code, :country ])[:billing_address]&.to_h || {}
     end
 
+    def clear_promo_code!
+      session.delete(:promo_code_id)
+      session.delete(:promo_code_display)
+    end
+
     # A card that was just added specifically to subscribe to a plan needs the whole page
     # (Current Plan section, not just the payment method card) to refresh, so this always
     # does a full redirect rather than a turbo_stream partial update - Turbo Drive follows a
@@ -70,7 +75,8 @@ module Billing
       organization = Current.organization
       return redirect_to billing_path, notice: "Payment method saved." if plan.nil? || plan.free? || plan.resolved_stripe_price_id(organization.billing_currency).blank?
 
-      result = organization.change_plan!(plan)
+      result = organization.change_plan!(plan, promotion_code: session[:promo_code_id])
+      clear_promo_code! unless result == :downgrade_scheduled
       log_audit(result == :upgraded ? :subscription_updated : :subscription_created,
         resource: organization, metadata: { plan: plan.key, trial: result == :trial_started }.compact_blank)
       message = if result == :trial_started

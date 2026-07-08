@@ -165,6 +165,33 @@ class OrganizationTest < ActiveSupport::TestCase
     end
   end
 
+  test "change_plan! passes an applied promotion code through to Stripe on upgrade" do
+    organization = Organization.create_personal_for!(users(:one))
+    customer = organization.set_payment_processor(:stripe)
+    customer.update!(processor_id: "cus_test123")
+    customer.payment_methods.create!(processor_id: "pm_test123", default: true, payment_method_type: "card", brand: "Visa", last4: "4242")
+
+    # `swap` reads the subscription's current item id off the locally-synced `object` JSON
+    # (Pay::Stripe::Subscription#subscription_items => stripe_object.items) rather than making a
+    # live Stripe API call as long as that column is already populated - set it directly so this
+    # test doesn't need to stub Stripe::Subscription.retrieve too.
+    fake_stripe_subscription = customer.subscriptions.create!(
+      name: "default", processor_id: "sub_test123", processor_plan: "price_fake_starter_usd", status: "active", quantity: 1,
+      object: { id: "sub_test123", items: { object: "list", data: [ { id: "si_test123" } ] } }
+    )
+    captured_params = nil
+
+    Stripe::Subscription.stub(:update, ->(_id, params, _opts) { captured_params = params; fake_stripe_subscription }) do
+      Billing::Plans.stub(:for_stripe_price, Billing::Plans::STARTER) do
+        with_resolvable_price(Billing::Plans::GROWTH) do
+          organization.change_plan!(Billing::Plans.find("growth"), promotion_code: "promo_test123")
+        end
+      end
+    end
+
+    assert_equal [ { promotion_code: "promo_test123" } ], captured_params[:discounts]
+  end
+
   test "change_plan! schedules a downgrade at period end instead of applying it now" do
     organization = Organization.create_personal_for!(users(:one))
     customer = organization.set_payment_processor(:fake_processor, allow_fake: true)

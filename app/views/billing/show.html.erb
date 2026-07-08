@@ -52,6 +52,13 @@
       </div>
     </div>
 
+    <%# ── Promo code ── %>
+    <% unless @on_grace_period %>
+      <div class="mt-3">
+        <%= render "billing/promo_code_widget", promo_code_id: @promo_code_id, promo_code_display: @promo_code_display %>
+      </div>
+    <% end %>
+
     <%# ── Subscription status notices ── %>
     <% period_end_copy = @current_period_end&.to_date&.to_fs(:long) || "the end of your current billing period" %>
     <% if @on_grace_period %>

@@ -9,14 +9,17 @@ module Billing
       return redirect_with_alert("You're already on the #{plan.name} plan.") if plan.key == organization.current_plan.key
       return redirect_with_alert("Add a payment method before subscribing.") unless organization.payment_processor.default_payment_method
 
-      case organization.change_plan!(plan)
+      case organization.change_plan!(plan, promotion_code: session[:promo_code_id])
       when :created
+        clear_promo_code!
         log_audit(:subscription_created, resource: organization, metadata: { plan: plan.key })
         redirect_to billing_path, notice: "Subscribed to the #{plan.name} plan."
       when :trial_started
+        clear_promo_code!
         log_audit(:subscription_created, resource: organization, metadata: { plan: plan.key, trial: true })
         redirect_to billing_path, notice: "Your #{Organization::TRIAL_DAYS}-day free trial of the #{plan.name} plan has started."
       when :upgraded
+        clear_promo_code!
         log_audit(:subscription_updated, resource: organization, metadata: { plan: plan.key })
         redirect_to billing_path, notice: "Switched to the #{plan.name} plan. The prorated difference for the rest of this period has been charged to your card."
       when :downgrade_scheduled
@@ -48,6 +51,11 @@ module Billing
     end
 
     private
+
+    def clear_promo_code!
+      session.delete(:promo_code_id)
+      session.delete(:promo_code_display)
+    end
 
     def redirect_with_alert(message)
       redirect_to billing_path, alert: message

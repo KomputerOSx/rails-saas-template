@@ -291,9 +291,17 @@ stays in sync via webhooks. What's safe and what isn't:
   `Pay::Charge#amount_refunded` and the billing history row shows a "Refunded" /
   "Partially refunded" badge.
 - **Per-customer discounts: safe - use Coupons/promotion codes**, applied to the customer or
-  subscription in the Dashboard. The subscription's price id doesn't change, so plan mapping
-  and member limits are untouched, and the discounted amounts flow into synced invoices/charges
-  automatically. (Plan cards keep showing the list price - only invoices reflect the discount.)
+  subscription in the Dashboard, **or self-applied by the org** via the "Have a promo code?"
+  field on the billing page (`Billing::PromoCodesController`). Entering a code resolves it to a
+  Stripe promotion code id (`Stripe::PromotionCode.list(code:, active: true)`, checking the
+  nested coupon's `valid` flag) and holds it in the session (not persisted - it's a
+  checkout-time convenience, not organization state) until the next subscribe/upgrade, which
+  passes it as `discounts: [{ promotion_code: id }]` to Stripe and then clears it. Only applies
+  to subscribe/upgrade (both invoice immediately); a scheduled downgrade has nothing to invoice
+  right now, so an applied code is simply left in the session for a later subscribe/upgrade.
+  Either way, the subscription's price id doesn't change, so plan mapping and member limits are
+  untouched, and the discounted amounts flow into synced invoices/charges automatically. (Plan
+  cards keep showing the list price - only invoices reflect the discount.)
 - **Changing an individual subscription to a one-off custom Price: DON'T.** The app maps
   `processor_plan` (the Stripe price id) back to `Billing::Plans` to resolve the org's plan and
   member limit - an unknown price id falls back to **Free** (1-member limit + over-limit

@@ -108,6 +108,36 @@ class BillingSubscriptionsTest < ActionDispatch::IntegrationTest
     assert_equal Organization::TRIAL_DAYS, captured_params[:trial_period_days]
   end
 
+  test "an applied promo code rides along on subscribe and is cleared afterward" do
+    customer = @organization.set_payment_processor(:stripe)
+    customer.update!(processor_id: "cus_test123")
+    customer.payment_methods.create!(processor_id: "pm_test123", default: true, payment_method_type: "card", brand: "Visa", last4: "4242")
+
+    post login_path, params: { email: @owner.email, password: "password123" }
+
+    coupon = Struct.new(:valid, :percent_off, :amount_off).new(true, 20, nil)
+    promotion_code = Struct.new(:id, :code, :coupon).new("promo_test123", "SAVE20", coupon)
+    Stripe::PromotionCode.stub(:list, [ promotion_code ]) do
+      post billing_promo_code_path, params: { code: "SAVE20" }
+    end
+
+    captured_params = nil
+    fake_stripe_subscription = Struct.new(:id).new("sub_test123")
+    fake_pay_subscription = Object.new.tap { |o| o.define_singleton_method(:incomplete?) { false } }
+
+    Stripe::Subscription.stub(:create, ->(params, _opts) { captured_params = params; fake_stripe_subscription }) do
+      Pay::Stripe::Subscription.stub(:sync, fake_pay_subscription) do
+        with_resolvable_price(Billing::Plans::STARTER) do
+          post billing_subscription_path(plan: "starter")
+        end
+      end
+    end
+
+    assert_redirected_to billing_path
+    assert_equal [ { promotion_code: "promo_test123" } ], captured_params[:discounts]
+    assert_nil session[:promo_code_id]
+  end
+
   test "the owner can switch from one paid plan to another without creating a second subscription" do
     post login_path, params: { email: @owner.email, password: "password123" }
 
