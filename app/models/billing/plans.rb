@@ -27,6 +27,17 @@ module Billing
       end
 
       def resolved_stripe_price_id(currency) = price_for(currency).resolved_stripe_price_id
+
+      # Every Stripe price id this plan has ever charged, in every currency - the currently
+      # configured one plus any retired ones from Plans.legacy_price_ids. Used only for
+      # *recognizing* an existing subscription's plan/limits, never for what a new subscribe
+      # charges (that's always resolved_stripe_price_id, the current one only).
+      def all_stripe_price_ids
+        Plans::SUPPORTED_CURRENCIES.flat_map { |currency| [
+          resolved_stripe_price_id(currency), *Plans.legacy_price_ids(key, currency) ] }.compact
+      end
+
+      end
     end
 
     FREE = Plan.new(key: "free", name: "Free", member_limit: 1, prices: {
