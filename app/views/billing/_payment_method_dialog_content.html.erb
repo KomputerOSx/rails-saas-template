@@ -1,9 +1,10 @@
 <div class="modal-box">
   <form method="dialog"><button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" data-action="click->modal#close">✕</button></form>
 
-  <h3 class="font-bold text-lg mb-4" data-stripe-payment-method-target="title">Update payment method</h3>
+  <h3 class="font-bold text-lg" data-stripe-payment-method-target="title">Update payment method</h3>
+  <p class="mt-1 text-sm text-base-content/60 hidden" data-stripe-payment-method-target="priceNotice"></p>
 
-  <div data-stripe-payment-method-target="elements" class="min-h-[200px]">
+  <div data-stripe-payment-method-target="elements" class="mt-4 min-h-[200px]">
     <p class="text-sm text-base-content/60">Loading payment form...</p>
   </div>
 

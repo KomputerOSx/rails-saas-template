@@ -49,9 +49,9 @@ module Billing
     # plain redirect response as a full visit regardless of the triggering form's format.
     def subscribe_to_pending_plan
       plan = ::Billing::Plans.find(params[:plan])
-      return redirect_to billing_path, notice: "Payment method saved." if plan.nil? || plan.free? || plan.resolved_stripe_price_id.blank?
-
       organization = Current.organization
+      return redirect_to billing_path, notice: "Payment method saved." if plan.nil? || plan.free? || plan.resolved_stripe_price_id(organization.billing_currency).blank?
+
       result = organization.subscribe_to!(plan)
       log_audit(result == :created ? :subscription_created : :subscription_updated, resource: organization, metadata: { plan: plan.key })
       redirect_to billing_path, notice: "Payment method saved and subscribed to the #{plan.name} plan."

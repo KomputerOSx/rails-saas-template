@@ -28,6 +28,7 @@ Rails.application.routes.draw do
     resource :setup_intent, only: [ :create ], controller: "billing/setup_intents"
     resource :payment_method, only: [ :create, :destroy ], controller: "billing/payment_methods"
     resource :subscription, only: [ :create, :destroy ], controller: "billing/subscriptions"
+    resource :currency, only: [ :update ], controller: "billing/currencies"
   end
   get    "profile/totp/new",     to: "profile#new_totp",          as: :new_profile_totp
   post   "profile/totp",         to: "profile#create_totp",       as: :profile_totp

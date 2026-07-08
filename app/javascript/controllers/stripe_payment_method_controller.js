@@ -9,11 +9,12 @@ import { Controller } from "@hotwired/stimulus"
 // default - keeps all persistence server-side, JS only drives the Stripe.js confirmation.
 //
 // Shared by both the standalone "Update payment method" button and each plan card's
-// Upgrade/Downgrade button (when there's no card on file yet): the latter passes a
-// plan/planName param so, once the card is saved, the server subscribes to that plan
-// immediately instead of stopping at "card saved."
+// Upgrade/Downgrade button (when there's no card on file yet): the latter passes
+// plan/planName/planPrice params so, once the card is saved, the server subscribes to that
+// plan immediately instead of stopping at "card saved," and the dialog shows what it's about
+// to charge before the user commits.
 export default class extends Controller {
-  static targets = ["elements", "error", "submit", "form", "setupIntentField", "planField", "title"]
+  static targets = ["elements", "error", "submit", "form", "setupIntentField", "planField", "title", "priceNotice"]
   static values = { publicKey: String, setupIntentUrl: String }
 
   connect() {
@@ -28,9 +29,7 @@ export default class extends Controller {
   // fetch itself is skipped - a later click from a different button should still update it.
   async start(event) {
     this.pendingPlan = event?.params?.plan || ""
-    if (this.hasTitleTarget) {
-      this.titleTarget.textContent = event?.params?.planName ? `Subscribe to ${event.params.planName}` : "Update payment method"
-    }
+    this.updateHeader(event?.params?.planName, event?.params?.planPrice)
 
     if (this.started) return
     this.started = true
@@ -67,11 +66,33 @@ export default class extends Controller {
       const { client_secret } = await response.json()
       this.elements = this.stripe.elements({ clientSecret: client_secret })
       this.elementsTarget.innerHTML = ""
-      this.elements.create("payment").mount(this.elementsTarget)
+      // Explicitly request the cardholder name field - Stripe's Payment Element can decide to
+      // omit it by default (its "auto" heuristic), but this app relies on it for the receipt/
+      // charge display (Pay reads the payment method's billing name from the PaymentMethod).
+      this.elements.create("payment", { fields: { billingDetails: { name: "always" } } }).mount(this.elementsTarget)
     } catch (error) {
       console.error("stripe-payment-method: failed to start", error)
       this.failToLoad("Something went wrong loading the payment form. Please try again.")
     }
+  }
+
+  updateHeader(planName, planPrice) {
+    if (this.hasTitleTarget) {
+      this.titleTarget.textContent = planName ? `Subscribe to ${planName}` : "Update payment method"
+    }
+    if (this.hasPriceNoticeTarget) {
+      if (planPrice) {
+        this.priceNoticeTarget.textContent = `You'll be charged ${planPrice}/mo, billed today and every month after.`
+        this.priceNoticeTarget.classList.remove("hidden")
+      } else {
+        this.priceNoticeTarget.classList.add("hidden")
+      }
+    }
+    if (this.hasSubmitTarget) this.submitTarget.textContent = this.defaultSubmitLabel()
+  }
+
+  defaultSubmitLabel() {
+    return this.pendingPlan ? "Upgrade" : "Save card"
   }
 
   failToLoad(message) {
@@ -83,7 +104,7 @@ export default class extends Controller {
     if (!this.elements) return
 
     this.submitTarget.disabled = true
-    this.submitTarget.textContent = "Saving..."
+    this.submitTarget.textContent = "Please wait..."
     this.hideError()
 
     try {
@@ -109,7 +130,7 @@ export default class extends Controller {
       this.showError("Something went wrong saving your card. Please try again.")
     } finally {
       this.submitTarget.disabled = false
-      this.submitTarget.textContent = "Save card"
+      this.submitTarget.textContent = this.defaultSubmitLabel()
     }
   }
 

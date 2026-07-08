@@ -4,9 +4,8 @@ module Billing
       authorize Current.organization, :manage?, policy_class: BillingPolicy
 
       plan = ::Billing::Plans.find(params[:plan])
-      return redirect_with_alert("That plan isn't available.") if plan.nil? || plan.free? || plan.resolved_stripe_price_id.blank?
-
       organization = Current.organization
+      return redirect_with_alert("That plan isn't available.") if plan.nil? || plan.free? || plan.resolved_stripe_price_id(organization.billing_currency).blank?
       return redirect_with_alert("Add a payment method before subscribing.") unless organization.payment_processor.default_payment_method
 
       result = organization.subscribe_to!(plan)

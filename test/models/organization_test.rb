@@ -135,4 +135,30 @@ class OrganizationTest < ActiveSupport::TestCase
       end
     end
   end
+
+  test "preferred_currency must be a supported currency" do
+    organization = Organization.create_personal_for!(users(:one))
+
+    organization.preferred_currency = "eur"
+    assert_not organization.valid?
+
+    organization.preferred_currency = "gbp"
+    assert organization.valid?
+  end
+
+  test "billing_currency defaults to preferred_currency while on Free" do
+    organization = Organization.create_personal_for!(users(:one))
+    organization.update!(preferred_currency: "gbp")
+
+    assert_equal "gbp", organization.billing_currency
+  end
+
+  test "billing_currency locks to the active subscription's currency once subscribed, ignoring preferred_currency" do
+    organization = Organization.create_personal_for!(users(:one))
+    organization.update!(preferred_currency: "usd")
+
+    with_active_subscription(organization, Billing::Plans::STARTER, currency: "gbp") do
+      assert_equal "gbp", organization.billing_currency
+    end
+  end
 end

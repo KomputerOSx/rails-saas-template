@@ -24,6 +24,7 @@ class Organization < ApplicationRecord
     format: { with: SLUG_FORMAT },
     length: { maximum: 63 },
     exclusion: { in: RESERVED_SLUGS }
+  validates :preferred_currency, inclusion: { in: Billing::Plans::SUPPORTED_CURRENCIES }
 
   # Every user gets exactly one of these at signup - see ConfirmationsController#create.
   # Name/slug are derived from the email local-part since registration only collects
@@ -87,6 +88,17 @@ class Organization < ApplicationRecord
     Billing::Plans.for_stripe_price(subscription.processor_plan) || Billing::Plans::FREE
   end
 
+  # The currency prices/subscribing use everywhere on the billing page. Once actually
+  # subscribed, this locks to whatever currency that subscription is really in (a Stripe
+  # subscription can't swap to a Price in a different currency, so displaying/upgrading in
+  # anything else would be misleading and would fail at Stripe anyway) - only while still on
+  # Free does `preferred_currency` (the billing page's USD/GBP toggle) actually apply.
+  def billing_currency
+    subscription = payment_processor&.subscription
+    return preferred_currency unless subscription&.active?
+    Billing::Plans.currency_for_stripe_price(subscription.processor_plan) || preferred_currency
+  end
+
   def member_limit
     current_plan.member_limit
   end
@@ -114,11 +126,13 @@ class Organization < ApplicationRecord
     payment_method = payment_processor.default_payment_method
     raise ArgumentError, "no payment method on file" unless payment_method
 
+    price_id = plan.resolved_stripe_price_id(billing_currency)
+
     if current_plan.free?
-      payment_processor.subscribe(plan: plan.resolved_stripe_price_id, default_payment_method: payment_method.processor_id, quantity: 1)
+      payment_processor.subscribe(plan: price_id, default_payment_method: payment_method.processor_id, quantity: 1)
       :created
     else
-      payment_processor.subscription.swap(plan.resolved_stripe_price_id)
+      payment_processor.subscription.swap(price_id)
       :updated
     end
   end

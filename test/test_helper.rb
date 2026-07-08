@@ -30,24 +30,31 @@ module ActiveSupport
     setup { Rails.cache.clear }
 
     # Gives an organization an active paid subscription for the duration of the block, using
-    # Pay's fake processor (no network calls) plus a stub of Billing::Plans.for_stripe_price so
-    # Organization#current_plan resolves to `plan` without needing real Stripe price ids in
-    # test credentials. Wrap any assertions that depend on the organization's plan/seat limit
-    # in this block.
-    def with_active_subscription(organization, plan)
+    # Pay's fake processor (no network calls) plus stubs of Billing::Plans.for_stripe_price and
+    # .currency_for_stripe_price so Organization#current_plan/#billing_currency resolve to
+    # `plan`/`currency` without needing real Stripe price ids in test credentials. Wrap any
+    # assertions that depend on the organization's plan/seat limit/currency in this block.
+    def with_active_subscription(organization, plan, currency: Billing::Plans::DEFAULT_CURRENCY)
       customer = organization.set_payment_processor(:fake_processor, allow_fake: true)
-      customer.subscribe(plan: "price_fake_#{plan.key}")
+      customer.subscribe(plan: "price_fake_#{plan.key}_#{currency}")
 
-      Billing::Plans.stub(:for_stripe_price, plan) { yield }
+      Billing::Plans.stub(:for_stripe_price, plan) do
+        Billing::Plans.stub(:currency_for_stripe_price, currency) { yield }
+      end
     end
 
-    # Makes Billing::Plans.find(plan.key) resolve to a price id for the duration of the
-    # block, without touching real Stripe credentials (test credentials carry none). Returns
-    # a separate Plan value (not `plan` itself, which stays untouched for identity/equality
-    # comparisons elsewhere, e.g. Organization#current_plan == Billing::Plans::STARTER) - only
-    # #resolved_stripe_price_id from the stubbed lookup needs to be non-blank.
-    def with_resolvable_price(plan, price_id: "price_fake_#{plan.key}")
-      resolvable_plan = plan.class.new(**plan.to_h.merge(stripe_price_id: price_id))
+    # Makes Billing::Plans.find(plan.key) resolve to a plan with real (fake) Stripe price ids
+    # for every supported currency, for the duration of the block, without touching real
+    # Stripe credentials (test credentials carry none). Returns a separate Plan value (not
+    # `plan` itself, which stays untouched for identity/equality comparisons elsewhere, e.g.
+    # Organization#current_plan == Billing::Plans::STARTER) - only #resolved_stripe_price_id
+    # from the stubbed lookup needs to be non-blank.
+    def with_resolvable_price(plan)
+      resolvable_prices = plan.prices.to_h { |currency, price|
+        [ currency, Billing::Plans::Price.new(cents: price.cents, stripe_price_id: "price_fake_#{plan.key}_#{currency}") ]
+      }
+      resolvable_plan = Billing::Plans::Plan.new(key: plan.key, name: plan.name, member_limit: plan.member_limit, prices: resolvable_prices)
+
       Billing::Plans.stub(:find, ->(key) { key.to_s == plan.key ? resolvable_plan : Billing::Plans::ALL.find { |p| p.key == key.to_s } }) do
         yield
       end

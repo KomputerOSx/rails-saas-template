@@ -1,30 +1,46 @@
 module Billing
   class Plans
-    # Must match whatever currency your Stripe Prices are actually denominated in - a Stripe
-    # Price is tied to one fixed currency, so this can't vary per-request/per-customer without
-    # setting up Stripe's multi-currency Prices feature (out of scope for this template's two
-    # fixed tiers). Change this (e.g. to "gbp") if your account's prices aren't USD - it drives
-    # both the displayed price below and must match what you actually charge, or the UI will
-    # show the wrong currency symbol/amount for what Stripe actually bills.
-    CURRENCY = "usd"
+    SUPPORTED_CURRENCIES = %w[usd gbp].freeze
+    DEFAULT_CURRENCY = "usd"
 
-    Plan = Data.define(:key, :name, :price_cents, :member_limit, :stripe_price_id) do
-      def free? = price_cents.zero?
-
-      def formatted_price
-        Pay::Currency.format(price_cents, currency: Plans::CURRENCY)
-      end
-
+    Price = Data.define(:cents, :stripe_price_id) do
       def resolved_stripe_price_id
         stripe_price_id.respond_to?(:call) ? stripe_price_id.call : stripe_price_id
       end
     end
 
-    FREE = Plan.new(key: "free", name: "Free", price_cents: 0, member_limit: 1, stripe_price_id: nil)
-    STARTER = Plan.new(key: "starter", name: "Starter", price_cents: 1000, member_limit: 5,
-      stripe_price_id: -> { Rails.application.credentials.dig(:stripe, :price_ids, :starter) })
-    GROWTH = Plan.new(key: "growth", name: "Growth", price_cents: 3000, member_limit: 20,
-      stripe_price_id: -> { Rails.application.credentials.dig(:stripe, :price_ids, :growth) })
+    # `prices` is a currency => Price hash - a Stripe Price (and therefore a subscription) is
+    # always denominated in exactly one fixed currency, so switching currency on the billing
+    # page means picking a different Price entirely, not converting an amount. See
+    # docs/BILLING.md for the Stripe dashboard setup (one Price per plan per currency).
+    Plan = Data.define(:key, :name, :member_limit, :prices) do
+      def free? = key == "free"
+
+      def price_for(currency)
+        prices.fetch(currency.to_s) { prices.fetch(Plans::DEFAULT_CURRENCY) }
+      end
+
+      def price_cents(currency) = price_for(currency).cents
+
+      def formatted_price(currency)
+        Pay::Currency.format(price_cents(currency), currency: currency)
+      end
+
+      def resolved_stripe_price_id(currency) = price_for(currency).resolved_stripe_price_id
+    end
+
+    FREE = Plan.new(key: "free", name: "Free", member_limit: 1, prices: {
+      "usd" => Price.new(cents: 0, stripe_price_id: nil),
+      "gbp" => Price.new(cents: 0, stripe_price_id: nil)
+    })
+    STARTER = Plan.new(key: "starter", name: "Starter", member_limit: 5, prices: {
+      "usd" => Price.new(cents: 999, stripe_price_id: -> { Rails.application.credentials.dig(:stripe, :price_ids, :starter, :usd) }),
+      "gbp" => Price.new(cents: 999, stripe_price_id: -> { Rails.application.credentials.dig(:stripe, :price_ids, :starter, :gbp) })
+    })
+    GROWTH = Plan.new(key: "growth", name: "Growth", member_limit: 20, prices: {
+      "usd" => Price.new(cents: 2999, stripe_price_id: -> { Rails.application.credentials.dig(:stripe, :price_ids, :growth, :usd) }),
+      "gbp" => Price.new(cents: 2999, stripe_price_id: -> { Rails.application.credentials.dig(:stripe, :price_ids, :growth, :gbp) })
+    })
 
     ALL = [ FREE, STARTER, GROWTH ].freeze
     PAID = [ STARTER, GROWTH ].freeze
@@ -33,9 +49,23 @@ module Billing
       ALL.find { |plan| plan.key == key.to_s }
     end
 
+    # Stripe price ids are unique per account regardless of currency, so a subscription's
+    # processor_plan alone is enough to find the right plan without already knowing which
+    # currency it was purchased in.
     def self.for_stripe_price(stripe_price_id)
       return nil if stripe_price_id.blank?
-      PAID.find { |plan| plan.resolved_stripe_price_id == stripe_price_id }
+      PAID.find { |plan| SUPPORTED_CURRENCIES.any? { |currency| plan.resolved_stripe_price_id(currency) == stripe_price_id } }
+    end
+
+    # Which of SUPPORTED_CURRENCIES a given Stripe price id was configured under, if any.
+    def self.currency_for_stripe_price(stripe_price_id)
+      return nil if stripe_price_id.blank?
+      PAID.each do |plan|
+        SUPPORTED_CURRENCIES.each do |currency|
+          return currency if plan.resolved_stripe_price_id(currency) == stripe_price_id
+        end
+      end
+      nil
     end
   end
 end

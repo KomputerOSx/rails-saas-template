@@ -15,7 +15,7 @@
     <%= button_to "Remove", billing_payment_method_path, method: :delete,
           class: "btn btn-error btn-outline btn-sm",
           data: {
-            controller: "confirm-modal", action: "click->confirm-modal#confirm",
+            controller: "confirm-modal loading-button", action: "click->confirm-modal#confirm",
             confirm_modal_message_value: "Remove your #{payment_method.brand&.capitalize} card ending in #{payment_method.last4}?"
           } %>
   <% end %>

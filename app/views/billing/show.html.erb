@@ -30,14 +30,24 @@
         </p>
       </div>
 
-      <% unless @current_plan.free? %>
-        <%= button_to "Cancel subscription", billing_subscription_path, method: :delete,
-              class: "btn btn-error btn-outline btn-sm shrink-0",
-              data: {
-                controller: "confirm-modal", action: "click->confirm-modal#confirm",
-                confirm_modal_message_value: Rails.env.production? ? "Cancel your #{@current_plan.name} subscription? You'll keep access until the end of your current billing period." : "Cancel your #{@current_plan.name} subscription? This will end it immediately."
-              } %>
-      <% end %>
+      <div class="flex shrink-0 items-center gap-2">
+        <% if @current_plan.free? %>
+          <div class="join">
+            <% Billing::Plans::SUPPORTED_CURRENCIES.each do |currency| %>
+              <%= button_to currency.upcase, billing_currency_path, method: :patch, params: { currency: currency },
+                    class: "btn btn-sm join-item #{"btn-primary" if @currency == currency}", data: { controller: "loading-button" } %>
+            <% end %>
+          </div>
+        <% else %>
+          <span class="badge badge-outline badge-sm">Billed in <%= @currency.upcase %></span>
+          <%= button_to "Cancel subscription", billing_subscription_path, method: :delete,
+                class: "btn btn-error btn-outline btn-sm",
+                data: {
+                  controller: "confirm-modal loading-button", action: "click->confirm-modal#confirm",
+                  confirm_modal_message_value: Rails.env.production? ? "Cancel your #{@current_plan.name} subscription? You'll keep access until the end of your current billing period." : "Cancel your #{@current_plan.name} subscription? This will end it immediately."
+                } %>
+        <% end %>
+      </div>
     </div>
 
     <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -51,23 +61,24 @@
               <% end %>
             </div>
             <p class="mt-1 text-2xl font-semibold">
-              <%= plan.free? ? "Free" : plan.formatted_price %>
+              <%= plan.free? ? "Free" : plan.formatted_price(@currency) %>
               <% unless plan.free? %><span class="text-sm font-normal text-base-content/60">/mo</span><% end %>
             </p>
             <p class="mt-1 text-sm text-base-content/60">Up to <%= plan.member_limit %> <%= "member".pluralize(plan.member_limit) %></p>
 
             <% if plan != @current_plan && !plan.free? %>
-              <% label = plan.price_cents > @current_plan.price_cents ? "Upgrade" : "Downgrade" %>
+              <% label = plan.price_cents(@currency) > @current_plan.price_cents(@currency) ? "Upgrade" : "Downgrade" %>
               <% if @payment_method %>
                 <%= button_to label, billing_subscription_path(plan: plan.key), method: :post,
-                      class: "btn btn-primary btn-sm mt-4 w-full" %>
+                      class: "btn btn-primary btn-sm mt-4 w-full", data: { controller: "loading-button" } %>
               <% else %>
                 <%# No card on file yet - open the same payment method dialog used below, and
                     subscribe to this plan immediately once the card is saved. %>
                 <button type="button" class="btn btn-primary btn-sm mt-4 w-full"
                         data-action="click->modal#open click->stripe-payment-method#start"
                         data-stripe-payment-method-plan-param="<%= plan.key %>"
-                        data-stripe-payment-method-plan-name-param="<%= plan.name %>">
+                        data-stripe-payment-method-plan-name-param="<%= plan.name %>"
+                        data-stripe-payment-method-plan-price-param="<%= plan.formatted_price(@currency) %>">
                   <%= label %>
                 </button>
               <% end %>
