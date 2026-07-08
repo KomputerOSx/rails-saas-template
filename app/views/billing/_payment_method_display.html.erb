@@ -1,9 +1,22 @@
-<dt class="text-xs text-base-content/60 uppercase tracking-wide">Card on file</dt>
-<% if payment_method %>
-  <dd class="mt-1 font-medium">
-    <%= payment_method.brand&.capitalize %> ending in <%= payment_method.last4 %>
-    <span class="font-normal text-base-content/50">(exp <%= payment_method.exp_month %>/<%= payment_method.exp_year %>)</span>
-  </dd>
-<% else %>
-  <dd class="mt-1 text-base-content/50">No payment method on file</dd>
-<% end %>
+<div id="<%= dom_id(Current.organization, :payment_method_display) %>" class="flex items-center gap-4">
+  <dl>
+    <dt class="text-xs text-base-content/60 uppercase tracking-wide">Card on file</dt>
+    <% if payment_method %>
+      <dd class="mt-1 font-medium">
+        <%= payment_method.brand&.capitalize %> ending in <%= payment_method.last4 %>
+        <span class="font-normal text-base-content/50">(exp <%= payment_method.exp_month %>/<%= payment_method.exp_year %>)</span>
+      </dd>
+    <% else %>
+      <dd class="mt-1 text-base-content/50">No payment method on file</dd>
+    <% end %>
+  </dl>
+
+  <% if payment_method %>
+    <%= button_to "Remove", billing_payment_method_path, method: :delete,
+          class: "btn btn-error btn-outline btn-sm",
+          data: {
+            controller: "confirm-modal", action: "click->confirm-modal#confirm",
+            confirm_modal_message_value: "Remove your #{payment_method.brand&.capitalize} card ending in #{payment_method.last4}?"
+          } %>
+  <% end %>
+</div>

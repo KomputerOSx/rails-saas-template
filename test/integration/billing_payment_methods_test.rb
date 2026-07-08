@@ -45,4 +45,55 @@ class BillingPaymentMethodsTest < ActionDispatch::IntegrationTest
 
     assert_redirected_to billing_path
   end
+
+  test "a non-owner cannot remove the payment method" do
+    member = users(:two)
+    @organization.memberships.create!(user: member).grant_role!(Role.find_or_create_by!(scope: :app, name: Role::APP_USER))
+
+    post login_path, params: { email: member.email, password: "password123" }
+
+    delete billing_payment_method_path
+    assert_redirected_to root_path
+  end
+
+  test "removing with no payment method on file shows an alert" do
+    post login_path, params: { email: @owner.email, password: "password123" }
+
+    delete billing_payment_method_path
+    assert_redirected_to billing_path
+  end
+
+  test "the owner can remove their payment method while on the Free plan" do
+    post login_path, params: { email: @owner.email, password: "password123" }
+
+    customer = @organization.set_payment_processor(:stripe)
+    customer.update!(processor_id: "cus_test123")
+    customer.payment_methods.create!(processor_id: "pm_test123", default: true, payment_method_type: "card", brand: "Visa", last4: "4242")
+
+    Stripe::PaymentMethod.stub(:detach, true) do
+      assert_difference "Pay::PaymentMethod.count", -1 do
+        delete billing_payment_method_path
+      end
+    end
+
+    assert_redirected_to billing_path
+    assert_nil @organization.payment_processor.default_payment_method
+    assert AuditLog.exists?(event_type: :payment_method_removed, resource_type: "Organization", resource_id: @organization.id)
+  end
+
+  test "removing the payment method is refused while subscribed to a paid plan" do
+    post login_path, params: { email: @owner.email, password: "password123" }
+
+    customer = @organization.set_payment_processor(:fake_processor, allow_fake: true)
+    customer.payment_methods.create!(processor_id: "pm_fake", default: true, payment_method_type: "card", brand: "Visa", last4: "4242")
+
+    with_active_subscription(@organization, Billing::Plans::STARTER) do
+      assert_no_difference "Pay::PaymentMethod.count" do
+        delete billing_payment_method_path
+      end
+    end
+
+    assert_redirected_to billing_path
+    assert @organization.payment_processor.default_payment_method.present?
+  end
 end

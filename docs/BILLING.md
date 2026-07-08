@@ -124,13 +124,20 @@ restricted key. `price_ids` is this app's own addition, read by `Billing::Plans:
   client-side. On success it submits the resulting `setup_intent_id` to a normal Rails form,
   which syncs the payment method (`Pay::Stripe::PaymentMethod.sync_setup_intent`) and marks it
   default (`PaymentMethod#make_default!`) - both provided by Pay, no custom Stripe API calls.
+- **Removing a card** (`app/controllers/billing/payment_methods_controller.rb`,
+  `DELETE /billing/payment_method`): calls Pay's `PaymentMethod#detach` (removes it from Stripe)
+  then destroys the local row - mirrors what Pay's own `payment_method.detached` webhook handler
+  does, just synchronously instead of waiting on a webhook round-trip. **Blocked while subscribed
+  to a paid plan** (`Organization#current_plan.free?` guard) so an org can't strand an active
+  subscription with nothing to charge at renewal - cancel first, then remove the card.
 - **Subscribing / upgrading / downgrading**
   (`app/controllers/billing/subscriptions_controller.rb`, `POST /billing/subscription`): requires
   a saved default payment method first (redirects back with an alert if there isn't one yet).
-  If the org is on Free, calls `payment_processor.subscribe(plan:, payment_method:)`; if already
-  on a paid plan, calls `subscription.swap(price_id)` to change the existing subscription's price
-  in place (prorated) instead of creating a second one - both are Pay-provided
-  `Pay::Stripe::Subscription` methods.
+  If the org is on Free, calls `payment_processor.subscribe(plan:, default_payment_method:)`; if
+  already on a paid plan, calls `subscription.swap(price_id)` to change the existing
+  subscription's price in place (prorated) instead of creating a second one - both are
+  Pay-provided `Pay::Stripe::Subscription` methods. (Note: Stripe's Subscription API param is
+  `default_payment_method`, not `payment_method` - passing the latter gets rejected outright.)
 - **Canceling** (`DELETE /billing/subscription`): `Rails.env.production?` decides which Pay
   method runs - `subscription.cancel` (marks `cancel_at_period_end: true`, access continues
   until the current period ends) in production, `subscription.cancel_now!` (ends immediately)

@@ -72,9 +72,7 @@
     <div class="card mt-4 border border-base-300">
       <div class="card-body p-0">
         <div class="flex items-center justify-between px-8 py-4">
-          <dl id="<%= dom_id(Current.organization, :payment_method_display) %>">
-            <%= render "billing/payment_method_display", payment_method: @payment_method %>
-          </dl>
+          <%= render "billing/payment_method_display", payment_method: @payment_method %>
 
           <div data-controller="modal stripe-payment-method" class="shrink-0"
                data-stripe-payment-method-public-key-value="<%= Rails.application.credentials.dig(:stripe, :public_key) %>"
