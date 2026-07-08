@@ -76,7 +76,9 @@
             <%= render "billing/payment_method_display", payment_method: @payment_method %>
           </dl>
 
-          <div data-controller="modal" class="shrink-0">
+          <div data-controller="modal stripe-payment-method" class="shrink-0"
+               data-stripe-payment-method-public-key-value="<%= Rails.application.credentials.dig(:stripe, :public_key) %>"
+               data-stripe-payment-method-setup-intent-url-value="<%= billing_setup_intent_path %>">
             <button data-action="click->modal#open click->stripe-payment-method#start" class="btn btn-outline btn-sm">
               Update payment method
             </button>

@@ -1,7 +1,4 @@
-<div class="modal-box"
-     data-controller="stripe-payment-method"
-     data-stripe-payment-method-public-key-value="<%= Rails.application.credentials.dig(:stripe, :public_key) %>"
-     data-stripe-payment-method-setup-intent-url-value="<%= billing_setup_intent_path %>">
+<div class="modal-box">
   <form method="dialog"><button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" data-action="click->modal#close">✕</button></form>
 
   <h3 class="font-bold text-lg mb-4">Update payment method</h3>
