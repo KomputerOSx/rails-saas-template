@@ -1,0 +1,48 @@
+require "test_helper"
+
+class BillingPaymentMethodsTest < ActionDispatch::IntegrationTest
+  setup do
+    @owner = users(:one)
+    @organization = Organization.create_personal_for!(@owner)
+  end
+
+  test "a non-owner cannot update the payment method" do
+    member = users(:two)
+    @organization.memberships.create!(user: member).grant_role!(Role.find_or_create_by!(scope: :app, name: Role::APP_USER))
+
+    post login_path, params: { email: member.email, password: "password123" }
+
+    post billing_payment_method_path, params: { setup_intent_id: "seti_test123" }
+    assert_redirected_to root_path
+  end
+
+  test "a completed setup intent is synced and saved as the default payment method" do
+    post login_path, params: { email: @owner.email, password: "password123" }
+
+    customer = @organization.set_payment_processor(:stripe)
+    customer.update!(processor_id: "cus_test123")
+    # Already `default: true` so PaymentMethod#make_default! short-circuits before making
+    # any Stripe API calls of its own - only Pay::Stripe::PaymentMethod.sync_setup_intent
+    # needs stubbing below.
+    payment_method = customer.payment_methods.create!(
+      processor_id: "pm_test123", default: true, payment_method_type: "card", brand: "Visa", last4: "4242"
+    )
+
+    Pay::Stripe::PaymentMethod.stub(:sync_setup_intent, payment_method) do
+      post billing_payment_method_path, params: { setup_intent_id: "seti_test123" }
+    end
+
+    assert_redirected_to billing_path
+    assert AuditLog.exists?(event_type: :payment_method_updated, resource_type: "Organization", resource_id: @organization.id)
+  end
+
+  test "an unresolvable setup intent shows an error instead of crashing" do
+    post login_path, params: { email: @owner.email, password: "password123" }
+
+    Pay::Stripe::PaymentMethod.stub(:sync_setup_intent, nil) do
+      post billing_payment_method_path, params: { setup_intent_id: "seti_bad" }
+    end
+
+    assert_redirected_to billing_path
+  end
+end

@@ -41,6 +41,18 @@ module ActiveSupport
       Billing::Plans.stub(:for_stripe_price, plan) { yield }
     end
 
+    # Makes Billing::Plans.find(plan.key) resolve to a price id for the duration of the
+    # block, without touching real Stripe credentials (test credentials carry none). Returns
+    # a separate Plan value (not `plan` itself, which stays untouched for identity/equality
+    # comparisons elsewhere, e.g. Organization#current_plan == Billing::Plans::STARTER) - only
+    # #resolved_stripe_price_id from the stubbed lookup needs to be non-blank.
+    def with_resolvable_price(plan, price_id: "price_fake_#{plan.key}")
+      resolvable_plan = plan.class.new(**plan.to_h.merge(stripe_price_id: price_id))
+      Billing::Plans.stub(:find, ->(key) { key.to_s == plan.key ? resolvable_plan : Billing::Plans::ALL.find { |p| p.key == key.to_s } }) do
+        yield
+      end
+    end
+
     # Add more helper methods to be used by all tests here...
   end
 end

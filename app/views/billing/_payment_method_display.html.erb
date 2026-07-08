@@ -1,0 +1,9 @@
+<dt class="text-xs text-base-content/60 uppercase tracking-wide">Card on file</dt>
+<% if payment_method %>
+  <dd class="mt-1 font-medium">
+    <%= payment_method.brand&.capitalize %> ending in <%= payment_method.last4 %>
+    <span class="font-normal text-base-content/50">(exp <%= payment_method.exp_month %>/<%= payment_method.exp_year %>)</span>
+  </dd>
+<% else %>
+  <dd class="mt-1 text-base-content/50">No payment method on file</dd>
+<% end %>

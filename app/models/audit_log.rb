@@ -62,7 +62,8 @@ class AuditLog < ApplicationRecord
     organization_feature_settings_updated: "organization_feature_settings_updated",
     subscription_created: "subscription_created",
     subscription_updated: "subscription_updated",
-    subscription_cancelled: "subscription_cancelled"
+    subscription_cancelled: "subscription_cancelled",
+    payment_method_updated: "payment_method_updated"
   }
 
   validates :event_type, presence: true

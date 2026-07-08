@@ -1,0 +1,26 @@
+<div class="modal-box"
+     data-controller="stripe-payment-method"
+     data-stripe-payment-method-public-key-value="<%= Rails.application.credentials.dig(:stripe, :public_key) %>"
+     data-stripe-payment-method-setup-intent-url-value="<%= billing_setup_intent_path %>">
+  <form method="dialog"><button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" data-action="click->modal#close">✕</button></form>
+
+  <h3 class="font-bold text-lg mb-4">Update payment method</h3>
+
+  <div data-stripe-payment-method-target="elements" class="min-h-[200px]">
+    <p class="text-sm text-base-content/60">Loading payment form...</p>
+  </div>
+
+  <p data-stripe-payment-method-target="error" class="mt-2 text-sm text-error hidden"></p>
+
+  <button type="button" data-action="click->stripe-payment-method#save"
+        data-stripe-payment-method-target="submit"
+        class="btn btn-primary w-full mt-4">
+    Save card
+  </button>
+
+  <%= form_with url: billing_payment_method_path, method: :post,
+        data: { stripe_payment_method_target: "form", action: "turbo:submit-end->modal#closeOnSuccess" }, class: "hidden" do |f| %>
+    <%= f.hidden_field :setup_intent_id, data: { stripe_payment_method_target: "setupIntentField" } %>
+  <% end %>
+</div>
+<form method="dialog" class="modal-backdrop"><button>close</button></form>

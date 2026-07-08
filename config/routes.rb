@@ -25,8 +25,9 @@ Rails.application.routes.draw do
 
   resource :profile, only: [ :show, :update, :destroy ], controller: "profile"
   resource :billing, only: [ :show ], controller: "billing" do
-    resources :checkouts, only: [ :create ], controller: "billing/checkouts"
-    resource :portal_session, only: [ :create ], controller: "billing/portal_sessions"
+    resource :setup_intent, only: [ :create ], controller: "billing/setup_intents"
+    resource :payment_method, only: [ :create ], controller: "billing/payment_methods"
+    resource :subscription, only: [ :create, :destroy ], controller: "billing/subscriptions"
   end
   get    "profile/totp/new",     to: "profile#new_totp",          as: :new_profile_totp
   post   "profile/totp",         to: "profile#create_totp",       as: :profile_totp

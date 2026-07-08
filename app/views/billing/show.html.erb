@@ -1,3 +1,7 @@
+<% content_for :head do %>
+  <script src="https://js.stripe.com/v3/"></script>
+<% end %>
+
 <section class="w-full max-w-3xl">
   <p class="text-sm font-medium text-base-content/60">Account Settings</p>
   <h1 class="mt-3 text-4xl font-semibold tracking-normal">Billing</h1>
@@ -15,10 +19,23 @@
 
   <%# ── Current Plan ── %>
   <div class="mt-10">
-    <h2 class="text-lg font-semibold">Current plan</h2>
-    <p class="mt-0.5 text-sm text-base-content/60">
-      <%= @member_usage %> of <%= @member_limit %> members used.
-    </p>
+    <div class="flex items-start justify-between gap-4">
+      <div>
+        <h2 class="text-lg font-semibold">Current plan</h2>
+        <p class="mt-0.5 text-sm text-base-content/60">
+          <%= @member_usage %> of <%= @member_limit %> members used.
+        </p>
+      </div>
+
+      <% unless @current_plan.free? %>
+        <%= button_to "Cancel subscription", billing_subscription_path, method: :delete,
+              class: "btn btn-error btn-outline btn-sm shrink-0",
+              data: {
+                controller: "confirm-modal", action: "click->confirm-modal#confirm",
+                confirm_modal_message_value: Rails.env.production? ? "Cancel your #{@current_plan.name} subscription? You'll keep access until the end of your current billing period." : "Cancel your #{@current_plan.name} subscription? This will end it immediately."
+              } %>
+      <% end %>
+    </div>
 
     <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
       <% @plans.each do |plan| %>
@@ -37,8 +54,9 @@
             <p class="mt-1 text-sm text-base-content/60">Up to <%= plan.member_limit %> <%= "member".pluralize(plan.member_limit) %></p>
 
             <% if plan != @current_plan && !plan.free? %>
-              <%= button_to "Upgrade", billing_checkouts_path(plan: plan.key), method: :post,
-                    class: "btn btn-primary btn-sm mt-4 w-full", data: { turbo: false } %>
+              <% label = plan.price_cents > @current_plan.price_cents ? "Upgrade" : "Downgrade" %>
+              <%= button_to label, billing_subscription_path(plan: plan.key), method: :post,
+                    class: "btn btn-primary btn-sm mt-4 w-full" %>
             <% end %>
           </div>
         </div>
@@ -49,25 +67,24 @@
   <%# ── Payment Method ── %>
   <div class="mt-10">
     <h2 class="text-lg font-semibold">Payment method</h2>
-    <p class="mt-0.5 text-sm text-base-content/60">Manage your card and billing details on Stripe.</p>
+    <p class="mt-0.5 text-sm text-base-content/60">Your card is billed automatically each cycle.</p>
 
     <div class="card mt-4 border border-base-300">
       <div class="card-body p-0">
         <div class="flex items-center justify-between px-8 py-4">
-          <div>
-            <dt class="text-xs text-base-content/60 uppercase tracking-wide">Card on file</dt>
-            <% if @payment_method %>
-              <dd class="mt-1 font-medium"><%= @payment_method.brand&.capitalize %> ending in <%= @payment_method.last4 %></dd>
-            <% else %>
-              <dd class="mt-1 text-base-content/50">No payment method on file</dd>
-            <% end %>
+          <dl id="<%= dom_id(Current.organization, :payment_method_display) %>">
+            <%= render "billing/payment_method_display", payment_method: @payment_method %>
+          </dl>
+
+          <div data-controller="modal" class="shrink-0">
+            <button data-action="click->modal#open click->stripe-payment-method#start" class="btn btn-outline btn-sm">
+              Update payment method
+            </button>
+
+            <dialog id="<%= dom_id(Current.organization, :payment_method_dialog) %>" data-modal-target="dialog" class="modal">
+              <%= render "billing/payment_method_dialog_content" %>
+            </dialog>
           </div>
-          <% if @has_billing_account %>
-            <%= button_to "Manage billing", billing_portal_session_path, method: :post,
-                  class: "btn btn-outline btn-sm", data: { turbo: false } %>
-          <% else %>
-            <button class="btn btn-ghost btn-sm" disabled>Add</button>
-          <% end %>
         </div>
       </div>
     </div>
@@ -87,7 +104,8 @@
                 <tr class="border-b border-base-300">
                   <th>Date</th>
                   <th>Amount</th>
-                  <th class="text-right">Charged to</th>
+                  <th>Charged to</th>
+                  <th class="text-right">Invoice</th>
                 </tr>
               </thead>
               <tbody>
@@ -95,7 +113,14 @@
                   <tr class="hover:bg-base-200">
                     <td class="text-base-content/60"><%= charge.created_at.strftime("%b %-d, %Y") %></td>
                     <td class="font-medium"><%= charge.amount_with_currency %></td>
-                    <td class="text-right text-base-content/60"><%= charge.charged_to %></td>
+                    <td class="text-base-content/60"><%= charge.charged_to %></td>
+                    <td class="text-right">
+                      <% invoice_pdf = charge.stripe_invoice.is_a?(Hash) ? charge.stripe_invoice["invoice_pdf"] : nil %>
+                      <% download_url = invoice_pdf || charge.stripe_receipt_url %>
+                      <% if download_url %>
+                        <%= link_to "Download", download_url, class: "link link-hover text-sm", target: "_blank", rel: "noopener" %>
+                      <% end %>
+                    </td>
                   </tr>
                 <% end %>
               </tbody>
