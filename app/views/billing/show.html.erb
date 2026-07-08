@@ -5,7 +5,8 @@
 <section class="w-full max-w-3xl"
          data-controller="modal stripe-payment-method processing-overlay"
          data-stripe-payment-method-public-key-value="<%= Rails.application.credentials.dig(:stripe, :public_key) %>"
-         data-stripe-payment-method-setup-intent-url-value="<%= billing_setup_intent_path %>">
+         data-stripe-payment-method-setup-intent-url-value="<%= billing_setup_intent_path %>"
+         data-stripe-payment-method-default-billing-value="<%= { name: Current.organization.billing_name.to_s, address: Current.organization.stripe_billing_address || {} }.to_json %>">
   <dialog data-processing-overlay-target="overlay" class="modal">
     <div class="flex items-center gap-3 rounded-lg border border-base-300 bg-base-100 px-6 py-4">
       <span class="loading loading-spinner loading-md"></span>
@@ -106,6 +107,70 @@
         </div>
       </div>
     </div>
+  </div>
+
+  <%# ── Billing Details ── %>
+  <div class="mt-10" data-controller="modal">
+    <h2 class="text-lg font-semibold">Billing details</h2>
+    <p class="mt-0.5 text-sm text-base-content/60">The name and address that appear on your invoices.</p>
+
+    <div class="card mt-4 border border-base-300">
+      <div class="card-body p-0">
+        <div class="flex items-center justify-between px-8 py-4">
+          <%= render "billing/billing_address_display", organization: Current.organization %>
+
+          <button data-action="click->modal#open" class="btn btn-outline btn-sm shrink-0">
+            Edit
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <dialog data-modal-target="dialog" class="modal">
+      <div class="modal-box">
+        <form method="dialog"><button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" data-action="click->modal#close">✕</button></form>
+        <h3 class="font-bold text-lg">Billing details</h3>
+
+        <%= form_with model: Current.organization, url: billing_billing_address_path, method: :patch,
+              data: { action: "turbo:submit-end->modal#closeOnSuccess" } do |f| %>
+          <div class="form-control mt-4">
+            <label class="label"><span class="label-text">Name</span></label>
+            <%= f.text_field :billing_name, class: "input-field w-full" %>
+          </div>
+          <div class="form-control mt-4">
+            <label class="label"><span class="label-text">Address line 1</span></label>
+            <%= f.text_field :billing_address_line1, class: "input-field w-full" %>
+          </div>
+          <div class="form-control mt-4">
+            <label class="label"><span class="label-text">Address line 2</span></label>
+            <%= f.text_field :billing_address_line2, class: "input-field w-full" %>
+          </div>
+          <div class="mt-4 grid grid-cols-2 gap-4">
+            <div class="form-control">
+              <label class="label"><span class="label-text">City</span></label>
+              <%= f.text_field :billing_address_city, class: "input-field w-full" %>
+            </div>
+            <div class="form-control">
+              <label class="label"><span class="label-text">State / Province</span></label>
+              <%= f.text_field :billing_address_state, class: "input-field w-full" %>
+            </div>
+          </div>
+          <div class="mt-4 grid grid-cols-2 gap-4">
+            <div class="form-control">
+              <label class="label"><span class="label-text">Postal code</span></label>
+              <%= f.text_field :billing_address_postal_code, class: "input-field w-full" %>
+            </div>
+            <div class="form-control">
+              <label class="label"><span class="label-text">Country</span></label>
+              <%= f.text_field :billing_address_country, class: "input-field w-full", placeholder: "e.g. US" %>
+            </div>
+          </div>
+
+          <%= f.button "Save", type: :submit, class: "btn btn-primary w-full mt-6", data: { controller: "loading-button" } %>
+        <% end %>
+      </div>
+      <form method="dialog" class="modal-backdrop"><button>close</button></form>
+    </dialog>
   </div>
 
   <%# ── Billing History ── %>

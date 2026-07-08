@@ -161,4 +161,42 @@ class OrganizationTest < ActiveSupport::TestCase
       assert_equal "gbp", organization.billing_currency
     end
   end
+
+  test "stripe_billing_address is nil until any address field is set" do
+    organization = Organization.create_personal_for!(users(:one))
+    assert_nil organization.stripe_billing_address
+
+    organization.update!(billing_address_city: "Springfield")
+    assert_equal "Springfield", organization.stripe_billing_address[:city]
+  end
+
+  test "sync_billing_details! persists locally and pushes name/address to the Stripe customer" do
+    organization = Organization.create_personal_for!(users(:one))
+    customer = organization.set_payment_processor(:stripe)
+    customer.update!(processor_id: "cus_test123")
+
+    update_attributes = nil
+    fake_update = ->(_processor_id, attributes, _opts) { update_attributes = attributes }
+
+    Stripe::Customer.stub(:update, fake_update) do
+      organization.sync_billing_details!(name: "Jane Doe", address: { line1: "1 Main St", country: "US" })
+    end
+
+    assert_equal "Jane Doe", organization.billing_name
+    assert_equal "1 Main St", organization.billing_address_line1
+    assert_equal "Jane Doe", update_attributes[:name]
+    assert_equal "1 Main St", update_attributes[:address][:line1]
+  end
+
+  test "the Stripe customer attributes fall back to the organization's own name until a billing name is set" do
+    organization = Organization.create_personal_for!(users(:one))
+    customer = organization.set_payment_processor(:stripe)
+
+    assert_equal organization.name, customer.api_record_attributes[:name]
+    assert_nil customer.api_record_attributes[:address]
+
+    organization.update!(billing_name: "Custom Billing Name", billing_address_country: "US")
+    assert_equal "Custom Billing Name", customer.api_record_attributes[:name]
+    assert_equal "US", customer.api_record_attributes[:address][:country]
+  end
 end

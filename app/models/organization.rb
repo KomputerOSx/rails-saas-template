@@ -7,8 +7,14 @@ class Organization < ApplicationRecord
   # Pay::Customer#email delegates to owner.email (Pay::Customer#api_record_attributes reads it
   # unconditionally), so Organization needs its own #email even though we have no email column -
   # see #email below, which borrows the current owner's.
+  #
+  # name/address here fall back to the org's own name (no address) until the user explicitly
+  # sets billing details via #sync_billing_details! - see there for how those then take over.
   pay_customer default_payment_processor: :stripe,
-    stripe_attributes: ->(pay_customer) { { name: pay_customer.owner.name } }
+    stripe_attributes: ->(pay_customer) {
+      organization = pay_customer.owner
+      { name: organization.billing_name.presence || organization.name, address: organization.stripe_billing_address }.compact
+    }
 
   serialize :features, coder: JSON
   after_initialize { self.features ||= {} }
@@ -117,6 +123,32 @@ class Organization < ApplicationRecord
 
   def over_member_limit?
     over_member_limit_at.present?
+  end
+
+  # Stripe-shaped address hash built from the billing_address_* columns, or nil if none of
+  # them are set (so we don't send Stripe an all-blank address object).
+  def stripe_billing_address
+    address = {
+      line1: billing_address_line1, line2: billing_address_line2, city: billing_address_city,
+      state: billing_address_state, postal_code: billing_address_postal_code, country: billing_address_country
+    }
+    address.values.all?(&:blank?) ? nil : address
+  end
+
+  # Persists the billing name/address locally and pushes them straight to the Stripe Customer
+  # (what invoices' "Bill to" section actually reads from - not the payment method). Raises
+  # Pay::Stripe::Error on failure; callers decide how to surface that.
+  def sync_billing_details!(name:, address: {})
+    update!(
+      billing_name: name,
+      billing_address_line1: address[:line1],
+      billing_address_line2: address[:line2],
+      billing_address_city: address[:city],
+      billing_address_state: address[:state],
+      billing_address_postal_code: address[:postal_code],
+      billing_address_country: address[:country]
+    )
+    payment_processor.update_api_record(name: billing_name.presence || self.name, address: stripe_billing_address)
   end
 
   # Subscribes to `plan` (moving off Free) or swaps an already-active subscription to it

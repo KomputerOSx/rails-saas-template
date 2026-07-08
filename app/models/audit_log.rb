@@ -64,7 +64,8 @@ class AuditLog < ApplicationRecord
     subscription_updated: "subscription_updated",
     subscription_cancelled: "subscription_cancelled",
     payment_method_updated: "payment_method_updated",
-    payment_method_removed: "payment_method_removed"
+    payment_method_removed: "payment_method_removed",
+    billing_details_updated: "billing_details_updated"
   }
 
   validates :event_type, presence: true

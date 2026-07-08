@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_08_005523) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_08_110000) do
   create_table "audit_logs", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "event_type", null: false
@@ -128,6 +128,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_08_005523) do
   end
 
   create_table "organizations", force: :cascade do |t|
+    t.string "billing_address_city"
+    t.string "billing_address_country"
+    t.string "billing_address_line1"
+    t.string "billing_address_line2"
+    t.string "billing_address_postal_code"
+    t.string "billing_address_state"
+    t.string "billing_name"
     t.datetime "created_at", null: false
     t.text "features"
     t.string "name", null: false

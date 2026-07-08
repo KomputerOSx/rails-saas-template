@@ -41,7 +41,12 @@ export default class extends Controller {
     this.overlayTarget.removeEventListener("cancel", this.preventCancelBound)
   }
 
-  show() {
+  // A <form method="dialog"> (the card dialog's ✕ button and its backdrop-close button) fires
+  // a genuine "submit" event too, even though nothing goes over the network - that's just how
+  // the browser closes the nearest <dialog>. Since no turbo:submit-end/turbo:load ever follows
+  // one of those, showing the overlay for it would leave "Processing..." stuck open forever.
+  show(event) {
+    if (event.target.matches('form[method="dialog"]')) return
     if (!this.overlayTarget.open) this.overlayTarget.showModal()
   }
 

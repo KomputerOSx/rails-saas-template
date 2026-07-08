@@ -14,13 +14,30 @@ import { Controller } from "@hotwired/stimulus"
 // plan immediately instead of stopping at "card saved," and the dialog shows what it's about
 // to charge before the user commits.
 export default class extends Controller {
-  static targets = ["elements", "error", "submit", "form", "setupIntentField", "planField", "title", "priceNotice", "nameField"]
-  static values = { publicKey: String, setupIntentUrl: String }
+  static targets = ["elements", "address", "error", "submit", "form", "setupIntentField", "planField", "title", "priceNotice"]
+  static values = { publicKey: String, setupIntentUrl: String, defaultBilling: Object }
 
   connect() {
     this.started = false
     this.pendingPlan = ""
     this.resumeAfterRedirect()
+  }
+
+  // Matches the widget to whatever daisyUI theme is currently active, reading the app's own
+  // CSS custom properties live rather than hardcoding colors that could drift out of sync with
+  // app/assets/tailwind/daisyui-theme.mjs.
+  buildAppearance() {
+    const theme = document.documentElement.getAttribute("data-theme") || "dark"
+    const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+    return {
+      theme: theme === "dark" ? "night" : "stripe",
+      variables: {
+        colorPrimary: css("--color-primary"),
+        colorBackground: css("--color-base-100"),
+        colorText: css("--color-base-content"),
+        colorDanger: css("--color-error")
+      }
+    }
   }
 
   // Lazily starts on first open (triggered alongside modal#open) rather than on every
@@ -31,7 +48,13 @@ export default class extends Controller {
     this.pendingPlan = event?.params?.plan || ""
     this.updateHeader(event?.params?.planName, event?.params?.planPrice)
 
-    if (this.started) return
+    if (this.started) {
+      // The SetupIntent/Elements instance only gets created once per page load, but the
+      // theme can change (and the dialog can be reopened) after that, so re-sync appearance
+      // every time the dialog opens rather than only on first mount.
+      if (this.elements) this.elements.update({ appearance: this.buildAppearance() })
+      return
+    }
     this.started = true
 
     if (typeof Stripe !== "function") {
@@ -64,13 +87,18 @@ export default class extends Controller {
       }
 
       const { client_secret } = await response.json()
-      this.elements = this.stripe.elements({ clientSecret: client_secret })
+      this.elements = this.stripe.elements({ clientSecret: client_secret, appearance: this.buildAppearance() })
+
+      this.addressTarget.innerHTML = ""
+      this.addressElement = this.elements.create("address", { mode: "billing", defaultValues: this.defaultBillingValue })
+      this.addressElement.mount(this.addressTarget)
+
       this.elementsTarget.innerHTML = ""
-      // The Payment Element's own cardholder-name field is unreliable (Stripe's "auto" fields
-      // heuristic can omit it, and there's no supported "always show" option) - collecting it
-      // ourselves and passing it via confirmParams.payment_method_data below guarantees it's
-      // always present, regardless of what the Payment Element decides to render.
-      this.elements.create("payment", { fields: { billingDetails: { name: "never" } } }).mount(this.elementsTarget)
+      // Name and address are collected once via the Address Element above (mounted into
+      // addressTarget) rather than letting the Payment Element collect them too - its own
+      // fields are unreliable (Stripe's "auto" heuristic can omit them, with no supported
+      // "always show" option), so we pass both through explicitly via confirmParams below.
+      this.elements.create("payment", { fields: { billingDetails: { name: "never", address: "never" } } }).mount(this.elementsTarget)
     } catch (error) {
       console.error("stripe-payment-method: failed to start", error)
       this.failToLoad("Something went wrong loading the payment form. Please try again.")
@@ -98,16 +126,16 @@ export default class extends Controller {
 
   failToLoad(message) {
     this.elementsTarget.innerHTML = ""
+    this.addressTarget.innerHTML = ""
     this.showError(message)
   }
 
   async save() {
     if (!this.elements) return
 
-    const name = this.nameFieldTarget.value.trim()
-    if (!name) {
-      this.showError("Enter the name on the card.")
-      this.nameFieldTarget.focus()
+    const { complete, value } = await this.addressElement.getValue()
+    if (!complete) {
+      this.showError("Enter your billing name and address.")
       return
     }
 
@@ -124,7 +152,7 @@ export default class extends Controller {
         redirect: "if_required",
         confirmParams: {
           return_url: returnUrl.toString(),
-          payment_method_data: { billing_details: { name } }
+          payment_method_data: { billing_details: { name: value.name, address: value.address } }
         }
       })
 
@@ -135,6 +163,13 @@ export default class extends Controller {
 
       this.setupIntentFieldTarget.value = setupIntent.id
       this.planFieldTarget.value = this.pendingPlan
+      this.setHiddenField("billing_name", value.name)
+      this.setHiddenField("billing_address[line1]", value.address.line1)
+      this.setHiddenField("billing_address[line2]", value.address.line2)
+      this.setHiddenField("billing_address[city]", value.address.city)
+      this.setHiddenField("billing_address[state]", value.address.state)
+      this.setHiddenField("billing_address[postal_code]", value.address.postal_code)
+      this.setHiddenField("billing_address[country]", value.address.country)
       this.formTarget.requestSubmit()
     } catch (error) {
       console.error("stripe-payment-method: failed to save", error)
@@ -143,6 +178,11 @@ export default class extends Controller {
       this.submitTarget.disabled = false
       this.submitTarget.textContent = this.defaultSubmitLabel()
     }
+  }
+
+  setHiddenField(name, value) {
+    const field = this.formTarget.querySelector(`[name="${name}"]`)
+    if (field) field.value = value || ""
   }
 
   // Handles cards that require an off-page redirect (e.g. 3D Secure) - Stripe sends the

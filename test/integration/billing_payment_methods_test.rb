@@ -36,6 +36,57 @@ class BillingPaymentMethodsTest < ActionDispatch::IntegrationTest
     assert AuditLog.exists?(event_type: :payment_method_updated, resource_type: "Organization", resource_id: @organization.id)
   end
 
+  test "saving a card persists and syncs the entered billing name and address to Stripe" do
+    post login_path, params: { email: @owner.email, password: "password123" }
+
+    customer = @organization.set_payment_processor(:stripe)
+    customer.update!(processor_id: "cus_test123")
+    payment_method = customer.payment_methods.create!(
+      processor_id: "pm_test123", default: true, payment_method_type: "card", brand: "Visa", last4: "4242"
+    )
+
+    update_attributes = nil
+    fake_update = ->(_processor_id, attributes, _opts) { update_attributes = attributes }
+
+    Pay::Stripe::PaymentMethod.stub(:sync_setup_intent, payment_method) do
+      Stripe::Customer.stub(:update, fake_update) do
+        post billing_payment_method_path, params: {
+          setup_intent_id: "seti_test123",
+          billing_name: "Jane Doe",
+          billing_address: { line1: "123 Main St", city: "Springfield", state: "IL", postal_code: "62701", country: "US" }
+        }
+      end
+    end
+
+    assert_redirected_to billing_path
+    @organization.reload
+    assert_equal "Jane Doe", @organization.billing_name
+    assert_equal "123 Main St", @organization.billing_address_line1
+    assert_equal "Springfield", @organization.billing_address_city
+    assert_equal "Jane Doe", update_attributes[:name]
+    assert_equal "123 Main St", update_attributes[:address][:line1]
+    assert_equal "US", update_attributes[:address][:country]
+  end
+
+  test "a Stripe error while syncing billing details does not block saving the card" do
+    post login_path, params: { email: @owner.email, password: "password123" }
+
+    customer = @organization.set_payment_processor(:stripe)
+    customer.update!(processor_id: "cus_test123")
+    payment_method = customer.payment_methods.create!(
+      processor_id: "pm_test123", default: true, payment_method_type: "card", brand: "Visa", last4: "4242"
+    )
+
+    Pay::Stripe::PaymentMethod.stub(:sync_setup_intent, payment_method) do
+      Stripe::Customer.stub(:update, ->(*) { raise Pay::Stripe::Error.new(Stripe::StripeError.new("boom")) }) do
+        post billing_payment_method_path, params: { setup_intent_id: "seti_test123", billing_name: "Jane Doe" }
+      end
+    end
+
+    assert_redirected_to billing_path
+    assert_equal "Payment method saved.", flash[:notice]
+  end
+
   test "saving a card with a pending plan also subscribes to it in the same request" do
     post login_path, params: { email: @owner.email, password: "password123" }
 

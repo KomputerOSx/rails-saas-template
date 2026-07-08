@@ -12,6 +12,8 @@ module Billing
       log_audit(:payment_method_updated, resource: Current.organization,
         metadata: { brand: payment_method.brand, last4: payment_method.last4 })
 
+      sync_billing_details
+
       if params[:plan].present?
         subscribe_to_pending_plan
       else
@@ -42,6 +44,22 @@ module Billing
     end
 
     private
+
+    # Best-effort sync of the billing name/address collected alongside the card - never lets
+    # a Stripe hiccup here override the fact that the payment method itself already saved fine.
+    def sync_billing_details
+      name = params[:billing_name].presence
+      address = billing_address_params
+      return if name.blank? && address.values.all?(&:blank?)
+
+      Current.organization.sync_billing_details!(name: name, address: address.symbolize_keys)
+    rescue Pay::Stripe::Error => e
+      Rails.logger.warn("Failed to sync billing details for organization #{Current.organization.id} to Stripe: #{e.message}")
+    end
+
+    def billing_address_params
+      params.permit(billing_address: [ :line1, :line2, :city, :state, :postal_code, :country ])[:billing_address]&.to_h || {}
+    end
 
     # A card that was just added specifically to subscribe to a plan needs the whole page
     # (Current Plan section, not just the payment method card) to refresh, so this always
