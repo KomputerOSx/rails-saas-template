@@ -8,13 +8,15 @@ module Billing
 
       subscription = organization.payment_processor&.subscription
 
-      # A scheduled downgrade is held locally (pending_plan_*) until Stripe actually flips the
-      # price at renewal - once the subscription reports the pending plan's price (or there's
-      # nothing active anymore, e.g. cancelled before the change landed), the pending state is
-      # spent and must be cleared so the "changing to X on <date>" notice goes away.
-      if organization.pending_plan_key.present?
-        downgrade_applied = organization.current_plan.key == organization.pending_plan_key
-        organization.clear_pending_plan_change! if downgrade_applied || !subscription&.active?
+      # A scheduled downgrade or price migration is held locally (pending_plan_change_at, plus
+      # either pending_plan_key or pending_price_cents) until Stripe actually flips the price at
+      # the subscription's renewal - once that effective time has passed (or there's nothing
+      # active anymore, e.g. cancelled before the change landed), the pending state is spent and
+      # must be cleared so the "changing to X on <date>" notice goes away. Time-based rather than
+      # comparing the resulting price/plan directly, since this same webhook fires for both kinds
+      # of pending change and a schedule's phase transition is exactly what triggers it.
+      if organization.pending_plan_change_at.present?
+        organization.clear_pending_plan_change! if organization.pending_plan_change_at.past? || !subscription&.active?
       end
 
       # An active subscription on a price this app doesn't know (e.g. someone hand-swapped the

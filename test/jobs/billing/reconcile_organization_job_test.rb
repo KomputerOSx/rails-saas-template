@@ -71,6 +71,31 @@ class Billing::ReconcileOrganizationJobTest < ActiveJob::TestCase
     assert_nil @organization.reload.pending_plan_key
   end
 
+  test "clears a pending price migration once its effective date has passed" do
+    @organization.update!(pending_price_cents: 1500, pending_plan_change_at: 1.day.ago,
+      stripe_subscription_schedule_id: "sub_sched_test123")
+
+    with_active_subscription(@organization, Billing::Plans::STARTER) do
+      Billing::ReconcileOrganizationJob.perform_now(@organization.id)
+    end
+
+    @organization.reload
+    assert_nil @organization.pending_price_cents
+    assert_nil @organization.pending_plan_change_at
+    assert_nil @organization.stripe_subscription_schedule_id
+  end
+
+  test "keeps a pending price migration until its effective date arrives" do
+    @organization.update!(pending_price_cents: 1500, pending_plan_change_at: 20.days.from_now,
+      stripe_subscription_schedule_id: "sub_sched_test123")
+
+    with_active_subscription(@organization, Billing::Plans::STARTER) do
+      Billing::ReconcileOrganizationJob.perform_now(@organization.id)
+    end
+
+    assert_equal 1500, @organization.reload.pending_price_cents
+  end
+
   test "flags an active subscription on an unrecognized Stripe price in the audit metadata" do
     customer = @organization.set_payment_processor(:fake_processor, allow_fake: true)
     customer.subscribe(plan: "price_unknown_custom_123")

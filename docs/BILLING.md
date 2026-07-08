@@ -10,10 +10,11 @@ project, and how to adapt it for a single-user (non-team) app instead.
 3. [Stripe dashboard setup](#3-stripe-dashboard-setup)
 4. [Credentials](#4-credentials)
 5. [How it works](#5-how-it-works)
-6. [Member limit enforcement](#6-member-limit-enforcement)
-7. [Known limitations](#7-known-limitations)
-8. [Testing](#8-testing)
-9. [Adapting this for a single-user app](#9-adapting-this-for-a-single-user-app)
+6. [Price increases: migrating existing subscribers vs. grandfathering](#6-price-increases-migrating-existing-subscribers-vs-grandfathering)
+7. [Member limit enforcement](#7-member-limit-enforcement)
+8. [Known limitations](#8-known-limitations)
+9. [Testing](#9-testing)
+10. [Adapting this for a single-user app](#10-adapting-this-for-a-single-user-app)
 
 ---
 
@@ -50,7 +51,7 @@ database-driven plan builder, since a template only needs a couple of fixed tier
 | Growth | $29.99/mo or £29.99/mo | 20 |
 
 The only thing a plan currently controls is `member_limit` (see
-[Member limit enforcement](#6-member-limit-enforcement)). To add a feature-gated plan later,
+[Member limit enforcement](#7-member-limit-enforcement)). To add a feature-gated plan later,
 extend the `Plan` `Data.define` in `app/models/billing/plans.rb` with more fields and read them
 wherever `Organization#current_plan` is already consulted.
 
@@ -334,7 +335,50 @@ stays in sync via webhooks. What's safe and what isn't:
   `customer.subscription.updated`/`.deleted` webhooks re-run the reconcile job and the app
   catches up on the next page load.
 
-## 6. Member limit enforcement
+## 6. Price increases: migrating existing subscribers vs. grandfathering
+
+Raising a plan's price (e.g. Starter $9.99 → $15.00) never touches subscribers on its own -
+Stripe Prices are immutable and a subscription stays pinned to whatever Price it was created
+with. Creating a new Price and pointing `Billing::Plans` at it (updating
+`credentials.stripe.price_ids` **and** the plan's hardcoded `cents:` in
+`app/models/billing/plans.rb`) only changes what *new* subscribers pay - existing ones are
+grandfathered by default, permanently, simply because nothing ever moves them. Two admin-only
+tools handle the rest, both gated behind the `system.billing.manage` permission
+(`/admin` → "Price Migrations", `system_admin` gets it by baseline - **note**: on an
+already-running database, `RbacRegistry` only attaches a role's baseline permissions the moment
+that role is first created, so an existing `system_admin` won't pick up this new permission
+automatically; grant it once via `/admin/roles`):
+
+- **Migrating existing subscribers to the new price**
+  (`Admin::PriceMigrationsController`, `/admin/price_migrations/new`): paste in the Plan,
+  currency, and the *old* Stripe price id (no longer discoverable from `Billing::Plans` once
+  credentials point at the new one) to preview exactly which organizations are currently on
+  that price - split into those that will migrate and those already grandfathered. Confirming
+  enqueues `Billing::MigratePriceJob`, which calls `Organization#schedule_price_migration!` for
+  each eligible org - the same Stripe Subscription Schedule mechanism as a customer's own
+  downgrade (`#schedule_downgrade!`), just moving to a different *Price* on the *same* Plan
+  instead of a different Plan: the current phase runs to its natural end, then one phase on the
+  new price, `end_behavior: "release"` handing the subscription back to normal renewals - no
+  mid-cycle proration, no surprise charge. One organization's Stripe error doesn't stop the
+  batch. Grandfathered organizations and any with a downgrade already pending are always
+  skipped rather than silently overridden.
+- **Grandfathering** (`Admin::OrganizationGrandfathersController`, buttons right on the
+  migration preview page): `Organization#grandfather!`/`#ungrandfather!` toggle
+  `grandfathered_at` - a durable account attribute, not tied to any one migration run. A
+  grandfathered org is permanently excluded from `Billing::MigratePriceJob` until explicitly
+  un-grandfathered.
+- **The customer sees it coming**: while a price migration is pending, the billing page shows
+  "Heads up - your price is changing to $X on \<date\>" (`pending_price_cents`, cleared by
+  `Billing::ReconcileOrganizationJob` once the renewal webhook confirms the price actually
+  flipped - the same `pending_plan_change_at`-based timing check used for downgrades). There's
+  deliberately no customer-facing "keep my current price" button here - that's what
+  grandfathering is for, and it's an admin decision, not a self-service one. **Advance notice
+  to customers is on you** - this UI only shows *after* a migration has been scheduled; email
+  your affected customers before running one, since raising a paying customer's price without
+  warning is generally expected practice (and often a ToS/consumer-protection expectation)
+  regardless of what the code allows.
+
+## 7. Member limit enforcement
 
 Every plan caps organization size. **Both accepted memberships and outstanding (unrevoked,
 unexpired) invitations count toward the limit** - an owner can't send 10 invites on a 5-seat
@@ -364,7 +408,7 @@ over its (possibly lower) limit. This **never removes members automatically** - 
 banner on `/billing` and continues to block new invites/accepts via the same guard above, until
 an owner either upgrades again or removes members by hand.
 
-## 7. Known limitations
+## 8. Known limitations
 
 Documented here rather than fixed, since they're reasonable trade-offs for a template baseline:
 
@@ -394,7 +438,7 @@ Documented here rather than fixed, since they're reasonable trade-offs for a tem
   saved payment methods would need a small UI list plus `Pay::PaymentMethod#detach`/`#make_default!`
   wired to each row instead of the single "Update payment method" dialog.
 
-## 8. Testing
+## 9. Testing
 
 Tests use Minitest (this app has no RSpec/FactoryBot). No real Stripe API calls are made:
 
@@ -426,7 +470,7 @@ Tests use Minitest (this app has no RSpec/FactoryBot). No real Stripe API calls 
   `test/integration/pay_webhooks_test.rb` confirms the endpoint is mounted and enforces
   signature verification, without touching that internal sync.
 
-## 9. Adapting this for a single-user app
+## 10. Adapting this for a single-user app
 
 This template already behaves like a single-user app for anyone who never uses the invite flow:
 `Organization.create_personal_for!` gives every user exactly one personal org 1:1 at signup, and

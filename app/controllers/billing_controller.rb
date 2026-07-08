@@ -17,6 +17,7 @@ class BillingController < ApplicationController
     @on_grace_period = @subscription&.active? && @subscription.on_grace_period?
     @on_trial = !@on_grace_period && @subscription&.active? && @subscription.on_trial?
     @pending_plan = Current.organization.pending_plan
+    @pending_price_cents = Current.organization.pending_price_cents
     @promo_code_id = session[:promo_code_id]
     @promo_code_display = session[:promo_code_display]
     # For "you'll keep X until <date>" copy on downgrade confirms - synced locally by Pay, so

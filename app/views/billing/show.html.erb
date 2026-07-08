@@ -92,6 +92,17 @@
                 class: "btn btn-outline btn-sm shrink-0", data: { controller: "loading-button" } %>
         </div>
       </div>
+    <% elsif @pending_price_cents %>
+      <div class="card mt-4 border border-warning/40 bg-warning/10">
+        <div class="card-body flex-row items-center gap-3 py-4">
+          <span class="material-symbols-outlined text-warning">trending_up</span>
+          <p class="text-sm">
+            Heads up - your <%= @current_plan.name %> price is changing to
+            <strong><%= Pay::Currency.format(@pending_price_cents, currency: @currency) %>/mo</strong> on
+            <strong><%= Current.organization.pending_plan_change_at&.to_date&.to_fs(:long) || "your next billing date" %></strong>.
+          </p>
+        </div>
+      </div>
     <% elsif @on_trial %>
       <div class="card mt-4 border border-info/40 bg-info/10">
         <div class="card-body flex-row items-center gap-3 py-4">

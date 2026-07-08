@@ -25,4 +25,8 @@ class SystemPolicy < ApplicationPolicy
   def view_audit_logs?
     user&.has_permission?("system.audit_logs.view") || false
   end
+
+  def manage_billing?
+    user&.has_permission?("system.billing.manage") || false
+  end
 end

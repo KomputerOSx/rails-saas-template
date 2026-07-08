@@ -81,6 +81,19 @@ class Organization < ApplicationRecord
     slug
   end
 
+  # Organizations with an active subscription still on the given Stripe price id - shared by
+  # Admin::PriceMigrationsController's preview and Billing::MigratePriceJob's actual run, so
+  # both always agree on exactly who a migration would affect. Pay's `active?` is a Ruby-level
+  # predicate (trial/active/not-yet-ended), not a DB column, so this filters in Ruby after a
+  # plain processor_plan lookup - fine at this app's scale; a large subscriber base would want
+  # a DB-level status filter instead.
+  def self.on_stripe_price(price_id)
+    Pay::Subscription.where(processor_plan: price_id).includes(:customer)
+      .select(&:active?)
+      .filter_map { |subscription| subscription.customer.owner if subscription.customer.owner_type == "Organization" }
+      .uniq
+  end
+
   # Stripe Customer email (see Pay::Customer#email, which delegates here) - Organization has
   # no email column of its own, so we borrow the current owner's. Falls back gracefully if the
   # org somehow has no owner membership.
@@ -275,32 +288,14 @@ class Organization < ApplicationRecord
   def schedule_downgrade!(plan)
     cancel_scheduled_downgrade! if scheduled_downgrade?
 
-    subscription = payment_processor.subscription
-    price_id = plan.resolved_stripe_price_id(billing_currency)
-
-    schedule = ::Stripe::SubscriptionSchedule.create(from_subscription: subscription.processor_id)
-    current_phase = schedule.phases.first
-    ::Stripe::SubscriptionSchedule.update(schedule.id, {
-      end_behavior: "release",
-      phases: [
-        {
-          items: current_phase.items.map { |item| { price: item.price, quantity: item.quantity } },
-          start_date: current_phase.start_date,
-          end_date: current_phase.end_date
-        },
-        { items: [ { price: price_id, quantity: 1 } ], iterations: 1 }
-      ]
-    })
-
-    update!(pending_plan_key: plan.key,
-      pending_plan_change_at: Time.at(current_phase.end_date),
-      stripe_subscription_schedule_id: schedule.id)
+    schedule_id, effective_at = schedule_price_change!(plan.resolved_stripe_price_id(billing_currency))
+    update!(pending_plan_key: plan.key, pending_plan_change_at: effective_at, stripe_subscription_schedule_id: schedule_id)
   rescue ::Stripe::StripeError => e
     raise Pay::Stripe::Error, e
   end
 
   # Releases the schedule on Stripe (subscription continues on its current price as if the
-  # downgrade was never requested) and clears the local pending state.
+  # downgrade/price migration was never requested) and clears the local pending state.
   def cancel_scheduled_downgrade!
     if stripe_subscription_schedule_id.present?
       begin
@@ -314,9 +309,73 @@ class Organization < ApplicationRecord
     clear_pending_plan_change!
   end
 
-  # Local-only cleanup, used once a scheduled downgrade has actually taken effect (the renewal
-  # webhook confirms the subscription is now on the pending plan's price).
+  # Local-only cleanup, used once a scheduled downgrade/price migration has actually taken
+  # effect (the renewal webhook confirms it - see Billing::ReconcileOrganizationJob).
   def clear_pending_plan_change!
-    update!(pending_plan_key: nil, pending_plan_change_at: nil, stripe_subscription_schedule_id: nil)
+    update!(pending_plan_key: nil, pending_plan_change_at: nil, stripe_subscription_schedule_id: nil, pending_price_cents: nil)
+  end
+
+  # --- Grandfathering & price migrations ---
+  #
+  # A grandfathered org is permanently excluded from Billing::MigratePriceJob - it keeps
+  # whatever price it's already on until an admin explicitly un-grandfathers it. This is the
+  # "keep some existing subscribers on their current price" half of a price increase; the
+  # other half is #schedule_price_migration! below, which moves everyone else.
+
+  def grandfathered?
+    grandfathered_at.present?
+  end
+
+  def grandfather!
+    update!(grandfathered_at: Time.current)
+  end
+
+  def ungrandfather!
+    update!(grandfathered_at: nil)
+  end
+
+  # Same underlying mechanism as schedule_downgrade! (a Stripe Subscription Schedule taking
+  # effect at the next renewal, no mid-cycle proration) but for a price change *within the
+  # same plan* - e.g. migrating existing subscribers to a new, higher Price after a price
+  # increase, driven by Billing::MigratePriceJob rather than a customer's own upgrade/downgrade
+  # click. Deliberately refuses to run for a grandfathered org, or one that already has a plan
+  # change (a downgrade) pending - a bulk price migration should never silently override either
+  # of those without an admin looking at it first.
+  def schedule_price_migration!(new_price_id:, new_price_cents:)
+    raise ArgumentError, "organization is grandfathered" if grandfathered?
+    raise ArgumentError, "a plan change is already pending" if pending_plan_key.present?
+
+    cancel_scheduled_downgrade! if stripe_subscription_schedule_id.present?
+
+    schedule_id, effective_at = schedule_price_change!(new_price_id)
+    update!(pending_price_cents: new_price_cents, pending_plan_change_at: effective_at, stripe_subscription_schedule_id: schedule_id)
+  rescue ::Stripe::StripeError => e
+    raise Pay::Stripe::Error, e
+  end
+
+  private
+
+  # Shared by schedule_downgrade! and schedule_price_migration! - both are "move the live
+  # subscription to a different Price at its own next renewal, no proration" under the hood.
+  # Returns [stripe_schedule_id, effective_at].
+  def schedule_price_change!(new_price_id)
+    subscription = payment_processor.subscription
+    raise ArgumentError, "no active subscription" unless subscription&.active?
+
+    schedule = ::Stripe::SubscriptionSchedule.create(from_subscription: subscription.processor_id)
+    current_phase = schedule.phases.first
+    ::Stripe::SubscriptionSchedule.update(schedule.id, {
+      end_behavior: "release",
+      phases: [
+        {
+          items: current_phase.items.map { |item| { price: item.price, quantity: item.quantity } },
+          start_date: current_phase.start_date,
+          end_date: current_phase.end_date
+        },
+        { items: [ { price: new_price_id, quantity: 1 } ], iterations: 1 }
+      ]
+    })
+
+    [ schedule.id, Time.at(current_phase.end_date) ]
   end
 end

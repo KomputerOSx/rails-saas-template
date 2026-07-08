@@ -84,6 +84,10 @@ Rails.application.routes.draw do
     resource :maintenance_mode, only: [ :edit, :update ], controller: "maintenance_mode" do
       post :force_logout_all
     end
+    resources :price_migrations, only: [ :new, :create ]
+    resources :organizations, only: [] do
+      resource :grandfather, only: [ :create, :destroy ], controller: "organization_grandfathers"
+    end
   end
 
   # --- Organization invitations (public acceptance endpoint) ---

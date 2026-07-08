@@ -49,7 +49,9 @@ class BillingShowTest < ActionDispatch::IntegrationTest
     post login_path, params: { email: @owner.email, password: "password123" }
 
     with_active_subscription(@organization, Billing::Plans::STARTER) do
-      get billing_path
+      Stripe::Invoice.stub(:create_preview, Struct.new(:total, :currency).new(999, "usd")) do
+        get billing_path
+      end
     end
 
     assert_response :success
@@ -77,7 +79,9 @@ class BillingShowTest < ActionDispatch::IntegrationTest
       stripe_subscription_schedule_id: "sub_sched_test123")
 
     with_active_subscription(@organization, Billing::Plans::GROWTH) do
-      get billing_path
+      Stripe::Invoice.stub(:create_preview, Struct.new(:total, :currency).new(2999, "usd")) do
+        get billing_path
+      end
     end
 
     assert_response :success
@@ -90,7 +94,9 @@ class BillingShowTest < ActionDispatch::IntegrationTest
 
     with_active_subscription(@organization, Billing::Plans::STARTER) do
       @organization.payment_processor.subscription.update!(trial_ends_at: 10.days.from_now)
-      get billing_path
+      Stripe::Invoice.stub(:create_preview, Struct.new(:total, :currency).new(999, "usd")) do
+        get billing_path
+      end
     end
 
     assert_response :success
@@ -160,5 +166,22 @@ class BillingShowTest < ActionDispatch::IntegrationTest
     get billing_path
     assert_response :success
     assert_no_match "Your next bill is", response.body
+  end
+
+  test "shows a price-increase-coming notice when a price migration is pending" do
+    post login_path, params: { email: @owner.email, password: "password123" }
+
+    @organization.update!(pending_price_cents: 1500, pending_plan_change_at: 20.days.from_now)
+
+    fake_preview = Struct.new(:total, :currency).new(999, "usd")
+    with_active_subscription(@organization, Billing::Plans::STARTER) do
+      Stripe::Invoice.stub(:create_preview, fake_preview) do
+        get billing_path
+      end
+    end
+
+    assert_response :success
+    assert_match "your Starter price is changing to", response.body
+    assert_match "$15.00", response.body
   end
 end

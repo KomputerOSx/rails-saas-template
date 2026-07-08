@@ -304,6 +304,83 @@ class OrganizationTest < ActiveSupport::TestCase
     assert_nil organization.stripe_subscription_schedule_id
   end
 
+  test "schedule_price_migration! schedules the new price at period end without touching the live subscription" do
+    organization = Organization.create_personal_for!(users(:one))
+    customer = organization.set_payment_processor(:fake_processor, allow_fake: true)
+    customer.payment_methods.create!(processor_id: "pm_fake", default: true, payment_method_type: "card", brand: "Visa", last4: "4242")
+
+    period_end = 20.days.from_now.to_i
+    phase_item = Struct.new(:price, :quantity).new("price_fake_starter_usd", 1)
+    phase = Struct.new(:items, :start_date, :end_date).new([ phase_item ], 10.days.ago.to_i, period_end)
+    fake_schedule = Struct.new(:id, :phases).new("sub_sched_test123", [ phase ])
+    schedule_update_args = nil
+
+    with_active_subscription(organization, Billing::Plans::STARTER) do
+      Stripe::SubscriptionSchedule.stub(:create, fake_schedule) do
+        Stripe::SubscriptionSchedule.stub(:update, ->(id, params) { schedule_update_args = [ id, params ]; fake_schedule }) do
+          organization.schedule_price_migration!(new_price_id: "price_new_starter_usd", new_price_cents: 1500)
+        end
+      end
+
+      # The live subscription is untouched until Stripe flips it at renewal.
+      assert_equal "price_fake_starter_usd", organization.payment_processor.subscription.processor_plan
+    end
+
+    organization.reload
+    assert_equal 1500, organization.pending_price_cents
+    assert_nil organization.pending_plan_key
+    assert_equal "sub_sched_test123", organization.stripe_subscription_schedule_id
+    assert_in_delta period_end, organization.pending_plan_change_at.to_i, 1
+    assert_equal "release", schedule_update_args[1][:end_behavior]
+    assert_equal "price_new_starter_usd", schedule_update_args[1][:phases].last[:items].first[:price]
+  end
+
+  test "schedule_price_migration! refuses to run for a grandfathered organization" do
+    organization = Organization.create_personal_for!(users(:one))
+    organization.grandfather!
+
+    with_active_subscription(organization, Billing::Plans::STARTER) do
+      assert_raises(ArgumentError) do
+        organization.schedule_price_migration!(new_price_id: "price_new_starter_usd", new_price_cents: 1500)
+      end
+    end
+  end
+
+  test "schedule_price_migration! refuses to run when a downgrade is already pending" do
+    organization = Organization.create_personal_for!(users(:one))
+    organization.update!(pending_plan_key: "starter", pending_plan_change_at: 20.days.from_now,
+      stripe_subscription_schedule_id: "sub_sched_test123")
+
+    with_active_subscription(organization, Billing::Plans::GROWTH) do
+      assert_raises(ArgumentError) do
+        organization.schedule_price_migration!(new_price_id: "price_new_starter_usd", new_price_cents: 1500)
+      end
+    end
+  end
+
+  test "grandfather!/ungrandfather! toggle grandfathered_at and grandfathered?" do
+    organization = Organization.create_personal_for!(users(:one))
+    assert_not organization.grandfathered?
+
+    organization.grandfather!
+    assert organization.grandfathered?
+
+    organization.ungrandfather!
+    assert_not organization.grandfathered?
+  end
+
+  test "Organization.on_stripe_price finds organizations with an active subscription on that price" do
+    on_price = Organization.create_personal_for!(users(:one))
+    with_active_subscription(on_price, Billing::Plans::STARTER) do
+      other_price = Organization.create_personal_for!(users(:two))
+      with_active_subscription(other_price, Billing::Plans::GROWTH) do
+        found = Organization.on_stripe_price("price_fake_starter_usd")
+        assert_includes found, on_price
+        assert_not_includes found, other_price
+      end
+    end
+  end
+
   test "cancel_subscription! cancels at period end and keeps the subscription active until then" do
     organization = Organization.create_personal_for!(users(:one))
     customer = organization.set_payment_processor(:fake_processor, allow_fake: true)

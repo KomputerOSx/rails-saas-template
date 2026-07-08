@@ -70,7 +70,11 @@ class AuditLog < ApplicationRecord
     payment_method_removed: "payment_method_removed",
     billing_details_updated: "billing_details_updated",
     promotion_code_applied: "promotion_code_applied",
-    promotion_code_removed: "promotion_code_removed"
+    promotion_code_removed: "promotion_code_removed",
+    price_migration_started: "price_migration_started",
+    price_migration_scheduled: "price_migration_scheduled",
+    organization_grandfathered: "organization_grandfathered",
+    organization_ungrandfathered: "organization_ungrandfathered"
   }
 
   validates :event_type, presence: true
