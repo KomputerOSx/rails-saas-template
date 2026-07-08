@@ -30,9 +30,12 @@ sync. Pay owns its own tables (`pay_customers`, `pay_subscriptions`, `pay_paymen
 `pay_charges`, `pay_webhooks`), auto-mounts a webhook endpoint, and handles Stripe Checkout /
 Billing Portal session creation.
 
-Upgrading and downgrading both happen entirely on Stripe's hosted pages - **Stripe Checkout**
-for subscribing to a paid plan, and the **Stripe Billing Portal** for managing payment methods,
-viewing invoices, or canceling. The app never collects card details directly.
+Upgrading happens entirely on Stripe's hosted pages via **Stripe Checkout**. Payment methods and
+invoices are managed through the **Stripe Billing Portal** (`Billing::PortalSessionsController`),
+plus two in-app actions on `/billing` that call the `pay` gem directly without leaving the app:
+canceling the subscription (graceful, effective at the end of the current billing period, with a
+"resume" undo while it's on its grace period) and removing the payment method on file. The app
+never collects card details directly.
 
 ## 2. Plans
 
@@ -115,7 +118,17 @@ directly. `price_ids` is this app's own addition, read by `Billing::Plans::START
   and redirects to the returned Stripe-hosted session URL.
 - **Billing Portal** (`app/controllers/billing/portal_sessions_controller.rb`,
   `POST /billing/portal_session`): redirects the owner to Stripe's hosted portal for managing
-  payment methods, invoices, and cancellation.
+  payment methods and invoices.
+- **Cancel / resume subscription** (`app/controllers/billing/subscriptions_controller.rb`,
+  `DELETE /billing/subscription` / `POST /billing/subscription/resume`): calls
+  `organization.payment_processor.subscription.cancel` (Pay's graceful cancel -
+  `cancel_at_period_end: true`) or `.resume` directly against Stripe, no portal redirect. The
+  subsequent `customer.subscription.updated`/`deleted` webhook still drives
+  `Billing::ReconcileOrganizationJob` as usual (see below) - these actions don't bypass that path,
+  they just also update `ends_at` locally so the UI reflects the grace period immediately.
+- **Remove payment method** (`app/controllers/billing/payment_methods_controller.rb`,
+  `DELETE /billing/payment_method`): detaches the default `Pay::PaymentMethod` from Stripe
+  (`Pay::Stripe::PaymentMethod#detach`) and destroys the local row.
 - **Webhooks**: Pay auto-mounts `POST /pay/webhooks/stripe` and verifies the signature itself.
   `config/initializers/pay.rb` subscribes `Billing::SubscriptionSyncHandler` to
   `customer.subscription.created/updated/deleted`, which enqueues
@@ -153,12 +166,12 @@ invitation already reserves a seat, so *accepting* it doesn't add a new occupant
 blocked if the org has become genuinely oversubscribed since the invite was sent (e.g. a
 downgrade or cancellation happened in between).
 
-**Downgrades/cancellations are never intercepted** - they happen entirely inside Stripe's
-Billing Portal, outside this app's control. Instead, `Billing::ReconcileOrganizationJob` runs
-after every subscription webhook and sets `organizations.over_member_limit_at` if the org is now
-over its (possibly lower) limit. This **never removes members automatically** - it only powers a
-banner on `/billing` and continues to block new invites/accepts via the same guard above, until
-an owner either upgrades again or removes members by hand.
+**Downgrades/cancellations never remove members automatically**, whether triggered from the
+in-app cancel button or Stripe's Billing Portal. `Billing::ReconcileOrganizationJob` runs after
+every subscription webhook and sets `organizations.over_member_limit_at` if the org is now over
+its (possibly lower) limit. This only powers a banner on `/billing` and continues to block new
+invites/accepts via the same guard above, until an owner either upgrades again or removes members
+by hand.
 
 ## 7. Known limitations
 
