@@ -36,18 +36,16 @@
             </div>
           </div>
 
-          <div class="px-8 py-4">
-            <dt class="text-xs text-base-content/60 uppercase tracking-wide">Roles</dt>
-            <dd class="mt-2 flex flex-wrap gap-1">
-              <% if current_user.roles.any? %>
+          <% if current_user.system_operator? %>
+            <div class="px-8 py-4">
+              <dt class="text-xs text-base-content/60 uppercase tracking-wide">Roles</dt>
+              <dd class="mt-2 flex flex-wrap gap-1">
                 <% current_user.roles.each do |role| %>
                   <span class=""><%= role.name %></span>
                 <% end %>
-              <% else %>
-                <span class="text-base-content/50">-</span>
-              <% end %>
-            </dd>
-          </div>
+              </dd>
+            </div>
+          <% end %>
 
           <div class="px-8 py-4">
             <dt class="text-xs text-base-content/60 uppercase tracking-wide">Last login</dt>
