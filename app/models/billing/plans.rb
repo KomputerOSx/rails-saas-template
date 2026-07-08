@@ -34,12 +34,12 @@ module Billing
       "gbp" => Price.new(cents: 0, stripe_price_id: nil)
     })
     STARTER = Plan.new(key: "starter", name: "Starter", member_limit: 5, prices: {
-      "usd" => Price.new(cents: 999, stripe_price_id: -> { Rails.application.credentials.dig(:stripe, :price_ids, :starter, :usd) }),
-      "gbp" => Price.new(cents: 999, stripe_price_id: -> { Rails.application.credentials.dig(:stripe, :price_ids, :starter, :gbp) })
+      "usd" => Price.new(cents: 999, stripe_price_id: -> { credential_price_id(:starter, :usd) }),
+      "gbp" => Price.new(cents: 999, stripe_price_id: -> { credential_price_id(:starter, :gbp) })
     })
     GROWTH = Plan.new(key: "growth", name: "Growth", member_limit: 20, prices: {
-      "usd" => Price.new(cents: 2999, stripe_price_id: -> { Rails.application.credentials.dig(:stripe, :price_ids, :growth, :usd) }),
-      "gbp" => Price.new(cents: 2999, stripe_price_id: -> { Rails.application.credentials.dig(:stripe, :price_ids, :growth, :gbp) })
+      "usd" => Price.new(cents: 2999, stripe_price_id: -> { credential_price_id(:growth, :usd) }),
+      "gbp" => Price.new(cents: 2999, stripe_price_id: -> { credential_price_id(:growth, :gbp) })
     })
 
     ALL = [ FREE, STARTER, GROWTH ].freeze
@@ -47,6 +47,15 @@ module Billing
 
     def self.find(key)
       ALL.find { |plan| plan.key == key.to_s }
+    end
+
+    # Reads price_ids.<plan>.<currency> from credentials. Also tolerates the old flat format
+    # (price_ids.<plan> as a plain string, from before multi-currency support) by using it for
+    # every currency, rather than crashing on `String#dig` - update credentials.example's nested
+    # form when you get a chance so each currency has its own real Stripe price.
+    def self.credential_price_id(plan_key, currency)
+      value = Rails.application.credentials.dig(:stripe, :price_ids, plan_key)
+      value.is_a?(Hash) ? value[currency] : value
     end
 
     # Stripe price ids are unique per account regardless of currency, so a subscription's
