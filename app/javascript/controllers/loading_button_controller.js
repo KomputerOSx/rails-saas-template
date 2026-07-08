@@ -18,6 +18,13 @@ import { Controller } from "@hotwired/stimulus"
 // button in the DOM rather than replacing it, so without this it would stay disabled showing
 // "Please wait..." forever. Harmless for responses that DO replace the button (it's already
 // gone from the DOM by the time this fires) since it's a no-op unless still disabled.
+//
+// Belt-and-braces timeout: if turbo:submit-end somehow never fires for this particular
+// submission (e.g. a request that errors out in a way Turbo doesn't cleanly resolve), the
+// button would otherwise stay stuck forever with no way to retry - self-unlock after a
+// generous ceiling instead of trusting the event to always show up.
+const STUCK_TIMEOUT_MS = 15000
+
 export default class extends Controller {
   static values = { text: { type: String, default: "Please wait..." } }
 
@@ -30,6 +37,7 @@ export default class extends Controller {
 
   disconnect() {
     document.removeEventListener("turbo:submit-end", this.unlockBound)
+    clearTimeout(this.stuckTimeout)
   }
 
   lock() {
@@ -37,9 +45,12 @@ export default class extends Controller {
     this.element.disabled = true
     this.element.dataset.originalText = this.element.textContent
     this.element.textContent = this.textValue
+    clearTimeout(this.stuckTimeout)
+    this.stuckTimeout = setTimeout(this.unlockBound, STUCK_TIMEOUT_MS)
   }
 
   unlock() {
+    clearTimeout(this.stuckTimeout)
     if (!this.element.disabled) return
     this.element.disabled = false
     if (this.element.dataset.originalText) this.element.textContent = this.element.dataset.originalText

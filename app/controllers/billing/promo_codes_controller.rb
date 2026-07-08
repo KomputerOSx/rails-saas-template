@@ -41,6 +41,14 @@ module Billing
       end
     rescue ::Stripe::StripeError, Pay::Stripe::Error => e
       respond_with_failure(e.message)
+    rescue => e
+      # Belt-and-braces: any *other* unexpected error here (e.g. a future Stripe object-shape
+      # surprise like the #coupon → #promotion.coupon move) must still degrade to a normal
+      # turbo_stream failure response rather than an unhandled 500 - an unrescued exception
+      # leaves the submitting button's own JS-driven "Please wait..." state with nothing to
+      # reset it (no turbo_stream response ever arrives to complete the request cleanly).
+      Rails.logger.error("[Billing::PromoCodesController#create] #{e.class}: #{e.message}")
+      respond_with_failure("Something went wrong applying that code. Please try again.")
     end
 
     def destroy
@@ -58,6 +66,9 @@ module Billing
       respond_with_success("Promo code removed.")
     rescue Pay::Stripe::Error => e
       respond_with_failure(e.message)
+    rescue => e
+      Rails.logger.error("[Billing::PromoCodesController#destroy] #{e.class}: #{e.message}")
+      respond_with_failure("Something went wrong removing that code. Please try again.")
     end
 
     private

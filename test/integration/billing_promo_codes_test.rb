@@ -61,6 +61,24 @@ class BillingPromoCodesTest < ActionDispatch::IntegrationTest
     assert_nil session[:promo_code_id]
   end
 
+  test "an unexpected error resolving the coupon degrades gracefully instead of a 500" do
+    # A Stripe object-shape surprise (or any other unexpected bug in coupon resolution)
+    # must never leave the request unhandled - that's exactly the kind of failure that leaves
+    # the submitting button's own "Please wait..." state with no response to reset it.
+    post login_path, params: { email: @owner.email, password: "password123" }
+
+    broken_promotion_code = Object.new
+    def broken_promotion_code.respond_to?(*) = raise "boom"
+
+    Stripe::PromotionCode.stub(:list, [ broken_promotion_code ]) do
+      post billing_promo_code_path, params: { code: "SAVE20" }
+    end
+
+    assert_redirected_to billing_path
+    assert_equal "Something went wrong applying that code. Please try again.", flash[:alert]
+    assert_nil session[:promo_code_id]
+  end
+
   test "an inactive coupon is rejected even if the promotion code itself is active" do
     post login_path, params: { email: @owner.email, password: "password123" }
 
