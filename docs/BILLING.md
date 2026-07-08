@@ -59,6 +59,22 @@ wherever `Organization#current_plan` is already consulted.
 `Billing::Plans::FREE` simply when there's no active subscription. This means a brand-new org
 never touches the Stripe API until its owner clicks "Upgrade."
 
+**Displayed price vs. charged price are two separate sources of truth** - `price_cents` in
+`app/models/billing/plans.rb` is only what the `/billing` UI *shows* ("$10.00/mo"); what Stripe
+actually *charges* is whatever amount the Stripe Price object (`price_ids.starter` /
+`price_ids.growth` in credentials) was created with. Nothing keeps these in sync automatically -
+if you change one, update the other to match, or the UI will display a different amount than
+what gets billed. `Plan#formatted_price` renders `price_cents` via `Pay::Currency.format`, so it
+handles non-round amounts (e.g. `999` → `"$9.99"`) and any currency correctly - see `CURRENCY`
+below.
+
+**Currency**: `Billing::Plans::CURRENCY` (default `"usd"`) is a single constant every plan's
+`formatted_price` uses. A Stripe Price is denominated in one fixed currency, so this can't vary
+per plan/customer without setting up Stripe's multi-currency Prices feature (out of scope here -
+this template assumes one currency for both tiers). If your Stripe account's prices aren't USD,
+change this constant to match (e.g. `"gbp"`) - see the currency gotcha in
+[Stripe dashboard setup](#3-stripe-dashboard-setup) below.
+
 ## 3. Stripe dashboard setup
 
 Create the two paid Products/Prices by hand in the Stripe Dashboard (do this once per Stripe
@@ -85,6 +101,16 @@ account, in both test mode and live mode):
 A scripted `Stripe::Product.create`/`Stripe::Price.create` setup script was deliberately not
 built here - for two fixed prices in a template, the dashboard is simpler and avoids a second
 source of truth (code vs. dashboard) for objects a developer will look at once per project.
+
+**Currency gotcha**: a Stripe Price is created in one specific currency, chosen in the dashboard
+when you create it (defaults to your account's settlement currency). If your Stripe account's
+country/settlement currency isn't USD (e.g. a UK account), creating a subscription against a
+USD-denominated Price can be rejected outright depending on the payment method - the fix is to
+create the Price in your account's actual currency (e.g. GBP) and use that price id, which is
+also why `Billing::Plans::CURRENCY` needs to match (see [Plans](#2-plans) above). Switching to
+Stripe's hosted Checkout would **not** avoid this - Checkout Sessions reference the exact same
+fixed-currency Price object, so the mismatch is a Stripe account/Price configuration issue, not
+something specific to this app's embedded-Elements UI.
 
 ## 4. Credentials
 
@@ -131,13 +157,23 @@ restricted key. `price_ids` is this app's own addition, read by `Billing::Plans:
   to a paid plan** (`Organization#current_plan.free?` guard) so an org can't strand an active
   subscription with nothing to charge at renewal - cancel first, then remove the card.
 - **Subscribing / upgrading / downgrading**
-  (`app/controllers/billing/subscriptions_controller.rb`, `POST /billing/subscription`): requires
-  a saved default payment method first (redirects back with an alert if there isn't one yet).
-  If the org is on Free, calls `payment_processor.subscribe(plan:, default_payment_method:)`; if
-  already on a paid plan, calls `subscription.swap(price_id)` to change the existing
-  subscription's price in place (prorated) instead of creating a second one - both are
-  Pay-provided `Pay::Stripe::Subscription` methods. (Note: Stripe's Subscription API param is
-  `default_payment_method`, not `payment_method` - passing the latter gets rejected outright.)
+  (`app/controllers/billing/subscriptions_controller.rb`, `POST /billing/subscription`, backed by
+  `Organization#subscribe_to!`): if the org is on Free, calls
+  `payment_processor.subscribe(plan:, default_payment_method:)`; if already on a paid plan, calls
+  `subscription.swap(price_id)` to change the existing subscription's price in place (prorated)
+  instead of creating a second one - both are Pay-provided `Pay::Stripe::Subscription` methods.
+  (Note: Stripe's Subscription API param is `default_payment_method`, not `payment_method` -
+  passing the latter gets rejected outright.)
+  - **No card on file yet**: the Upgrade/Downgrade button opens the same payment-method dialog
+    described above instead of posting directly, with the target plan attached as a Stimulus
+    param (`data-stripe-payment-method-plan-param`). Once `stripe.confirmSetup()` succeeds, the
+    plan key rides along as a hidden `plan` field on the same form post to
+    `POST /billing/payment_method` - `PaymentMethodsController#create` saves the card *and* calls
+    `organization.subscribe_to!` in the same request, so a brand-new org can add a card and
+    subscribe in one step rather than being told to "add a payment method first" and having to
+    find the button again. This response is always a full redirect (not a turbo_stream partial
+    update), since subscribing changes more of the page (plan cards, member usage, cancel button)
+    than the payment-method card alone.
 - **Canceling** (`DELETE /billing/subscription`): `Rails.env.production?` decides which Pay
   method runs - `subscription.cancel` (marks `cancel_at_period_end: true`, access continues
   until the current period ends) in production, `subscription.cancel_now!` (ends immediately)

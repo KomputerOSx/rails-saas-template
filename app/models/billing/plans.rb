@@ -1,9 +1,19 @@
 module Billing
   class Plans
+    # Must match whatever currency your Stripe Prices are actually denominated in - a Stripe
+    # Price is tied to one fixed currency, so this can't vary per-request/per-customer without
+    # setting up Stripe's multi-currency Prices feature (out of scope for this template's two
+    # fixed tiers). Change this (e.g. to "gbp") if your account's prices aren't USD - it drives
+    # both the displayed price below and must match what you actually charge, or the UI will
+    # show the wrong currency symbol/amount for what Stripe actually bills.
+    CURRENCY = "usd"
+
     Plan = Data.define(:key, :name, :price_cents, :member_limit, :stripe_price_id) do
       def free? = price_cents.zero?
 
-      def price_dollars = price_cents / 100
+      def formatted_price
+        Pay::Currency.format(price_cents, currency: Plans::CURRENCY)
+      end
 
       def resolved_stripe_price_id
         stripe_price_id.respond_to?(:call) ? stripe_price_id.call : stripe_price_id

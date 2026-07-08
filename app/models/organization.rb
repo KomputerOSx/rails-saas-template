@@ -106,4 +106,20 @@ class Organization < ApplicationRecord
   def over_member_limit?
     over_member_limit_at.present?
   end
+
+  # Subscribes to `plan` (moving off Free) or swaps an already-active subscription to it
+  # (upgrade/downgrade in place, prorated) - the org must already have a default payment
+  # method. Returns :created or :updated so callers can pick the right audit event/message.
+  def subscribe_to!(plan)
+    payment_method = payment_processor.default_payment_method
+    raise ArgumentError, "no payment method on file" unless payment_method
+
+    if current_plan.free?
+      payment_processor.subscribe(plan: plan.resolved_stripe_price_id, default_payment_method: payment_method.processor_id, quantity: 1)
+      :created
+    else
+      payment_processor.subscription.swap(plan.resolved_stripe_price_id)
+      :updated
+    end
+  end
 end

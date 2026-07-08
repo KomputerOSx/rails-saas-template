@@ -101,4 +101,38 @@ class OrganizationTest < ActiveSupport::TestCase
     organization.update!(over_member_limit_at: Time.current)
     assert organization.over_member_limit?
   end
+
+  test "subscribe_to! raises without a payment method on file" do
+    organization = Organization.create_personal_for!(users(:one))
+
+    with_resolvable_price(Billing::Plans::STARTER) do
+      assert_raises(ArgumentError) { organization.subscribe_to!(Billing::Plans.find("starter")) }
+    end
+  end
+
+  test "subscribe_to! creates a subscription when currently on Free" do
+    organization = Organization.create_personal_for!(users(:one))
+    customer = organization.set_payment_processor(:fake_processor, allow_fake: true)
+    customer.payment_methods.create!(processor_id: "pm_fake", default: true, payment_method_type: "card", brand: "Visa", last4: "4242")
+
+    with_resolvable_price(Billing::Plans::STARTER) do
+      assert_difference "Pay::Subscription.count", 1 do
+        assert_equal :created, organization.subscribe_to!(Billing::Plans.find("starter"))
+      end
+    end
+  end
+
+  test "subscribe_to! swaps the existing subscription in place when already on a paid plan" do
+    organization = Organization.create_personal_for!(users(:one))
+    customer = organization.set_payment_processor(:fake_processor, allow_fake: true)
+    customer.payment_methods.create!(processor_id: "pm_fake", default: true, payment_method_type: "card", brand: "Visa", last4: "4242")
+
+    with_active_subscription(organization, Billing::Plans::STARTER) do
+      with_resolvable_price(Billing::Plans::GROWTH) do
+        assert_no_difference "Pay::Subscription.count" do
+          assert_equal :updated, organization.subscribe_to!(Billing::Plans.find("growth"))
+        end
+      end
+    end
+  end
 end

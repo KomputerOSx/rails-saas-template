@@ -7,18 +7,31 @@ import { Controller } from "@hotwired/stimulus"
 // SetupIntent client-side, then submits the resulting setup_intent id to a normal Rails
 // form (formTarget) so the server can attach it to the org's Stripe customer and mark it
 // default - keeps all persistence server-side, JS only drives the Stripe.js confirmation.
+//
+// Shared by both the standalone "Update payment method" button and each plan card's
+// Upgrade/Downgrade button (when there's no card on file yet): the latter passes a
+// plan/planName param so, once the card is saved, the server subscribes to that plan
+// immediately instead of stopping at "card saved."
 export default class extends Controller {
-  static targets = ["elements", "error", "submit", "form", "setupIntentField"]
+  static targets = ["elements", "error", "submit", "form", "setupIntentField", "planField", "title"]
   static values = { publicKey: String, setupIntentUrl: String }
 
   connect() {
     this.started = false
+    this.pendingPlan = ""
     this.resumeAfterRedirect()
   }
 
   // Lazily starts on first open (triggered alongside modal#open) rather than on every
-  // page load, so a plain page view never creates a Stripe SetupIntent.
-  async start() {
+  // page load, so a plain page view never creates a Stripe SetupIntent. Always re-captures
+  // which plan (if any) triggered this open, even on repeat opens where the SetupIntent
+  // fetch itself is skipped - a later click from a different button should still update it.
+  async start(event) {
+    this.pendingPlan = event?.params?.plan || ""
+    if (this.hasTitleTarget) {
+      this.titleTarget.textContent = event?.params?.planName ? `Subscribe to ${event.params.planName}` : "Update payment method"
+    }
+
     if (this.started) return
     this.started = true
 
@@ -74,10 +87,13 @@ export default class extends Controller {
     this.hideError()
 
     try {
+      const returnUrl = new URL(window.location.href)
+      if (this.pendingPlan) returnUrl.searchParams.set("intended_plan", this.pendingPlan)
+
       const { error, setupIntent } = await this.stripe.confirmSetup({
         elements: this.elements,
         redirect: "if_required",
-        confirmParams: { return_url: window.location.href }
+        confirmParams: { return_url: returnUrl.toString() }
       })
 
       if (error) {
@@ -86,6 +102,7 @@ export default class extends Controller {
       }
 
       this.setupIntentFieldTarget.value = setupIntent.id
+      this.planFieldTarget.value = this.pendingPlan
       this.formTarget.requestSubmit()
     } catch (error) {
       console.error("stripe-payment-method: failed to save", error)
@@ -98,14 +115,17 @@ export default class extends Controller {
 
   // Handles cards that require an off-page redirect (e.g. 3D Secure) - Stripe sends the
   // browser back here with setup_intent params in the query string instead of resolving
-  // save() in-page, so finalize from there instead.
+  // save() in-page, so finalize from there instead. The intended plan (if any) rides along
+  // as its own query param since in-memory state doesn't survive the redirect round-trip.
   resumeAfterRedirect() {
     const params = new URLSearchParams(window.location.search)
     const setupIntentId = params.get("setup_intent")
     if (!setupIntentId) return
 
+    const intendedPlan = params.get("intended_plan") || ""
     window.history.replaceState({}, "", window.location.pathname)
     this.setupIntentFieldTarget.value = setupIntentId
+    this.planFieldTarget.value = intendedPlan
     this.formTarget.requestSubmit()
   }
 

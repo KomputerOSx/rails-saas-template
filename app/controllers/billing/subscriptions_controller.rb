@@ -7,20 +7,11 @@ module Billing
       return redirect_with_alert("That plan isn't available.") if plan.nil? || plan.free? || plan.resolved_stripe_price_id.blank?
 
       organization = Current.organization
-      payment_method = organization.payment_processor.default_payment_method
-      return redirect_with_alert("Add a payment method before subscribing.") unless payment_method
+      return redirect_with_alert("Add a payment method before subscribing.") unless organization.payment_processor.default_payment_method
 
-      if organization.current_plan.free?
-        organization.payment_processor.subscribe(
-          plan: plan.resolved_stripe_price_id, default_payment_method: payment_method.processor_id, quantity: 1
-        )
-        log_audit(:subscription_created, resource: organization, metadata: { plan: plan.key })
-        message = "Subscribed to the #{plan.name} plan."
-      else
-        organization.payment_processor.subscription.swap(plan.resolved_stripe_price_id)
-        log_audit(:subscription_updated, resource: organization, metadata: { plan: plan.key })
-        message = "Switched to the #{plan.name} plan."
-      end
+      result = organization.subscribe_to!(plan)
+      log_audit(result == :created ? :subscription_created : :subscription_updated, resource: organization, metadata: { plan: plan.key })
+      message = result == :created ? "Subscribed to the #{plan.name} plan." : "Switched to the #{plan.name} plan."
 
       redirect_to billing_path, notice: message
     rescue Pay::ActionRequired, Pay::InvalidPaymentMethod

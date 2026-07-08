@@ -12,7 +12,11 @@ module Billing
       log_audit(:payment_method_updated, resource: Current.organization,
         metadata: { brand: payment_method.brand, last4: payment_method.last4 })
 
-      respond_with_success("Payment method saved.", payment_method: payment_method)
+      if params[:plan].present?
+        subscribe_to_pending_plan
+      else
+        respond_with_success("Payment method saved.", payment_method: payment_method)
+      end
     rescue Pay::Stripe::Error => e
       respond_with_failure(e.message)
     end
@@ -38,6 +42,24 @@ module Billing
     end
 
     private
+
+    # A card that was just added specifically to subscribe to a plan needs the whole page
+    # (Current Plan section, not just the payment method card) to refresh, so this always
+    # does a full redirect rather than a turbo_stream partial update - Turbo Drive follows a
+    # plain redirect response as a full visit regardless of the triggering form's format.
+    def subscribe_to_pending_plan
+      plan = ::Billing::Plans.find(params[:plan])
+      return redirect_to billing_path, notice: "Payment method saved." if plan.nil? || plan.free? || plan.resolved_stripe_price_id.blank?
+
+      organization = Current.organization
+      result = organization.subscribe_to!(plan)
+      log_audit(result == :created ? :subscription_created : :subscription_updated, resource: organization, metadata: { plan: plan.key })
+      redirect_to billing_path, notice: "Payment method saved and subscribed to the #{plan.name} plan."
+    rescue Pay::ActionRequired, Pay::InvalidPaymentMethod
+      redirect_to billing_path, alert: "Payment method saved, but your card needs additional verification before we can subscribe. Please try upgrading again."
+    rescue Pay::Stripe::Error => e
+      redirect_to billing_path, alert: "Payment method saved, but subscribing failed: #{e.message}"
+    end
 
     def respond_with_success(message, payment_method:)
       respond_to do |format|

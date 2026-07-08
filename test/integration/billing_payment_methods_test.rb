@@ -36,6 +36,50 @@ class BillingPaymentMethodsTest < ActionDispatch::IntegrationTest
     assert AuditLog.exists?(event_type: :payment_method_updated, resource_type: "Organization", resource_id: @organization.id)
   end
 
+  test "saving a card with a pending plan also subscribes to it in the same request" do
+    post login_path, params: { email: @owner.email, password: "password123" }
+
+    customer = @organization.set_payment_processor(:stripe)
+    customer.update!(processor_id: "cus_test123")
+    payment_method = customer.payment_methods.create!(
+      processor_id: "pm_test123", default: true, payment_method_type: "card", brand: "Visa", last4: "4242"
+    )
+
+    fake_stripe_subscription = Struct.new(:id).new("sub_test123")
+    fake_pay_subscription = Object.new.tap { |o| o.define_singleton_method(:incomplete?) { false } }
+
+    Pay::Stripe::PaymentMethod.stub(:sync_setup_intent, payment_method) do
+      Stripe::Subscription.stub(:create, fake_stripe_subscription) do
+        Pay::Stripe::Subscription.stub(:sync, fake_pay_subscription) do
+          with_resolvable_price(Billing::Plans::STARTER) do
+            post billing_payment_method_path, params: { setup_intent_id: "seti_test123", plan: "starter" }
+          end
+        end
+      end
+    end
+
+    assert_redirected_to billing_path
+    assert AuditLog.exists?(event_type: :payment_method_updated, resource_type: "Organization", resource_id: @organization.id)
+    assert AuditLog.exists?(event_type: :subscription_created, resource_type: "Organization", resource_id: @organization.id)
+  end
+
+  test "saving a card with no pending plan just saves the card (existing behavior)" do
+    post login_path, params: { email: @owner.email, password: "password123" }
+
+    customer = @organization.set_payment_processor(:stripe)
+    customer.update!(processor_id: "cus_test123")
+    payment_method = customer.payment_methods.create!(
+      processor_id: "pm_test123", default: true, payment_method_type: "card", brand: "Visa", last4: "4242"
+    )
+
+    Pay::Stripe::PaymentMethod.stub(:sync_setup_intent, payment_method) do
+      post billing_payment_method_path, params: { setup_intent_id: "seti_test123", plan: "" }
+    end
+
+    assert_redirected_to billing_path
+    assert_not AuditLog.exists?(event_type: :subscription_created, resource_type: "Organization", resource_id: @organization.id)
+  end
+
   test "an unresolvable setup intent shows an error instead of crashing" do
     post login_path, params: { email: @owner.email, password: "password123" }
 

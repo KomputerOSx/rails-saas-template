@@ -39,10 +39,16 @@ class Billing::PlansTest < ActiveSupport::TestCase
     assert_equal "price_plain", plan.resolved_stripe_price_id
   end
 
-  test "free? and price_dollars" do
+  test "free? and formatted_price" do
     assert Billing::Plans::FREE.free?
     assert_not Billing::Plans::STARTER.free?
-    assert_equal 10, Billing::Plans::STARTER.price_dollars
-    assert_equal 30, Billing::Plans::GROWTH.price_dollars
+    assert_equal "$10.00", Billing::Plans::STARTER.formatted_price
+    assert_equal "$30.00", Billing::Plans::GROWTH.formatted_price
+  end
+
+  test "formatted_price shows cents correctly for non-round amounts" do
+    plan = Billing::Plans::Plan.new(key: "test", name: "Test", price_cents: 999, member_limit: 3, stripe_price_id: "price_test")
+
+    assert_equal "$9.99", plan.formatted_price
   end
 end
