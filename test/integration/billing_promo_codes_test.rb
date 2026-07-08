@@ -31,6 +31,25 @@ class BillingPromoCodesTest < ActionDispatch::IntegrationTest
     assert_match "20% off", session[:promo_code_display]
   end
 
+  test "applying a code on a Stripe account using the newer polymorphic promotion.coupon shape" do
+    # Regression test: Stripe moved PromotionCode#coupon to a polymorphic
+    # PromotionCode#promotion.coupon as of the 2025-09-30 API version - #coupon doesn't exist
+    # at all on that shape (not just nil), so this object deliberately has no #coupon method.
+    post login_path, params: { email: @owner.email, password: "password123" }
+
+    coupon = Struct.new(:valid, :percent_off, :amount_off).new(true, 20, nil)
+    promotion = Struct.new(:type, :coupon).new("coupon", coupon)
+    promotion_code = Struct.new(:id, :code, :promotion).new("promo_test123", "SAVE20", promotion)
+
+    Stripe::PromotionCode.stub(:list, [ promotion_code ]) do
+      post billing_promo_code_path, params: { code: "save20" }
+    end
+
+    assert_redirected_to billing_path
+    assert_equal "promo_test123", session[:promo_code_id]
+    assert_match "20% off", session[:promo_code_display]
+  end
+
   test "applying an unknown or expired code shows an alert and stores nothing" do
     post login_path, params: { email: @owner.email, password: "password123" }
 

@@ -15,13 +15,16 @@ module Billing
       code = params[:code].to_s.strip
       return respond_with_failure("Enter a promo code.") if code.blank?
 
-      promotion_code = ::Stripe::PromotionCode.list(code: code, active: true, limit: 1, expand: [ "data.coupon" ]).first
-      unless promotion_code&.coupon&.valid
+      promotion_code = ::Stripe::PromotionCode.list(
+        code: code, active: true, limit: 1, expand: [ "data.coupon", "data.promotion.coupon" ]
+      ).first
+      coupon = resolve_coupon(promotion_code)
+      unless coupon&.valid
         return respond_with_failure("That promo code isn't valid or has expired.")
       end
 
       organization = Current.organization
-      description = describe_coupon(promotion_code.coupon)
+      description = describe_coupon(coupon)
 
       if organization.current_plan.free?
         session[:promo_code_id] = promotion_code.id
@@ -58,6 +61,21 @@ module Billing
     end
 
     private
+
+    # Stripe moved PromotionCode#coupon to a polymorphic PromotionCode#promotion.coupon as of
+    # the 2025-09-30 ("Clover") API version - #coupon no longer exists at all on that version,
+    # it's not just deprecated-but-present, so calling it directly raises NoMethodError rather
+    # than returning nil. Prefer the new field; fall back to the old one for any account still
+    # pinned to an older API version where #promotion doesn't exist.
+    def resolve_coupon(promotion_code)
+      return nil unless promotion_code
+
+      if promotion_code.respond_to?(:promotion) && promotion_code.promotion&.type == "coupon"
+        promotion_code.promotion.coupon
+      elsif promotion_code.respond_to?(:coupon)
+        promotion_code.coupon
+      end
+    end
 
     def describe_coupon(coupon)
       if coupon.percent_off
