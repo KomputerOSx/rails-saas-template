@@ -6,12 +6,12 @@
          data-controller="modal stripe-payment-method processing-overlay"
          data-stripe-payment-method-public-key-value="<%= Rails.application.credentials.dig(:stripe, :public_key) %>"
          data-stripe-payment-method-setup-intent-url-value="<%= billing_setup_intent_path %>">
-  <div data-processing-overlay-target="overlay" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-base-300/60 backdrop-blur-sm">
+  <dialog data-processing-overlay-target="overlay" class="modal">
     <div class="flex items-center gap-3 rounded-lg border border-base-300 bg-base-100 px-6 py-4">
       <span class="loading loading-spinner loading-md"></span>
       <span class="text-sm font-medium">Processing your request...</span>
     </div>
-  </div>
+  </dialog>
 
   <p class="text-sm font-medium text-base-content/60">Account Settings</p>
   <h1 class="mt-3 text-4xl font-semibold tracking-normal">Billing</h1>

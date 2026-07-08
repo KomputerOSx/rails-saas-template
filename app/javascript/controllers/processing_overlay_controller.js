@@ -10,6 +10,12 @@ import { Controller } from "@hotwired/stimulus"
 // affects the one button clicked; this blocks interaction with the *entire* page so a
 // different button can't be clicked mid-flight either.
 //
+// The overlay itself is a <dialog> (not a plain positioned div) shown via showModal() - a
+// regular z-indexed element can never cover the card-entry dialog, since any <dialog> shown
+// with showModal() renders in the browser's "top layer," which sits above *all* normal content
+// regardless of z-index. Top-layer dialogs stack in the order they're opened, so opening this
+// one while the card dialog is already open correctly places it on top instead of behind.
+//
 // Listens on the capture phase at the controller's root so it catches every submit underneath
 // it, including the hidden form the Stripe Elements dialog submits programmatically.
 export default class extends Controller {
@@ -18,22 +24,28 @@ export default class extends Controller {
   connect() {
     this.showBound = this.show.bind(this)
     this.hideBound = this.hide.bind(this)
+    this.preventCancelBound = (event) => event.preventDefault()
+
     this.element.addEventListener("submit", this.showBound, true)
     document.addEventListener("turbo:load", this.hideBound)
     document.addEventListener("turbo:submit-end", this.hideBound)
+    // Blocks dismissing via the Escape key - this is a blocking "please wait", not a
+    // dismissable dialog.
+    this.overlayTarget.addEventListener("cancel", this.preventCancelBound)
   }
 
   disconnect() {
     this.element.removeEventListener("submit", this.showBound, true)
     document.removeEventListener("turbo:load", this.hideBound)
     document.removeEventListener("turbo:submit-end", this.hideBound)
+    this.overlayTarget.removeEventListener("cancel", this.preventCancelBound)
   }
 
   show() {
-    this.overlayTarget.classList.remove("hidden")
+    if (!this.overlayTarget.open) this.overlayTarget.showModal()
   }
 
   hide() {
-    this.overlayTarget.classList.add("hidden")
+    if (this.overlayTarget.open) this.overlayTarget.close()
   }
 }
