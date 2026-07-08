@@ -44,6 +44,35 @@ class BillingSubscriptionsTest < ActionDispatch::IntegrationTest
     assert AuditLog.exists?(event_type: :subscription_created, resource_type: "Organization", resource_id: @organization.id)
   end
 
+  test "subscribing sends default_payment_method (not payment_method) to Stripe" do
+    # Pay's fake processor doesn't validate Stripe's actual parameter names, so this exercises
+    # the real Pay::Stripe::Customer#subscribe call path (stubbing only the Stripe SDK boundary)
+    # to pin down the exact request shape Stripe expects - regression test for a prior bug where
+    # `payment_method:` was sent instead of `default_payment_method:` and Stripe rejected it with
+    # "Received unknown parameter: payment_method".
+    customer = @organization.set_payment_processor(:stripe)
+    customer.update!(processor_id: "cus_test123")
+    customer.payment_methods.create!(processor_id: "pm_test123", default: true, payment_method_type: "card", brand: "Visa", last4: "4242")
+
+    post login_path, params: { email: @owner.email, password: "password123" }
+
+    captured_params = nil
+    fake_stripe_subscription = Struct.new(:id).new("sub_test123")
+    fake_pay_subscription = Object.new.tap { |o| o.define_singleton_method(:incomplete?) { false } }
+
+    Stripe::Subscription.stub(:create, ->(params, _opts) { captured_params = params; fake_stripe_subscription }) do
+      Pay::Stripe::Subscription.stub(:sync, fake_pay_subscription) do
+        with_resolvable_price(Billing::Plans::STARTER) do
+          post billing_subscription_path(plan: "starter")
+        end
+      end
+    end
+
+    assert_redirected_to billing_path
+    assert_equal "pm_test123", captured_params[:default_payment_method]
+    assert_not captured_params.key?(:payment_method)
+  end
+
   test "the owner can switch from one paid plan to another without creating a second subscription" do
     post login_path, params: { email: @owner.email, password: "password123" }
 

@@ -12,7 +12,7 @@ module Billing
 
       if organization.current_plan.free?
         organization.payment_processor.subscribe(
-          plan: plan.resolved_stripe_price_id, payment_method: payment_method.processor_id, quantity: 1
+          plan: plan.resolved_stripe_price_id, default_payment_method: payment_method.processor_id, quantity: 1
         )
         log_audit(:subscription_created, resource: organization, metadata: { plan: plan.key })
         message = "Subscribed to the #{plan.name} plan."

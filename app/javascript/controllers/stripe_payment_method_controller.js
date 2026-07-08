@@ -23,30 +23,47 @@ export default class extends Controller {
     this.started = true
 
     if (typeof Stripe !== "function") {
-      this.elementsTarget.innerHTML = ""
-      this.showError("Payment form failed to load. Check your connection and try again.")
+      this.failToLoad("Payment form failed to load. Check your connection and try again.")
       return
     }
 
-    this.stripe = Stripe(this.publicKeyValue)
+    try {
+      this.stripe = Stripe(this.publicKeyValue)
 
-    const response = await fetch(this.setupIntentUrlValue, {
-      method: "POST",
-      headers: {
-        "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]').content,
-        Accept: "application/json"
+      const response = await fetch(this.setupIntentUrlValue, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+          "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]').content,
+          Accept: "application/json"
+        }
+      })
+
+      const contentType = response.headers.get("content-type") || ""
+      if (!response.ok || !contentType.includes("application/json")) {
+        const body = await response.text()
+        console.error("stripe-payment-method: setup intent request failed", response.status, body)
+        this.failToLoad(
+          response.status === 401 || response.status === 403
+            ? "You're not authorized to update billing for this organization."
+            : "Could not start payment setup. Please try again."
+        )
+        return
       }
-    })
 
-    if (!response.ok) {
-      this.showError("Could not start payment setup. Please try again.")
-      return
+      const { client_secret } = await response.json()
+      this.elements = this.stripe.elements({ clientSecret: client_secret })
+      this.elementsTarget.innerHTML = ""
+      this.elements.create("payment").mount(this.elementsTarget)
+    } catch (error) {
+      console.error("stripe-payment-method: failed to start", error)
+      this.failToLoad("Something went wrong loading the payment form. Please try again.")
     }
+  }
 
-    const { client_secret } = await response.json()
-    this.elements = this.stripe.elements({ clientSecret: client_secret })
+  failToLoad(message) {
     this.elementsTarget.innerHTML = ""
-    this.elements.create("payment").mount(this.elementsTarget)
+    this.showError(message)
   }
 
   async save() {
@@ -56,21 +73,27 @@ export default class extends Controller {
     this.submitTarget.textContent = "Saving..."
     this.hideError()
 
-    const { error, setupIntent } = await this.stripe.confirmSetup({
-      elements: this.elements,
-      redirect: "if_required",
-      confirmParams: { return_url: window.location.href }
-    })
+    try {
+      const { error, setupIntent } = await this.stripe.confirmSetup({
+        elements: this.elements,
+        redirect: "if_required",
+        confirmParams: { return_url: window.location.href }
+      })
 
-    if (error) {
-      this.showError(error.message)
+      if (error) {
+        this.showError(error.message)
+        return
+      }
+
+      this.setupIntentFieldTarget.value = setupIntent.id
+      this.formTarget.requestSubmit()
+    } catch (error) {
+      console.error("stripe-payment-method: failed to save", error)
+      this.showError("Something went wrong saving your card. Please try again.")
+    } finally {
       this.submitTarget.disabled = false
       this.submitTarget.textContent = "Save card"
-      return
     }
-
-    this.setupIntentFieldTarget.value = setupIntent.id
-    this.formTarget.requestSubmit()
   }
 
   // Handles cards that require an off-page redirect (e.g. 3D Secure) - Stripe sends the
