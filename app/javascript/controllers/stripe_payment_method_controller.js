@@ -14,7 +14,7 @@ import { Controller } from "@hotwired/stimulus"
 // plan immediately instead of stopping at "card saved," and the dialog shows what it's about
 // to charge before the user commits.
 export default class extends Controller {
-  static targets = ["elements", "error", "submit", "form", "setupIntentField", "planField", "title", "priceNotice"]
+  static targets = ["elements", "error", "submit", "form", "setupIntentField", "planField", "title", "priceNotice", "nameField"]
   static values = { publicKey: String, setupIntentUrl: String }
 
   connect() {
@@ -66,10 +66,11 @@ export default class extends Controller {
       const { client_secret } = await response.json()
       this.elements = this.stripe.elements({ clientSecret: client_secret })
       this.elementsTarget.innerHTML = ""
-      // Explicitly request the cardholder name field - Stripe's Payment Element can decide to
-      // omit it by default (its "auto" heuristic), but this app relies on it for the receipt/
-      // charge display (Pay reads the payment method's billing name from the PaymentMethod).
-      this.elements.create("payment", { fields: { billingDetails: { name: "always" } } }).mount(this.elementsTarget)
+      // The Payment Element's own cardholder-name field is unreliable (Stripe's "auto" fields
+      // heuristic can omit it, and there's no supported "always show" option) - collecting it
+      // ourselves and passing it via confirmParams.payment_method_data below guarantees it's
+      // always present, regardless of what the Payment Element decides to render.
+      this.elements.create("payment", { fields: { billingDetails: { name: "never" } } }).mount(this.elementsTarget)
     } catch (error) {
       console.error("stripe-payment-method: failed to start", error)
       this.failToLoad("Something went wrong loading the payment form. Please try again.")
@@ -103,6 +104,13 @@ export default class extends Controller {
   async save() {
     if (!this.elements) return
 
+    const name = this.nameFieldTarget.value.trim()
+    if (!name) {
+      this.showError("Enter the name on the card.")
+      this.nameFieldTarget.focus()
+      return
+    }
+
     this.submitTarget.disabled = true
     this.submitTarget.textContent = "Please wait..."
     this.hideError()
@@ -114,7 +122,10 @@ export default class extends Controller {
       const { error, setupIntent } = await this.stripe.confirmSetup({
         elements: this.elements,
         redirect: "if_required",
-        confirmParams: { return_url: returnUrl.toString() }
+        confirmParams: {
+          return_url: returnUrl.toString(),
+          payment_method_data: { billing_details: { name } }
+        }
       })
 
       if (error) {

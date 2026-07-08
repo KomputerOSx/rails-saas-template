@@ -4,6 +4,11 @@
   <h3 class="font-bold text-lg" data-stripe-payment-method-target="title">Update payment method</h3>
   <p class="mt-1 text-sm text-base-content/60 hidden" data-stripe-payment-method-target="priceNotice"></p>
 
+  <div class="form-control mt-4">
+    <label class="label"><span class="label-text">Name on card</span></label>
+    <input type="text" autocomplete="cc-name" class="input-field w-full" data-stripe-payment-method-target="nameField">
+  </div>
+
   <div data-stripe-payment-method-target="elements" class="mt-4 min-h-[200px]">
     <p class="text-sm text-base-content/60">Loading payment form...</p>
   </div>
