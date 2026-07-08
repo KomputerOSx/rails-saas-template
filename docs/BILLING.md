@@ -104,10 +104,21 @@ Stripe account, in both test mode and live mode):
    credentials (see below).
 3. [dashboard.stripe.com/test/webhooks](https://dashboard.stripe.com/test/webhooks) → **+ Add
    endpoint**, URL `https://yourdomain.com/pay/webhooks/stripe` (Pay auto-mounts this route -
-   there is no controller to write). Subscribe to at minimum:
-   - `customer.subscription.created`
-   - `customer.subscription.updated`
-   - `customer.subscription.deleted`
+   there is no controller to write). Subscribe to the full set of events Pay's built-in handlers
+   consume - **charges/invoices only appear in Billing History via these webhooks** (nothing is
+   created synchronously in-app), so a missing event here means silently missing data:
+   - `customer.subscription.created` / `customer.subscription.updated` /
+     `customer.subscription.deleted` / `customer.subscription.trial_will_end`
+   - `charge.succeeded` / `charge.refunded` / `charge.updated`
+   - `payment_intent.succeeded`
+   - `invoice.upcoming` / `invoice.updated` / `invoice.payment_action_required` /
+     `invoice.payment_failed`
+   - `payment_method.attached` / `payment_method.updated` /
+     `payment_method.automatically_updated` / `payment_method.detached`
+   - `customer.updated` / `customer.deleted`
+
+   (For local development, `stripe listen --forward-to localhost:3000/pay/webhooks/stripe`
+   forwards everything by default, which covers all of the above.)
 
    Copy the endpoint's signing secret into `stripe.signing_secret`.
 4. Repeat steps 1-3 in live mode
@@ -179,31 +190,66 @@ restricted key. `price_ids` is this app's own addition, read by `Billing::Plans:
   subscription with nothing to charge at renewal - cancel first, then remove the card.
 - **Subscribing / upgrading / downgrading**
   (`app/controllers/billing/subscriptions_controller.rb`, `POST /billing/subscription`, backed by
-  `Organization#subscribe_to!`): if the org is on Free, calls
-  `payment_processor.subscribe(plan:, default_payment_method:)`; if already on a paid plan, calls
-  `subscription.swap(price_id)` to change the existing subscription's price in place (prorated)
-  instead of creating a second one - both are Pay-provided `Pay::Stripe::Subscription` methods.
-  (Note: Stripe's Subscription API param is `default_payment_method`, not `payment_method` -
-  passing the latter gets rejected outright.)
+  `Organization#change_plan!`, which returns `:created`/`:trial_started`/`:upgraded`/
+  `:downgrade_scheduled` so the controller can pick the right message/audit event):
+  - **First subscribe from Free**: `payment_processor.subscribe(plan:, default_payment_method:)` -
+    charged today, unless the org is eligible for the one-time Starter free trial (see
+    "Free trials" below). (Note: Stripe's Subscription API param is `default_payment_method`,
+    not `payment_method` - passing the latter gets rejected outright.)
+  - **Upgrade (more expensive plan)**: applied immediately via
+    `subscription.swap(price_id, proration_behavior: "always_invoice")` - Stripe invoices the
+    prorated difference for the remainder of the period right now, and the next renewal is at
+    the new price. (`"always_invoice"` is also Pay's own default for `swap`; it's passed
+    explicitly so the billing policy doesn't silently change if the gem's default ever does.)
+    The Upgrade button's confirm dialog tells the user they'll be charged the difference today.
+  - **Downgrade (cheaper plan)**: takes effect **at the end of the current period**, not
+    immediately - the org keeps everything it already paid for, and the next renewal invoice is
+    simply the lower price. Implemented with a Stripe Subscription Schedule
+    (`Organization#schedule_downgrade!`): the current phase runs to `current_period_end`, one
+    phase on the new price follows, then `end_behavior: "release"` hands the subscription back
+    to normal renewals. The pending change is mirrored locally
+    (`organizations.pending_plan_key/pending_plan_change_at/stripe_subscription_schedule_id`)
+    to power the "Your plan changes to X on <date>" notice and a **"Keep current plan"** undo
+    button (`DELETE /billing/subscription/scheduled_change`, which releases the schedule).
+    `Billing::ReconcileOrganizationJob` clears the pending state once the renewal webhook
+    confirms the price actually flipped. Upgrading or cancelling while a downgrade is pending
+    releases the schedule first (a schedule-managed subscription rejects direct updates).
   - **No card on file yet**: the Upgrade/Downgrade button opens the same payment-method dialog
     described above instead of posting directly, with the target plan/name/price attached as
     Stimulus params (`data-stripe-payment-method-plan-param` etc.) - the dialog then shows what
     it's about to charge ("You'll be charged $9.99/mo...") and its submit button reads "Upgrade"
     instead of "Save card". Once `stripe.confirmSetup()` succeeds, the plan key rides along as a
     hidden `plan` field on the same form post to `POST /billing/payment_method` -
-    `PaymentMethodsController#create` saves the card *and* calls `organization.subscribe_to!` in
+    `PaymentMethodsController#create` saves the card *and* calls `organization.change_plan!` in
     the same request, so a brand-new org can add a card and subscribe in one step rather than
     being told to "add a payment method first" and having to find the button again. This response
     is always a full redirect (not a turbo_stream partial update), since subscribing changes more
     of the page (plan cards, member usage, cancel button) than the payment-method card alone. The
     Payment Element is also explicitly configured with `fields: { billingDetails: { name: "always" } }`
     so the cardholder name field always shows - Stripe's own "auto" heuristic can omit it.
-- **Canceling** (`DELETE /billing/subscription`): `Rails.env.production?` decides which Pay
-  method runs - `subscription.cancel` (marks `cancel_at_period_end: true`, access continues
-  until the current period ends) in production, `subscription.cancel_now!` (ends immediately)
-  everywhere else, specifically so this can be re-tested in dev without waiting out a billing
-  cycle. See [Known limitations](#7-known-limitations) if this needs to be config-driven instead
-  of environment-driven later.
+- **Canceling** (`DELETE /billing/subscription`, backed by `Organization#cancel_subscription!`):
+  always cancels **at period end** (`subscription.cancel` → `cancel_at_period_end: true`) in
+  every environment - the org keeps access to what it paid for until the period runs out, and
+  nothing is ever cut off mid-cycle. Cancelling during a free trial ends at the trial's end and
+  the card is never charged. Any pending scheduled downgrade is released first.
+- **Resuming** (`POST /billing/subscription/resume`,
+  `app/controllers/billing/subscription_resumes_controller.rb`): while a cancelled subscription
+  is in its grace period (`subscription.on_grace_period?` - cancelled but not yet ended), the
+  billing page shows a "cancelled, ends on <date>" banner with a **Resume subscription** button
+  backed by Pay's `subscription.resume`, which flips `cancel_at_period_end` back off. Plan
+  change buttons and the Cancel section are hidden during the grace period - resume first.
+- **Free trials**: the **first** paid subscription an org ever starts gets a
+  **14-day free trial if (and only if) it's the Starter plan** - card required up front, $0
+  today, Stripe charges the card automatically when the trial ends
+  (`payment_processor.subscribe(..., trial_period_days: 14)` in `Organization#change_plan!`).
+  Eligibility is `Organization#trial_eligible?` (`trial_used_at IS NULL`); `trial_used_at` is
+  stamped the moment a trial starts and never cleared, so it's strictly **one trial per
+  organization, ever** - cancelling mid-trial doesn't restore it, and orgs that subscribed
+  before this feature existed were backfilled as used. Trials are deliberately done in-app
+  rather than via the Stripe Dashboard: dashboard trials would be manual per-customer and
+  couldn't enforce the one-per-org rule. During a trial the billing page shows a "first charge
+  on <date>" notice, and Growth is never trialed - upgrading from a Starter trial swaps
+  immediately as usual.
 - **Webhooks**: Pay auto-mounts `POST /pay/webhooks/stripe` and verifies the signature itself.
   `config/initializers/pay.rb` subscribes `Billing::SubscriptionSyncHandler` to
   `customer.subscription.created/updated/deleted`, which enqueues
@@ -235,6 +281,28 @@ restricted key. `price_ids` is this app's own addition, read by `Billing::Plans:
   `config/rbac.yml`, granted only to the `owner` role), enforced via `BillingPolicy`
   (`app/policies/billing_policy.rb`) using the same `user.has_permission?(key, organization:)`
   idiom as every other org-scoped policy in this app.
+
+### Managing billing from the Stripe Dashboard
+
+Day-to-day billing operations are meant to happen in the Dashboard, not in app code - the app
+stays in sync via webhooks. What's safe and what isn't:
+
+- **Refunds: safe.** Refund a charge in the Dashboard; the `charge.refunded` webhook updates
+  `Pay::Charge#amount_refunded` and the billing history row shows a "Refunded" /
+  "Partially refunded" badge.
+- **Per-customer discounts: safe - use Coupons/promotion codes**, applied to the customer or
+  subscription in the Dashboard. The subscription's price id doesn't change, so plan mapping
+  and member limits are untouched, and the discounted amounts flow into synced invoices/charges
+  automatically. (Plan cards keep showing the list price - only invoices reflect the discount.)
+- **Changing an individual subscription to a one-off custom Price: DON'T.** The app maps
+  `processor_plan` (the Stripe price id) back to `Billing::Plans` to resolve the org's plan and
+  member limit - an unknown price id falls back to **Free** (1-member limit + over-limit
+  banner). Use a Coupon instead. As a safety net, `Billing::ReconcileOrganizationJob` logs a
+  loud warning and stamps `unrecognized_price` into the audit log when it sees an active
+  subscription on an unknown price.
+- **Plan changes / cancels between this app's known Prices: safe** - the
+  `customer.subscription.updated`/`.deleted` webhooks re-run the reconcile job and the app
+  catches up on the next page load.
 
 ## 6. Member limit enforcement
 
@@ -279,11 +347,11 @@ Documented here rather than fixed, since they're reasonable trade-offs for a tem
   feature-gated tiers, extend `Billing::Plans::Plan` and check the new field wherever
   `current_plan` is read - the existing `FeatureToggleable` concern (`app/models/concerns/`) is
   a natural pairing for that.
-- **Cancellation timing is environment-driven** (`Rails.env.production?` in
-  `Billing::SubscriptionsController#destroy`), not a configurable business rule. That's
-  deliberate for a template baseline (immediate cancel makes the limit/downgrade flows easy to
-  re-test locally without waiting out a billing cycle) but a real project may want this as an
-  explicit setting instead of being tied to the Rails environment.
+- **Testing period-end flows locally takes patience**: cancels and downgrades both settle at the
+  period end in every environment (no dev-only immediate cancel anymore, since Resume/undo make
+  mid-cycle re-testing possible without it). To see a renewal-time price flip or a trial-end
+  charge without waiting, use Stripe test clocks, or cancel via `cancel_now!` from a Rails
+  console.
 - **3D Secure / SCA is handled minimally**: the embedded card form uses `redirect: "if_required"`
   and a light `resumeAfterRedirect()` in the Stimulus controller for cards that do need an
   off-page authentication step, and `Billing::SubscriptionsController#create` rescues

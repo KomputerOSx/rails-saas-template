@@ -36,4 +36,48 @@ class Billing::ReconcileOrganizationJobTest < ActiveJob::TestCase
       Billing::ReconcileOrganizationJob.perform_now(-1)
     end
   end
+
+  test "clears a pending downgrade once the subscription is on the pending plan's price" do
+    @organization.update!(pending_plan_key: "starter", pending_plan_change_at: 1.day.ago,
+      stripe_subscription_schedule_id: "sub_sched_test123")
+
+    with_active_subscription(@organization, Billing::Plans::STARTER) do
+      Billing::ReconcileOrganizationJob.perform_now(@organization.id)
+    end
+
+    @organization.reload
+    assert_nil @organization.pending_plan_key
+    assert_nil @organization.pending_plan_change_at
+    assert_nil @organization.stripe_subscription_schedule_id
+  end
+
+  test "keeps the pending downgrade while the subscription is still on the old plan" do
+    @organization.update!(pending_plan_key: "starter", pending_plan_change_at: 20.days.from_now,
+      stripe_subscription_schedule_id: "sub_sched_test123")
+
+    with_active_subscription(@organization, Billing::Plans::GROWTH) do
+      Billing::ReconcileOrganizationJob.perform_now(@organization.id)
+    end
+
+    assert_equal "starter", @organization.reload.pending_plan_key
+  end
+
+  test "clears a pending downgrade when there's no active subscription anymore" do
+    @organization.update!(pending_plan_key: "starter", pending_plan_change_at: 20.days.from_now,
+      stripe_subscription_schedule_id: "sub_sched_test123")
+
+    Billing::ReconcileOrganizationJob.perform_now(@organization.id)
+
+    assert_nil @organization.reload.pending_plan_key
+  end
+
+  test "flags an active subscription on an unrecognized Stripe price in the audit metadata" do
+    customer = @organization.set_payment_processor(:fake_processor, allow_fake: true)
+    customer.subscribe(plan: "price_unknown_custom_123")
+
+    Billing::ReconcileOrganizationJob.perform_now(@organization.id)
+
+    audit_log = AuditLog.where(resource_type: "Organization", resource_id: @organization.id).last
+    assert_equal "price_unknown_custom_123", audit_log.metadata["unrecognized_price"]
+  end
 end

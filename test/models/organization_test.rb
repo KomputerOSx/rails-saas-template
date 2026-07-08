@@ -102,27 +102,56 @@ class OrganizationTest < ActiveSupport::TestCase
     assert organization.over_member_limit?
   end
 
-  test "subscribe_to! raises without a payment method on file" do
+  test "change_plan! raises without a payment method on file" do
     organization = Organization.create_personal_for!(users(:one))
 
     with_resolvable_price(Billing::Plans::STARTER) do
-      assert_raises(ArgumentError) { organization.subscribe_to!(Billing::Plans.find("starter")) }
+      assert_raises(ArgumentError) { organization.change_plan!(Billing::Plans.find("starter")) }
     end
   end
 
-  test "subscribe_to! creates a subscription when currently on Free" do
+  test "change_plan! starts a 14-day trial for a first-ever Starter subscription" do
     organization = Organization.create_personal_for!(users(:one))
     customer = organization.set_payment_processor(:fake_processor, allow_fake: true)
     customer.payment_methods.create!(processor_id: "pm_fake", default: true, payment_method_type: "card", brand: "Visa", last4: "4242")
 
     with_resolvable_price(Billing::Plans::STARTER) do
       assert_difference "Pay::Subscription.count", 1 do
-        assert_equal :created, organization.subscribe_to!(Billing::Plans.find("starter"))
+        assert_equal :trial_started, organization.change_plan!(Billing::Plans.find("starter"))
       end
     end
+
+    assert organization.reload.trial_used_at.present?
+    assert organization.payment_processor.subscription.trial_ends_at.present?
   end
 
-  test "subscribe_to! swaps the existing subscription in place when already on a paid plan" do
+  test "change_plan! never grants a second trial once trial_used_at is set" do
+    organization = Organization.create_personal_for!(users(:one))
+    organization.update!(trial_used_at: 1.year.ago)
+    customer = organization.set_payment_processor(:fake_processor, allow_fake: true)
+    customer.payment_methods.create!(processor_id: "pm_fake", default: true, payment_method_type: "card", brand: "Visa", last4: "4242")
+
+    with_resolvable_price(Billing::Plans::STARTER) do
+      assert_equal :created, organization.change_plan!(Billing::Plans.find("starter"))
+    end
+
+    assert_nil organization.payment_processor.subscription.trial_ends_at
+  end
+
+  test "change_plan! subscribes Growth from Free with no trial (Starter-only trials)" do
+    organization = Organization.create_personal_for!(users(:one))
+    customer = organization.set_payment_processor(:fake_processor, allow_fake: true)
+    customer.payment_methods.create!(processor_id: "pm_fake", default: true, payment_method_type: "card", brand: "Visa", last4: "4242")
+
+    with_resolvable_price(Billing::Plans::GROWTH) do
+      assert_equal :created, organization.change_plan!(Billing::Plans.find("growth"))
+    end
+
+    assert_nil organization.reload.trial_used_at
+    assert_nil organization.payment_processor.subscription.trial_ends_at
+  end
+
+  test "change_plan! upgrades in place, keeping a single subscription" do
     organization = Organization.create_personal_for!(users(:one))
     customer = organization.set_payment_processor(:fake_processor, allow_fake: true)
     customer.payment_methods.create!(processor_id: "pm_fake", default: true, payment_method_type: "card", brand: "Visa", last4: "4242")
@@ -130,10 +159,86 @@ class OrganizationTest < ActiveSupport::TestCase
     with_active_subscription(organization, Billing::Plans::STARTER) do
       with_resolvable_price(Billing::Plans::GROWTH) do
         assert_no_difference "Pay::Subscription.count" do
-          assert_equal :updated, organization.subscribe_to!(Billing::Plans.find("growth"))
+          assert_equal :upgraded, organization.change_plan!(Billing::Plans.find("growth"))
         end
       end
     end
+  end
+
+  test "change_plan! schedules a downgrade at period end instead of applying it now" do
+    organization = Organization.create_personal_for!(users(:one))
+    customer = organization.set_payment_processor(:fake_processor, allow_fake: true)
+    customer.payment_methods.create!(processor_id: "pm_fake", default: true, payment_method_type: "card", brand: "Visa", last4: "4242")
+
+    period_end = 20.days.from_now.to_i
+    phase_item = Struct.new(:price, :quantity).new("price_fake_growth_usd", 1)
+    phase = Struct.new(:items, :start_date, :end_date).new([ phase_item ], 10.days.ago.to_i, period_end)
+    fake_schedule = Struct.new(:id, :phases).new("sub_sched_test123", [ phase ])
+    schedule_update_args = nil
+
+    with_active_subscription(organization, Billing::Plans::GROWTH) do
+      with_resolvable_price(Billing::Plans::STARTER) do
+        Stripe::SubscriptionSchedule.stub(:create, fake_schedule) do
+          Stripe::SubscriptionSchedule.stub(:update, ->(id, params) { schedule_update_args = [ id, params ]; fake_schedule }) do
+            assert_equal :downgrade_scheduled, organization.change_plan!(Billing::Plans.find("starter"))
+          end
+        end
+      end
+
+      # The live subscription is untouched until Stripe flips it at renewal.
+      assert_equal "price_fake_growth_usd", organization.payment_processor.subscription.processor_plan
+    end
+
+    organization.reload
+    assert_equal "starter", organization.pending_plan_key
+    assert_equal "sub_sched_test123", organization.stripe_subscription_schedule_id
+    assert_in_delta period_end, organization.pending_plan_change_at.to_i, 1
+
+    assert_equal "sub_sched_test123", schedule_update_args[0]
+    assert_equal "release", schedule_update_args[1][:end_behavior]
+    assert_equal "price_fake_starter_usd", schedule_update_args[1][:phases].last[:items].first[:price]
+  end
+
+  test "cancel_scheduled_downgrade! releases the schedule and clears pending state" do
+    organization = Organization.create_personal_for!(users(:one))
+    organization.update!(pending_plan_key: "starter", pending_plan_change_at: 20.days.from_now,
+      stripe_subscription_schedule_id: "sub_sched_test123")
+
+    released_id = nil
+    Stripe::SubscriptionSchedule.stub(:release, ->(id) { released_id = id }) do
+      organization.cancel_scheduled_downgrade!
+    end
+
+    assert_equal "sub_sched_test123", released_id
+    organization.reload
+    assert_nil organization.pending_plan_key
+    assert_nil organization.pending_plan_change_at
+    assert_nil organization.stripe_subscription_schedule_id
+  end
+
+  test "cancel_subscription! cancels at period end and keeps the subscription active until then" do
+    organization = Organization.create_personal_for!(users(:one))
+    customer = organization.set_payment_processor(:fake_processor, allow_fake: true)
+    customer.payment_methods.create!(processor_id: "pm_fake", default: true, payment_method_type: "card", brand: "Visa", last4: "4242")
+
+    with_active_subscription(organization, Billing::Plans::STARTER) do
+      organization.cancel_subscription!
+
+      subscription = organization.payment_processor.subscription.reload
+      assert subscription.active?
+      assert subscription.ends_at.present?
+      assert subscription.on_grace_period?
+    end
+  end
+
+  test "trial_eligible? is Starter-only and one-shot" do
+    organization = Organization.create_personal_for!(users(:one))
+
+    assert organization.trial_eligible?(Billing::Plans::STARTER)
+    assert_not organization.trial_eligible?(Billing::Plans::GROWTH)
+
+    organization.update!(trial_used_at: Time.current)
+    assert_not organization.trial_eligible?(Billing::Plans::STARTER)
   end
 
   test "preferred_currency must be a supported currency" do

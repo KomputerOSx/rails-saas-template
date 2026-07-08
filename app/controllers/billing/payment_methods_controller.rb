@@ -70,9 +70,15 @@ module Billing
       organization = Current.organization
       return redirect_to billing_path, notice: "Payment method saved." if plan.nil? || plan.free? || plan.resolved_stripe_price_id(organization.billing_currency).blank?
 
-      result = organization.subscribe_to!(plan)
-      log_audit(result == :created ? :subscription_created : :subscription_updated, resource: organization, metadata: { plan: plan.key })
-      redirect_to billing_path, notice: "Payment method saved and subscribed to the #{plan.name} plan."
+      result = organization.change_plan!(plan)
+      log_audit(result == :upgraded ? :subscription_updated : :subscription_created,
+        resource: organization, metadata: { plan: plan.key, trial: result == :trial_started }.compact_blank)
+      message = if result == :trial_started
+        "Payment method saved. Your #{Organization::TRIAL_DAYS}-day free trial of the #{plan.name} plan has started."
+      else
+        "Payment method saved and subscribed to the #{plan.name} plan."
+      end
+      redirect_to billing_path, notice: message
     rescue Pay::ActionRequired, Pay::InvalidPaymentMethod
       redirect_to billing_path, alert: "Payment method saved, but your card needs additional verification before we can subscribe. Please try upgrading again."
     rescue Pay::Stripe::Error => e

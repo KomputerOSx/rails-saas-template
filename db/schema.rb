@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_08_110000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_08_120000) do
   create_table "audit_logs", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "event_type", null: false
@@ -139,8 +139,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_08_110000) do
     t.text "features"
     t.string "name", null: false
     t.datetime "over_member_limit_at"
+    t.datetime "pending_plan_change_at"
+    t.string "pending_plan_key"
     t.string "preferred_currency", default: "usd", null: false
     t.string "slug", null: false
+    t.string "stripe_subscription_schedule_id"
+    t.datetime "trial_used_at"
     t.datetime "updated_at", null: false
     t.index ["slug"], name: "index_organizations_on_slug", unique: true
   end

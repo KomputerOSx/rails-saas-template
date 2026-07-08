@@ -20,6 +20,7 @@ export default class extends Controller {
   connect() {
     this.started = false
     this.pendingPlan = ""
+    this.pendingTrial = false
     this.resumeAfterRedirect()
   }
 
@@ -46,6 +47,7 @@ export default class extends Controller {
   // fetch itself is skipped - a later click from a different button should still update it.
   async start(event) {
     this.pendingPlan = event?.params?.plan || ""
+    this.pendingTrial = event?.params?.planTrial === true
     this.updateHeader(event?.params?.planName, event?.params?.planPrice)
 
     if (this.started) {
@@ -110,7 +112,10 @@ export default class extends Controller {
       this.titleTarget.textContent = planName ? `Subscribe to ${planName}` : "Update payment method"
     }
     if (this.hasPriceNoticeTarget) {
-      if (planPrice) {
+      if (planPrice && this.pendingTrial) {
+        this.priceNoticeTarget.textContent = `14-day free trial - nothing is charged today. Your card will be charged ${planPrice}/mo when the trial ends, unless you cancel first.`
+        this.priceNoticeTarget.classList.remove("hidden")
+      } else if (planPrice) {
         this.priceNoticeTarget.textContent = `You'll be charged ${planPrice}/mo, billed today and every month after.`
         this.priceNoticeTarget.classList.remove("hidden")
       } else {
@@ -121,7 +126,8 @@ export default class extends Controller {
   }
 
   defaultSubmitLabel() {
-    return this.pendingPlan ? "Upgrade" : "Save card"
+    if (!this.pendingPlan) return "Save card"
+    return this.pendingTrial ? "Start free trial" : "Upgrade"
   }
 
   failToLoad(message) {

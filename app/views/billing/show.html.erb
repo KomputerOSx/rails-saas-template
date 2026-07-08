@@ -52,6 +52,52 @@
       </div>
     </div>
 
+    <%# ── Subscription status notices ── %>
+    <% period_end_copy = @current_period_end&.to_date&.to_fs(:long) || "the end of your current billing period" %>
+    <% if @on_grace_period %>
+      <div class="card mt-4 border border-warning/40 bg-warning/10">
+        <div class="card-body flex-row items-center justify-between gap-3 py-4">
+          <div class="flex items-center gap-3">
+            <span class="material-symbols-outlined text-warning">schedule</span>
+            <p class="text-sm">
+              Your <%= @current_plan.name %> plan is cancelled and ends on
+              <strong><%= @subscription.ends_at&.to_date&.to_fs(:long) || "your period end date" %></strong>.
+              You keep full access until then.
+            </p>
+          </div>
+          <%= button_to "Resume subscription", billing_subscription_resume_path, method: :post,
+                class: "btn btn-primary btn-sm shrink-0", data: { controller: "loading-button" } %>
+        </div>
+      </div>
+    <% elsif @pending_plan %>
+      <div class="card mt-4 border border-info/40 bg-info/10">
+        <div class="card-body flex-row items-center justify-between gap-3 py-4">
+          <div class="flex items-center gap-3">
+            <span class="material-symbols-outlined text-info">schedule</span>
+            <p class="text-sm">
+              Your plan changes to <strong><%= @pending_plan.name %>
+              (<%= @pending_plan.formatted_price(@currency) %>/mo)</strong> on
+              <strong><%= Current.organization.pending_plan_change_at&.to_date&.to_fs(:long) || "your next billing date" %></strong>.
+              Until then you keep everything in <%= @current_plan.name %>.
+            </p>
+          </div>
+          <%= button_to "Keep current plan", billing_subscription_scheduled_change_path, method: :delete,
+                class: "btn btn-outline btn-sm shrink-0", data: { controller: "loading-button" } %>
+        </div>
+      </div>
+    <% elsif @on_trial %>
+      <div class="card mt-4 border border-info/40 bg-info/10">
+        <div class="card-body flex-row items-center gap-3 py-4">
+          <span class="material-symbols-outlined text-info">hourglass_top</span>
+          <p class="text-sm">
+            Free trial - your card will be charged <%= @current_plan.formatted_price(@currency) %>/mo starting
+            <strong><%= @subscription.trial_ends_at&.to_date&.to_fs(:long) %></strong>.
+            Cancel before then and you won't be charged.
+          </p>
+        </div>
+      </div>
+    <% end %>
+
     <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
       <% @plans.each do |plan| %>
         <div class="card border <%= plan == @current_plan ? "border-primary" : "border-base-300" %>">
@@ -69,10 +115,32 @@
             <p class="mt-1 text-sm text-base-content/60">Up to <%= plan.member_limit %> <%= "member".pluralize(plan.member_limit) %></p>
 
             <% if plan != @current_plan && !plan.free? %>
-              <% label = plan.price_cents(@currency) > @current_plan.price_cents(@currency) ? "Upgrade" : "Downgrade" %>
-              <% if @payment_method %>
+              <% upgrade = plan.price_cents(@currency) > @current_plan.price_cents(@currency) %>
+              <% trial = @current_plan.free? && Current.organization.trial_eligible?(plan) %>
+              <% label = trial ? "Start #{Organization::TRIAL_DAYS}-day free trial" : (upgrade ? "Upgrade" : "Downgrade") %>
+              <% if @on_grace_period %>
+                <%# Plan changes are locked while cancelled - resume first (banner above). %>
+              <% elsif @pending_plan == plan %>
+                <span class="badge badge-info badge-sm mt-4">
+                  Scheduled for <%= Current.organization.pending_plan_change_at&.to_date&.to_fs(:long) || "next billing date" %>
+                </span>
+              <% elsif @payment_method %>
+                <% confirm_message =
+                     if trial
+                       "Start your #{Organization::TRIAL_DAYS}-day free trial of #{plan.name}? Nothing is charged today - your card will be charged #{plan.formatted_price(@currency)}/mo starting in #{Organization::TRIAL_DAYS} days unless you cancel first."
+                     elsif @current_plan.free?
+                       "Subscribe to #{plan.name}? Your card will be charged #{plan.formatted_price(@currency)}/mo starting today."
+                     elsif upgrade
+                       "Switch to #{plan.name} now? You'll be charged the prorated difference for the rest of this billing period today, then #{plan.formatted_price(@currency)}/mo from your next billing date."
+                     else
+                       "Downgrade to #{plan.name}? You'll keep #{@current_plan.name} until #{period_end_copy} - from then you'll be charged #{plan.formatted_price(@currency)}/mo. You can undo this any time before it happens."
+                     end %>
                 <%= button_to label, billing_subscription_path(plan: plan.key), method: :post,
-                      class: "btn btn-primary btn-sm mt-4 w-full", data: { controller: "loading-button" } %>
+                      class: "btn btn-primary btn-sm mt-4 w-full",
+                      data: {
+                        controller: "confirm-modal loading-button", action: "click->confirm-modal#confirm",
+                        confirm_modal_message_value: confirm_message
+                      } %>
               <% else %>
                 <%# No card on file yet - open the same payment method dialog used below, and
                     subscribe to this plan immediately once the card is saved. %>
@@ -80,7 +148,8 @@
                         data-action="click->modal#open click->stripe-payment-method#start"
                         data-stripe-payment-method-plan-param="<%= plan.key %>"
                         data-stripe-payment-method-plan-name-param="<%= plan.name %>"
-                        data-stripe-payment-method-plan-price-param="<%= plan.formatted_price(@currency) %>">
+                        data-stripe-payment-method-plan-price-param="<%= plan.formatted_price(@currency) %>"
+                        data-stripe-payment-method-plan-trial-param="<%= trial %>">
                   <%= label %>
                 </button>
               <% end %>
@@ -195,7 +264,14 @@
                 <% @charges.each do |charge| %>
                   <tr class="hover:bg-base-200">
                     <td class="text-base-content/60"><%= charge.created_at.strftime("%b %-d, %Y") %></td>
-                    <td class="font-medium"><%= charge.amount_with_currency %></td>
+                    <td class="font-medium">
+                      <%= charge.amount_with_currency %>
+                      <% if charge.amount_refunded.to_i > 0 %>
+                        <span class="badge badge-warning badge-sm ml-1">
+                          <%= charge.amount_refunded.to_i >= charge.amount.to_i ? "Refunded" : "Partially refunded" %>
+                        </span>
+                      <% end %>
+                    </td>
                     <td class="text-base-content/60"><%= charge.charged_to %></td>
                     <td class="text-right">
                       <% invoice_pdf = charge.stripe_invoice.is_a?(Hash) ? charge.stripe_invoice["invoice_pdf"] : nil %>
@@ -235,17 +311,18 @@
   </div>
 
   <%# ── Cancel Subscription ── %>
-  <% unless @current_plan.free? %>
+  <% if !@current_plan.free? && !@on_grace_period %>
     <div class="mt-10">
       <h2 class="text-lg font-semibold">Cancel subscription</h2>
       <p class="mt-0.5 text-sm text-base-content/60">
-        <%= Rails.env.production? ? "You'll keep access to #{@current_plan.name} until the end of your current billing period." : "This will end your #{@current_plan.name} subscription immediately." %>
+        You'll keep access to <%= @current_plan.name %> until <%= period_end_copy %>, and can resume any time before then.
+        <% if @on_trial %>Cancelling during your trial means your card is never charged.<% end %>
       </p>
       <%= button_to "Cancel subscription", billing_subscription_path, method: :delete,
             class: "btn btn-error btn-outline btn-sm mt-4",
             data: {
               controller: "confirm-modal loading-button", action: "click->confirm-modal#confirm",
-              confirm_modal_message_value: Rails.env.production? ? "Cancel your #{@current_plan.name} subscription? You'll keep access until the end of your current billing period." : "Cancel your #{@current_plan.name} subscription? This will end it immediately."
+              confirm_modal_message_value: "Cancel your #{@current_plan.name} subscription? You'll keep access until #{period_end_copy}, and you can resume any time before then."
             } %>
     </div>
   <% end %>

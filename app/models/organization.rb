@@ -151,21 +151,128 @@ class Organization < ApplicationRecord
     payment_processor.update_api_record(name: billing_name.presence || self.name, address: stripe_billing_address)
   end
 
-  # Subscribes to `plan` (moving off Free) or swaps an already-active subscription to it
-  # (upgrade/downgrade in place, prorated) - the org must already have a default payment
-  # method. Returns :created or :updated so callers can pick the right audit event/message.
-  def subscribe_to!(plan)
+  # --- Subscription lifecycle ---
+  #
+  # Policy implemented here (see docs/BILLING.md):
+  # - First subscribe from Free: immediate, charged today - unless the org is eligible for the
+  #   one-time Starter trial, in which case Stripe starts a 14-day trial ($0 today, card charged
+  #   automatically at trial end).
+  # - Upgrade (more expensive plan): applied immediately, prorated difference invoiced right now
+  #   ("always_invoice" - also Pay's own default for swap, made explicit here so the policy
+  #   doesn't silently change if the gem's default ever does).
+  # - Downgrade (cheaper plan): scheduled via a Stripe Subscription Schedule to take effect at
+  #   the end of the current period - the org keeps what it already paid for, and the next
+  #   renewal invoice is simply the lower price. Held in pending_plan_* columns until the
+  #   renewal webhook confirms the flip (see Billing::ReconcileOrganizationJob).
+
+  TRIAL_PLAN_KEY = "starter"
+  TRIAL_DAYS = 14
+
+  # One trial per organization, ever - trial_used_at is set the moment a trial starts and is
+  # never cleared, so cancelling mid-trial doesn't restore eligibility.
+  def trial_eligible?(plan)
+    plan.key == TRIAL_PLAN_KEY && trial_used_at.nil?
+  end
+
+  def pending_plan
+    return nil if pending_plan_key.blank?
+    Billing::Plans.find(pending_plan_key)
+  end
+
+  # Moves the org onto `plan` under the policy above. Returns :created, :trial_started,
+  # :upgraded, or :downgrade_scheduled so callers can pick the right audit event/message.
+  def change_plan!(plan)
     payment_method = payment_processor.default_payment_method
     raise ArgumentError, "no payment method on file" unless payment_method
 
     price_id = plan.resolved_stripe_price_id(billing_currency)
 
     if current_plan.free?
-      payment_processor.subscribe(plan: price_id, default_payment_method: payment_method.processor_id, quantity: 1)
-      :created
+      if trial_eligible?(plan)
+        payment_processor.subscribe(plan: price_id, default_payment_method: payment_method.processor_id,
+          quantity: 1, trial_period_days: TRIAL_DAYS)
+        update!(trial_used_at: Time.current)
+        :trial_started
+      else
+        payment_processor.subscribe(plan: price_id, default_payment_method: payment_method.processor_id, quantity: 1)
+        :created
+      end
+    elsif plan.price_cents(billing_currency) > current_plan.price_cents(billing_currency)
+      # A subscription managed by a schedule rejects direct updates - release any pending
+      # downgrade before swapping.
+      cancel_scheduled_downgrade! if scheduled_downgrade?
+      payment_processor.subscription.swap(price_id, proration_behavior: "always_invoice")
+      :upgraded
     else
-      payment_processor.subscription.swap(price_id)
-      :updated
+      schedule_downgrade!(plan)
+      :downgrade_scheduled
     end
+  end
+
+  # Cancels at period end (never immediately - the org keeps access until what they paid for
+  # runs out, and can resume any time before then). Releases any pending downgrade first, since
+  # cancel_at_period_end can't be set on a schedule-managed subscription. Returns the (mutated)
+  # subscription so callers can read ends_at back without a stale, separately-fetched copy.
+  def cancel_subscription!
+    cancel_scheduled_downgrade! if scheduled_downgrade?
+    subscription = payment_processor.subscription
+    subscription.cancel
+    subscription
+  end
+
+  def scheduled_downgrade?
+    pending_plan_key.present? || stripe_subscription_schedule_id.present?
+  end
+
+  # Wraps the live subscription in a Stripe Subscription Schedule whose current phase ends at
+  # the period end, followed by one billing cycle on the cheaper price; end_behavior "release"
+  # then hands the subscription back to normal renewals at that price. Replaces any previously
+  # scheduled downgrade.
+  def schedule_downgrade!(plan)
+    cancel_scheduled_downgrade! if scheduled_downgrade?
+
+    subscription = payment_processor.subscription
+    price_id = plan.resolved_stripe_price_id(billing_currency)
+
+    schedule = ::Stripe::SubscriptionSchedule.create(from_subscription: subscription.processor_id)
+    current_phase = schedule.phases.first
+    ::Stripe::SubscriptionSchedule.update(schedule.id, {
+      end_behavior: "release",
+      phases: [
+        {
+          items: current_phase.items.map { |item| { price: item.price, quantity: item.quantity } },
+          start_date: current_phase.start_date,
+          end_date: current_phase.end_date
+        },
+        { items: [ { price: price_id, quantity: 1 } ], iterations: 1 }
+      ]
+    })
+
+    update!(pending_plan_key: plan.key,
+      pending_plan_change_at: Time.at(current_phase.end_date),
+      stripe_subscription_schedule_id: schedule.id)
+  rescue ::Stripe::StripeError => e
+    raise Pay::Stripe::Error, e
+  end
+
+  # Releases the schedule on Stripe (subscription continues on its current price as if the
+  # downgrade was never requested) and clears the local pending state.
+  def cancel_scheduled_downgrade!
+    if stripe_subscription_schedule_id.present?
+      begin
+        ::Stripe::SubscriptionSchedule.release(stripe_subscription_schedule_id)
+      rescue ::Stripe::InvalidRequestError
+        # Already released/completed/canceled on Stripe's side - only the local pointer is stale.
+      rescue ::Stripe::StripeError => e
+        raise Pay::Stripe::Error, e
+      end
+    end
+    clear_pending_plan_change!
+  end
+
+  # Local-only cleanup, used once a scheduled downgrade has actually taken effect (the renewal
+  # webhook confirms the subscription is now on the pending plan's price).
+  def clear_pending_plan_change!
+    update!(pending_plan_key: nil, pending_plan_change_at: nil, stripe_subscription_schedule_id: nil)
   end
 end

@@ -27,7 +27,10 @@ Rails.application.routes.draw do
   resource :billing, only: [ :show ], controller: "billing" do
     resource :setup_intent, only: [ :create ], controller: "billing/setup_intents"
     resource :payment_method, only: [ :create, :destroy ], controller: "billing/payment_methods"
-    resource :subscription, only: [ :create, :destroy ], controller: "billing/subscriptions"
+    resource :subscription, only: [ :create, :destroy ], controller: "billing/subscriptions" do
+      resource :resume, only: [ :create ], controller: "billing/subscription_resumes"
+      resource :scheduled_change, only: [ :destroy ], controller: "billing/scheduled_changes"
+    end
     resource :currency, only: [ :update ], controller: "billing/currencies"
     resource :billing_address, only: [ :update ], controller: "billing/billing_addresses"
   end

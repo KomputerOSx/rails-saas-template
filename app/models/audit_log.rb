@@ -63,6 +63,9 @@ class AuditLog < ApplicationRecord
     subscription_created: "subscription_created",
     subscription_updated: "subscription_updated",
     subscription_cancelled: "subscription_cancelled",
+    subscription_resumed: "subscription_resumed",
+    subscription_downgrade_scheduled: "subscription_downgrade_scheduled",
+    subscription_downgrade_cancelled: "subscription_downgrade_cancelled",
     payment_method_updated: "payment_method_updated",
     payment_method_removed: "payment_method_removed",
     billing_details_updated: "billing_details_updated"

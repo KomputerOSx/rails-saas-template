@@ -28,7 +28,7 @@ class BillingSubscriptionsTest < ActionDispatch::IntegrationTest
     assert_redirected_to billing_path
   end
 
-  test "the owner can subscribe to a paid plan once a payment method exists" do
+  test "a first Starter subscribe starts the 14-day free trial" do
     customer = @organization.set_payment_processor(:fake_processor, allow_fake: true)
     customer.payment_methods.create!(processor_id: "pm_fake", default: true, payment_method_type: "card", brand: "Visa", last4: "4242")
 
@@ -41,7 +41,40 @@ class BillingSubscriptionsTest < ActionDispatch::IntegrationTest
     end
 
     assert_redirected_to billing_path
-    assert AuditLog.exists?(event_type: :subscription_created, resource_type: "Organization", resource_id: @organization.id)
+    assert @organization.reload.trial_used_at.present?
+    assert @organization.payment_processor.subscription.trial_ends_at.present?
+    audit_log = AuditLog.where(event_type: :subscription_created, resource_id: @organization.id).last
+    assert_equal true, audit_log.metadata["trial"]
+  end
+
+  test "subscribing to Starter again after a used trial charges immediately with no trial" do
+    @organization.update!(trial_used_at: 1.year.ago)
+    customer = @organization.set_payment_processor(:fake_processor, allow_fake: true)
+    customer.payment_methods.create!(processor_id: "pm_fake", default: true, payment_method_type: "card", brand: "Visa", last4: "4242")
+
+    post login_path, params: { email: @owner.email, password: "password123" }
+
+    with_resolvable_price(Billing::Plans::STARTER) do
+      post billing_subscription_path(plan: "starter")
+    end
+
+    assert_redirected_to billing_path
+    assert_nil @organization.payment_processor.subscription.trial_ends_at
+  end
+
+  test "subscribing to Growth from Free never gets a trial (Starter-only)" do
+    customer = @organization.set_payment_processor(:fake_processor, allow_fake: true)
+    customer.payment_methods.create!(processor_id: "pm_fake", default: true, payment_method_type: "card", brand: "Visa", last4: "4242")
+
+    post login_path, params: { email: @owner.email, password: "password123" }
+
+    with_resolvable_price(Billing::Plans::GROWTH) do
+      post billing_subscription_path(plan: "growth")
+    end
+
+    assert_redirected_to billing_path
+    assert_nil @organization.reload.trial_used_at
+    assert_nil @organization.payment_processor.subscription.trial_ends_at
   end
 
   test "subscribing sends default_payment_method (not payment_method) to Stripe" do
@@ -71,6 +104,8 @@ class BillingSubscriptionsTest < ActionDispatch::IntegrationTest
     assert_redirected_to billing_path
     assert_equal "pm_test123", captured_params[:default_payment_method]
     assert_not captured_params.key?(:payment_method)
+    # Fresh org + Starter = trial path, which must ride the same subscribe call.
+    assert_equal Organization::TRIAL_DAYS, captured_params[:trial_period_days]
   end
 
   test "the owner can switch from one paid plan to another without creating a second subscription" do
@@ -107,33 +142,144 @@ class BillingSubscriptionsTest < ActionDispatch::IntegrationTest
     assert_redirected_to billing_path
   end
 
-  test "in non-production, canceling ends the subscription immediately" do
+  test "switching to a plan you're already on is refused" do
+    post login_path, params: { email: @owner.email, password: "password123" }
+
+    customer = @organization.set_payment_processor(:fake_processor, allow_fake: true)
+    customer.payment_methods.create!(processor_id: "pm_fake", default: true, payment_method_type: "card", brand: "Visa", last4: "4242")
+
+    with_active_subscription(@organization, Billing::Plans::STARTER) do
+      with_resolvable_price(Billing::Plans::STARTER) do
+        assert_no_difference "AuditLog.count" do
+          post billing_subscription_path(plan: "starter")
+        end
+      end
+
+      assert_equal "price_fake_starter_usd", @organization.payment_processor.subscription.processor_plan
+    end
+
+    assert_redirected_to billing_path
+  end
+
+  test "downgrading schedules the change for period end instead of applying it now" do
+    post login_path, params: { email: @owner.email, password: "password123" }
+
+    customer = @organization.set_payment_processor(:fake_processor, allow_fake: true)
+    customer.payment_methods.create!(processor_id: "pm_fake", default: true, payment_method_type: "card", brand: "Visa", last4: "4242")
+
+    phase_item = Struct.new(:price, :quantity).new("price_fake_growth_usd", 1)
+    phase = Struct.new(:items, :start_date, :end_date).new([ phase_item ], 10.days.ago.to_i, 20.days.from_now.to_i)
+    fake_schedule = Struct.new(:id, :phases).new("sub_sched_test123", [ phase ])
+
+    with_active_subscription(@organization, Billing::Plans::GROWTH) do
+      with_resolvable_price(Billing::Plans::STARTER) do
+        Stripe::SubscriptionSchedule.stub(:create, fake_schedule) do
+          Stripe::SubscriptionSchedule.stub(:update, fake_schedule) do
+            post billing_subscription_path(plan: "starter")
+          end
+        end
+      end
+
+      # Still on Growth until Stripe flips the price at renewal.
+      assert_equal "price_fake_growth_usd", @organization.payment_processor.subscription.processor_plan
+    end
+
+    assert_redirected_to billing_path
+    assert_equal "starter", @organization.reload.pending_plan_key
+    assert AuditLog.exists?(event_type: :subscription_downgrade_scheduled, resource_id: @organization.id)
+  end
+
+  test "the owner can cancel the scheduled downgrade to keep the current plan" do
+    post login_path, params: { email: @owner.email, password: "password123" }
+
+    @organization.update!(pending_plan_key: "starter", pending_plan_change_at: 20.days.from_now,
+      stripe_subscription_schedule_id: "sub_sched_test123")
+
+    Stripe::SubscriptionSchedule.stub(:release, true) do
+      delete billing_subscription_scheduled_change_path
+    end
+
+    assert_redirected_to billing_path
+    assert_nil @organization.reload.pending_plan_key
+    assert AuditLog.exists?(event_type: :subscription_downgrade_cancelled, resource_id: @organization.id)
+  end
+
+  test "canceling a scheduled change when none exists shows an alert" do
+    post login_path, params: { email: @owner.email, password: "password123" }
+
+    delete billing_subscription_scheduled_change_path
+    assert_redirected_to billing_path
+    assert_nil AuditLog.find_by(event_type: :subscription_downgrade_cancelled, resource_id: @organization.id)
+  end
+
+  test "canceling keeps access until the end of the billing period in every environment" do
     post login_path, params: { email: @owner.email, password: "password123" }
 
     with_active_subscription(@organization, Billing::Plans::STARTER) do
       delete billing_subscription_path
+
+      subscription = @organization.payment_processor.subscription.reload
+      assert subscription.active?
+      assert subscription.ends_at.present?
+      assert subscription.on_grace_period?
     end
 
     assert_redirected_to billing_path
-    assert_not @organization.payment_processor.subscription.reload.active?
-    audit_log = AuditLog.where(event_type: :subscription_cancelled, resource_id: @organization.id).last
-    assert audit_log.present?
-    assert_equal true, audit_log.metadata["immediate"]
+    assert AuditLog.exists?(event_type: :subscription_cancelled, resource_id: @organization.id)
   end
 
-  test "in production, canceling keeps access until the end of the billing period" do
+  test "canceling twice is refused while already in the grace period" do
     post login_path, params: { email: @owner.email, password: "password123" }
 
     with_active_subscription(@organization, Billing::Plans::STARTER) do
-      Rails.env.stub(:production?, true) do
+      delete billing_subscription_path
+      assert_no_difference "AuditLog.where(event_type: :subscription_cancelled).count" do
         delete billing_subscription_path
       end
     end
 
     assert_redirected_to billing_path
-    subscription = @organization.payment_processor.subscription.reload
-    assert subscription.active?
-    assert subscription.ends_at.present?
+  end
+
+  test "the owner can resume a cancelled subscription during the grace period" do
+    post login_path, params: { email: @owner.email, password: "password123" }
+
+    with_active_subscription(@organization, Billing::Plans::STARTER) do
+      @organization.payment_processor.subscription.cancel
+
+      post billing_subscription_resume_path
+
+      subscription = @organization.payment_processor.subscription.reload
+      assert subscription.active?
+      assert_nil subscription.ends_at
+    end
+
+    assert_redirected_to billing_path
+    assert AuditLog.exists?(event_type: :subscription_resumed, resource_id: @organization.id)
+  end
+
+  test "resuming with nothing cancelled shows an alert" do
+    post login_path, params: { email: @owner.email, password: "password123" }
+
+    with_active_subscription(@organization, Billing::Plans::STARTER) do
+      post billing_subscription_resume_path
+    end
+
+    assert_redirected_to billing_path
+    assert_nil AuditLog.find_by(event_type: :subscription_resumed, resource_id: @organization.id)
+  end
+
+  test "a non-owner cannot resume or cancel scheduled changes" do
+    member = users(:two)
+    @organization.memberships.create!(user: member).grant_role!(Role.find_or_create_by!(scope: :app, name: Role::APP_USER))
+
+    post login_path, params: { email: member.email, password: "password123" }
+
+    post billing_subscription_resume_path
+    assert_redirected_to root_path
+
+    delete billing_subscription_scheduled_change_path
+    assert_redirected_to root_path
   end
 
   test "canceling with no active subscription is a no-op redirect" do
