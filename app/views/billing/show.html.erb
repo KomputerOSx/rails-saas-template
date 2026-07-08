@@ -3,9 +3,16 @@
 <% end %>
 
 <section class="w-full max-w-3xl"
-         data-controller="modal stripe-payment-method"
+         data-controller="modal stripe-payment-method processing-overlay"
          data-stripe-payment-method-public-key-value="<%= Rails.application.credentials.dig(:stripe, :public_key) %>"
          data-stripe-payment-method-setup-intent-url-value="<%= billing_setup_intent_path %>">
+  <div data-processing-overlay-target="overlay" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-base-300/60 backdrop-blur-sm">
+    <div class="flex items-center gap-3 rounded-lg border border-base-300 bg-base-100 px-6 py-4">
+      <span class="loading loading-spinner loading-md"></span>
+      <span class="text-sm font-medium">Processing your request...</span>
+    </div>
+  </div>
+
   <p class="text-sm font-medium text-base-content/60">Account Settings</p>
   <h1 class="mt-3 text-4xl font-semibold tracking-normal">Billing</h1>
 
@@ -40,12 +47,6 @@
           </div>
         <% else %>
           <span class="badge badge-outline badge-sm">Billed in <%= @currency.upcase %></span>
-          <%= button_to "Cancel subscription", billing_subscription_path, method: :delete,
-                class: "btn btn-error btn-outline btn-sm",
-                data: {
-                  controller: "confirm-modal loading-button", action: "click->confirm-modal#confirm",
-                  confirm_modal_message_value: Rails.env.production? ? "Cancel your #{@current_plan.name} subscription? You'll keep access until the end of your current billing period." : "Cancel your #{@current_plan.name} subscription? This will end it immediately."
-                } %>
         <% end %>
       </div>
     </div>
@@ -108,7 +109,7 @@
   </div>
 
   <%# ── Billing History ── %>
-  <div class="mt-10">
+  <div class="mt-10" id="billing-history">
     <h2 class="text-lg font-semibold">Billing history</h2>
     <p class="mt-0.5 text-sm text-base-content/60">Your organization's past invoices.</p>
 
@@ -145,10 +146,44 @@
           </div>
         </div>
       </div>
+
+      <% if @charges_total_pages > 1 %>
+        <div class="mt-3 flex items-center justify-between">
+          <p class="text-sm text-base-content/60">Page <%= @charges_page %> of <%= @charges_total_pages %></p>
+          <div class="join">
+            <% if @charges_page > 1 %>
+              <%= link_to "Previous", billing_path(charges_page: @charges_page - 1, anchor: "billing-history"), class: "btn btn-sm join-item" %>
+            <% else %>
+              <button class="btn btn-sm join-item" disabled>Previous</button>
+            <% end %>
+            <% if @charges_page < @charges_total_pages %>
+              <%= link_to "Next", billing_path(charges_page: @charges_page + 1, anchor: "billing-history"), class: "btn btn-sm join-item" %>
+            <% else %>
+              <button class="btn btn-sm join-item" disabled>Next</button>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
     <% else %>
       <p class="mt-4 text-sm text-base-content/60">No invoices yet.</p>
     <% end %>
   </div>
+
+  <%# ── Cancel Subscription ── %>
+  <% unless @current_plan.free? %>
+    <div class="mt-10">
+      <h2 class="text-lg font-semibold">Cancel subscription</h2>
+      <p class="mt-0.5 text-sm text-base-content/60">
+        <%= Rails.env.production? ? "You'll keep access to #{@current_plan.name} until the end of your current billing period." : "This will end your #{@current_plan.name} subscription immediately." %>
+      </p>
+      <%= button_to "Cancel subscription", billing_subscription_path, method: :delete,
+            class: "btn btn-error btn-outline btn-sm mt-4",
+            data: {
+              controller: "confirm-modal loading-button", action: "click->confirm-modal#confirm",
+              confirm_modal_message_value: Rails.env.production? ? "Cancel your #{@current_plan.name} subscription? You'll keep access until the end of your current billing period." : "Cancel your #{@current_plan.name} subscription? This will end it immediately."
+            } %>
+    </div>
+  <% end %>
 
   <dialog id="<%= dom_id(Current.organization, :payment_method_dialog) %>" data-modal-target="dialog" class="modal">
     <%= render "billing/payment_method_dialog_content" %>
