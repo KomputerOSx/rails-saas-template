@@ -22,6 +22,12 @@ export default class extends Controller {
     if (this.started) return
     this.started = true
 
+    if (typeof Stripe !== "function") {
+      this.elementsTarget.innerHTML = ""
+      this.showError("Payment form failed to load. Check your connection and try again.")
+      return
+    }
+
     this.stripe = Stripe(this.publicKeyValue)
 
     const response = await fetch(this.setupIntentUrlValue, {

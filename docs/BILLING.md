@@ -30,9 +30,13 @@ sync. Pay owns its own tables (`pay_customers`, `pay_subscriptions`, `pay_paymen
 `pay_charges`, `pay_webhooks`), auto-mounts a webhook endpoint, and handles Stripe Checkout /
 Billing Portal session creation.
 
-Upgrading and downgrading both happen entirely on Stripe's hosted pages - **Stripe Checkout**
-for subscribing to a paid plan, and the **Stripe Billing Portal** for managing payment methods,
-viewing invoices, or canceling. The app never collects card details directly.
+All of it happens inline in the app's own UI on `/billing` - there is no redirect to a
+Stripe-hosted Checkout or Billing Portal page. A card is collected via an embedded
+[Stripe Elements](https://stripe.com/docs/payments/elements) Payment Element (in a modal
+dialog, backed by a SetupIntent), saved as the org's default payment method, and reused for
+every subscribe/upgrade/downgrade from then on - the card is only re-entered when the owner
+explicitly clicks "Update payment method." Card data itself never touches the Rails server;
+Stripe.js sends it directly to Stripe and the app only ever handles Stripe's opaque ids.
 
 ## 2. Plans
 
@@ -97,9 +101,12 @@ stripe:
     growth: ""
 ```
 
-`public_key`, `private_key`, and `signing_secret` are read automatically by the `pay` gem
-(`Pay::Stripe.public_key` / `.private_key` / `.signing_secret`) - no app code touches them
-directly. `price_ids` is this app's own addition, read by `Billing::Plans::STARTER` /
+`private_key` and `signing_secret` are read automatically by the `pay` gem
+(`Pay::Stripe.private_key` / `.signing_secret`) - no app code touches them directly.
+`public_key` IS read directly by this app (`billing/_payment_method_dialog_content.html.erb`
+inlines it as a data attribute for Stripe.js) since the embedded card form runs client-side -
+make sure it's the real `pk_test_...`/`pk_live_...` **publishable** key, not a secret or
+restricted key. `price_ids` is this app's own addition, read by `Billing::Plans::STARTER` /
 `Billing::Plans::GROWTH`.
 
 ## 5. How it works
@@ -107,20 +114,41 @@ directly. `price_ids` is this app's own addition, read by `Billing::Plans::START
 - **`Organization` is the Pay billable** (`app/models/organization.rb`):
   `pay_customer default_payment_processor: :stripe`. `Current.organization.payment_processor`
   lazily creates a local `Pay::Customer` row on first access, and lazily creates the real Stripe
-  Customer (one API call) the first time `checkout` or `billing_portal` is called - never on a
-  plain page view.
-- **Checkout** (`app/controllers/billing/checkouts_controller.rb`, `POST /billing/checkouts`):
-  looks up the requested plan in `Billing::Plans`, calls
-  `organization.payment_processor.checkout(mode: "subscription", line_items: price_id, ...)`,
-  and redirects to the returned Stripe-hosted session URL.
-- **Billing Portal** (`app/controllers/billing/portal_sessions_controller.rb`,
-  `POST /billing/portal_session`): redirects the owner to Stripe's hosted portal for managing
-  payment methods, invoices, and cancellation.
+  Customer (one API call) the first time a SetupIntent is created - never on a plain page view.
+- **Adding/updating a card** (`app/controllers/billing/setup_intents_controller.rb`,
+  `POST /billing/setup_intent` + `app/controllers/billing/payment_methods_controller.rb`,
+  `POST /billing/payment_method`): the "Update payment method" button opens a `<dialog>`
+  (`app/views/billing/_payment_method_dialog_content.html.erb`) whose Stimulus controller
+  (`app/javascript/controllers/stripe_payment_method_controller.js`) fetches a SetupIntent
+  client secret, mounts a Stripe Elements Payment Element, and calls `stripe.confirmSetup()`
+  client-side. On success it submits the resulting `setup_intent_id` to a normal Rails form,
+  which syncs the payment method (`Pay::Stripe::PaymentMethod.sync_setup_intent`) and marks it
+  default (`PaymentMethod#make_default!`) - both provided by Pay, no custom Stripe API calls.
+- **Subscribing / upgrading / downgrading**
+  (`app/controllers/billing/subscriptions_controller.rb`, `POST /billing/subscription`): requires
+  a saved default payment method first (redirects back with an alert if there isn't one yet).
+  If the org is on Free, calls `payment_processor.subscribe(plan:, payment_method:)`; if already
+  on a paid plan, calls `subscription.swap(price_id)` to change the existing subscription's price
+  in place (prorated) instead of creating a second one - both are Pay-provided
+  `Pay::Stripe::Subscription` methods.
+- **Canceling** (`DELETE /billing/subscription`): `Rails.env.production?` decides which Pay
+  method runs - `subscription.cancel` (marks `cancel_at_period_end: true`, access continues
+  until the current period ends) in production, `subscription.cancel_now!` (ends immediately)
+  everywhere else, specifically so this can be re-tested in dev without waiting out a billing
+  cycle. See [Known limitations](#7-known-limitations) if this needs to be config-driven instead
+  of environment-driven later.
 - **Webhooks**: Pay auto-mounts `POST /pay/webhooks/stripe` and verifies the signature itself.
   `config/initializers/pay.rb` subscribes `Billing::SubscriptionSyncHandler` to
   `customer.subscription.created/updated/deleted`, which enqueues
   `Billing::ReconcileOrganizationJob` to recompute the org's over-limit flag and write an
-  `AuditLog` entry (`subscription_created`/`subscription_updated`/`subscription_cancelled`).
+  `AuditLog` entry (`subscription_created`/`subscription_updated`/`subscription_cancelled`). This
+  is what keeps `/billing` correct if a subscription changes outside the app (e.g. a manual
+  refund or edit in the Stripe Dashboard).
+- **Downloading invoices**: the billing history table links each charge to
+  `charge.stripe_invoice["invoice_pdf"]` when the charge is tied to a subscription invoice
+  (Pay stores the full raw Stripe Invoice JSON on the charge via `store_accessor`), falling back
+  to `charge.stripe_receipt_url` (Stripe's own hosted receipt) for one-off charges. No extra API
+  call - both come from data Pay already synced.
 - **Current plan resolution** (`Organization#current_plan`): no active `Pay::Subscription` →
   Free. Otherwise maps the subscription's Stripe price id back to a `Billing::Plans` entry,
   falling back to Free if the price id isn't recognized (e.g. a manually-created Stripe
@@ -173,6 +201,22 @@ Documented here rather than fixed, since they're reasonable trade-offs for a tem
   feature-gated tiers, extend `Billing::Plans::Plan` and check the new field wherever
   `current_plan` is read - the existing `FeatureToggleable` concern (`app/models/concerns/`) is
   a natural pairing for that.
+- **Cancellation timing is environment-driven** (`Rails.env.production?` in
+  `Billing::SubscriptionsController#destroy`), not a configurable business rule. That's
+  deliberate for a template baseline (immediate cancel makes the limit/downgrade flows easy to
+  re-test locally without waiting out a billing cycle) but a real project may want this as an
+  explicit setting instead of being tied to the Rails environment.
+- **3D Secure / SCA is handled minimally**: the embedded card form uses `redirect: "if_required"`
+  and a light `resumeAfterRedirect()` in the Stimulus controller for cards that do need an
+  off-page authentication step, and `Billing::SubscriptionsController#create` rescues
+  `Pay::ActionRequired`/`Pay::InvalidPaymentMethod` with a generic "update your payment method"
+  message rather than a guided retry flow. Stripe's standard test cards (e.g. `4242 4242 4242
+  4242`) never trigger this path, so it won't come up in day-to-day testing - budget time for a
+  fuller SCA flow before processing real international cards at scale.
+- **Only one saved card at a time**: adding a new card immediately replaces the previous default
+  rather than keeping a card list. Fine for a template baseline; a real project wanting multiple
+  saved payment methods would need a small UI list plus `Pay::PaymentMethod#detach`/`#make_default!`
+  wired to each row instead of the single "Update payment method" dialog.
 
 ## 8. Testing
 
@@ -185,12 +229,18 @@ Tests use Minitest (this app has no RSpec/FactoryBot). No real Stripe API calls 
   price id, which test credentials don't have) - wrap any assertion that depends on the org's
   plan/seat limit in this block. See `test/models/organization_test.rb` and
   `test/integration/billing_limits_test.rb`.
-- **Checkout/Billing Portal** aren't modeled by the fake processor (they're inherently
+- **SetupIntent/payment method sync** aren't modeled by the fake processor (they're inherently
   real-Stripe-API concerns), so those tests stub the Stripe SDK boundary directly
-  (`Stripe::Customer.stub(:create, ...)`, `Stripe::Checkout::Session.stub(:create, ...)`,
-  `Stripe::BillingPortal::Session.stub(:create, ...)`) rather than pulling in VCR/WebMock for a
-  couple of narrow assertions. This requires the `minitest-mock` gem (minitest 6 split
-  `Object#stub` out of the core gem - see the `Gemfile`'s `:test` group).
+  (`Stripe::Customer.stub(:create, ...)`, `Stripe::SetupIntent.stub(:create, ...)`,
+  `Pay::Stripe::PaymentMethod.stub(:sync_setup_intent, ...)`) rather than pulling in VCR/WebMock
+  for a handful of narrow assertions. This requires the `minitest-mock` gem (minitest 6 split
+  `Object#stub` out of the core gem - see the `Gemfile`'s `:test` group). See
+  `test/integration/billing_setup_intents_test.rb` and `billing_payment_methods_test.rb`.
+- **Subscribe/swap/cancel** (`test/integration/billing_subscriptions_test.rb`) run entirely
+  against Pay's fake processor - `Pay::FakeProcessor::Subscription` implements `swap`/`cancel`/
+  `cancel_now!` locally with no network calls, so these are tested for real rather than stubbed.
+  `with_resolvable_price(plan)` (`test/test_helper.rb`) stubs `Billing::Plans.find` so a plan's
+  `resolved_stripe_price_id` is non-blank without real Stripe price ids in test credentials.
 - **Webhooks**: `Billing::SubscriptionSyncHandler` and `Billing::ReconcileOrganizationJob` are
   tested directly (`test/models/billing/subscription_sync_handler_test.rb`,
   `test/jobs/billing/reconcile_organization_job_test.rb`) rather than through a full
