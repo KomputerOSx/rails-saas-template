@@ -232,6 +232,42 @@ class Organization < ApplicationRecord
     pending_plan_key.present? || stripe_subscription_schedule_id.present?
   end
 
+  # Attaches a promotion code straight to the live subscription for an already-subscribed org
+  # (as opposed to change_plan!'s discount_options, which only apply on a subscribe/upgrade
+  # call). `discounts:` replaces whatever discounts were on the subscription, not merges with
+  # them - fine here since only one code is ever tracked at a time (see PromoCodesController).
+  def apply_promotion_code!(promotion_code)
+    subscription = payment_processor.subscription
+    raise ArgumentError, "no active subscription" unless subscription&.active?
+
+    ::Stripe::Subscription.update(subscription.processor_id, discounts: [ { promotion_code: promotion_code } ])
+  rescue ::Stripe::StripeError => e
+    raise Pay::Stripe::Error, e
+  end
+
+  # Strips any discount from the live subscription - the counterpart to apply_promotion_code!.
+  def remove_promotion_code!
+    subscription = payment_processor.subscription
+    return unless subscription&.active?
+
+    ::Stripe::Subscription.update(subscription.processor_id, discounts: [])
+  rescue ::Stripe::StripeError => e
+    raise Pay::Stripe::Error, e
+  end
+
+  # Live preview of the next invoice Stripe will actually generate for this subscription -
+  # reflects whatever discounts currently apply, unlike the plan's static list price. Nil (and
+  # the caller falls back to the static price) if there's nothing upcoming or the preview call
+  # fails - this is a "nice to have" display, not something that should ever break the page.
+  def upcoming_invoice_preview
+    subscription = payment_processor&.subscription
+    return nil unless subscription&.active? && !subscription.on_grace_period?
+
+    ::Stripe::Invoice.create_preview(customer: payment_processor.processor_id, subscription: subscription.processor_id)
+  rescue ::Stripe::StripeError
+    nil
+  end
+
   # Wraps the live subscription in a Stripe Subscription Schedule whose current phase ends at
   # the period end, followed by one billing cycle on the cheaper price; end_behavior "release"
   # then hands the subscription back to normal renewals at that price. Replaces any previously

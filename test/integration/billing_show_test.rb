@@ -124,4 +124,41 @@ class BillingShowTest < ActionDispatch::IntegrationTest
     assert_match "Partially refunded", response.body
     assert_match(/>\s*Refunded\s*</, response.body)
   end
+
+  test "shows the live next-bill preview amount for an active subscription" do
+    post login_path, params: { email: @owner.email, password: "password123" }
+
+    fake_preview = Struct.new(:total, :currency).new(0, "usd")
+
+    with_active_subscription(@organization, Billing::Plans::STARTER) do
+      Stripe::Invoice.stub(:create_preview, fake_preview) do
+        get billing_path
+      end
+    end
+
+    assert_response :success
+    assert_match "Your next bill is", response.body
+    assert_match "$0.00", response.body
+  end
+
+  test "falls back to the static plan price if the next-bill preview call fails" do
+    post login_path, params: { email: @owner.email, password: "password123" }
+
+    with_active_subscription(@organization, Billing::Plans::STARTER) do
+      Stripe::Invoice.stub(:create_preview, ->(*) { raise Stripe::StripeError, "boom" }) do
+        get billing_path
+      end
+    end
+
+    assert_response :success
+    assert_match Billing::Plans::STARTER.formatted_price("usd"), response.body
+  end
+
+  test "shows no next-bill line while on Free" do
+    post login_path, params: { email: @owner.email, password: "password123" }
+
+    get billing_path
+    assert_response :success
+    assert_no_match "Your next bill is", response.body
+  end
 end

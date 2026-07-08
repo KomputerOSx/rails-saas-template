@@ -1,0 +1,12 @@
+<div id="next_bill">
+  <% subscription = Current.organization.payment_processor&.subscription %>
+  <% if subscription&.active? && !subscription.on_grace_period? %>
+    <% preview = Current.organization.upcoming_invoice_preview %>
+    <% next_date = (subscription.on_trial? ? subscription.trial_ends_at : subscription.current_period_end)&.to_date&.to_fs(:long) %>
+    <% next_amount = preview ? Pay::Currency.format(preview.total, currency: preview.currency) : Current.organization.current_plan.formatted_price(Current.organization.billing_currency) %>
+    <p class="mt-2 text-sm text-base-content/60">
+      <%= subscription.on_trial? ? "Your first charge is" : "Your next bill is" %>
+      <strong class="text-base-content"><%= next_amount %></strong><% if next_date %> on <%= next_date %><% end %>.
+    </p>
+  <% end %>
+</div>

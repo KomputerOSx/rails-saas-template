@@ -1,8 +1,13 @@
 module Billing
-  # Lets the org preview-apply a Stripe promotion code before subscribing/upgrading. The
-  # resolved promotion code id is held in the session (not persisted) until it's actually used
-  # by SubscriptionsController#create or PaymentMethodsController#subscribe_to_pending_plan, or
-  # removed here - it's a checkout-time convenience, not organization state.
+  # Applying a code means different things depending on billing state:
+  # - No active subscription yet (Free): resolved id is held in the session (not persisted)
+  #   until it's actually used by SubscriptionsController#create or
+  #   PaymentMethodsController#subscribe_to_pending_plan - it's a checkout-time convenience,
+  #   not organization state.
+  # - Already subscribed: applied straight to the live Stripe subscription right away
+  #   (Organization#apply_promotion_code!), so an existing customer can be given a discount
+  #   without changing plans - the session then just mirrors what's live, purely for display,
+  #   and "Remove" strips it back off the subscription instead of only clearing the session.
   class PromoCodesController < ApplicationController
     def create
       authorize Current.organization, :manage?, policy_class: BillingPolicy
@@ -15,19 +20,41 @@ module Billing
         return respond_with_failure("That promo code isn't valid or has expired.")
       end
 
-      session[:promo_code_id] = promotion_code.id
-      session[:promo_code_display] = "#{promotion_code.code} - #{describe_coupon(promotion_code.coupon)}"
-      respond_with_success("Promo code applied: #{describe_coupon(promotion_code.coupon)}.")
-    rescue ::Stripe::StripeError => e
+      organization = Current.organization
+      description = describe_coupon(promotion_code.coupon)
+
+      if organization.current_plan.free?
+        session[:promo_code_id] = promotion_code.id
+        session[:promo_code_display] = "#{promotion_code.code} - #{description}"
+        session[:promo_code_applied_live] = false
+        respond_with_success("Promo code applied: #{description}. It'll be used when you subscribe.")
+      else
+        organization.apply_promotion_code!(promotion_code.id)
+        session[:promo_code_id] = promotion_code.id
+        session[:promo_code_display] = "#{promotion_code.code} - #{description}"
+        session[:promo_code_applied_live] = true
+        log_audit(:promotion_code_applied, resource: organization, metadata: { code: promotion_code.code })
+        respond_with_success("Promo code applied: #{description}. Your next bill reflects this.")
+      end
+    rescue ::Stripe::StripeError, Pay::Stripe::Error => e
       respond_with_failure(e.message)
     end
 
     def destroy
       authorize Current.organization, :manage?, policy_class: BillingPolicy
 
+      organization = Current.organization
+      if session[:promo_code_applied_live]
+        organization.remove_promotion_code!
+        log_audit(:promotion_code_removed, resource: organization)
+      end
+
       session.delete(:promo_code_id)
       session.delete(:promo_code_display)
+      session.delete(:promo_code_applied_live)
       respond_with_success("Promo code removed.")
+    rescue Pay::Stripe::Error => e
+      respond_with_failure(e.message)
     end
 
     private
@@ -51,6 +78,7 @@ module Billing
             turbo_stream.replace("promo_code_widget",
               partial: "billing/promo_code_widget",
               locals: { promo_code_id: session[:promo_code_id], promo_code_display: session[:promo_code_display] }),
+            turbo_stream.replace("next_bill", partial: "billing/next_bill"),
             turbo_stream.update("flash_messages", partial: "shared/flash")
           ]
         end

@@ -55,6 +55,51 @@ class BillingPromoCodesTest < ActionDispatch::IntegrationTest
     assert_nil session[:promo_code_id]
   end
 
+  test "applying a code while already subscribed attaches it to the live subscription immediately" do
+    post login_path, params: { email: @owner.email, password: "password123" }
+
+    coupon = Struct.new(:valid, :percent_off, :amount_off).new(true, 20, nil)
+    promotion_code = Struct.new(:id, :code, :coupon).new("promo_test123", "SAVE20", coupon)
+    captured_args = nil
+
+    with_active_subscription(@organization, Billing::Plans::STARTER) do
+      Stripe::Subscription.stub(:update, ->(id, params) { captured_args = [ id, params ] }) do
+        Stripe::PromotionCode.stub(:list, [ promotion_code ]) do
+          post billing_promo_code_path, params: { code: "SAVE20" }
+        end
+      end
+    end
+
+    assert_redirected_to billing_path
+    assert_equal [ { promotion_code: "promo_test123" } ], captured_args[1][:discounts]
+    assert_equal "promo_test123", session[:promo_code_id]
+    assert_equal true, session[:promo_code_applied_live]
+    assert AuditLog.exists?(event_type: :promotion_code_applied, resource_type: "Organization", resource_id: @organization.id)
+  end
+
+  test "removing a live-applied code strips it from the subscription, not just the session" do
+    post login_path, params: { email: @owner.email, password: "password123" }
+
+    coupon = Struct.new(:valid, :percent_off, :amount_off).new(true, 20, nil)
+    promotion_code = Struct.new(:id, :code, :coupon).new("promo_test123", "SAVE20", coupon)
+    captured_args = nil
+
+    with_active_subscription(@organization, Billing::Plans::STARTER) do
+      Stripe::Subscription.stub(:update, ->(id, params) { captured_args = [ id, params ] }) do
+        Stripe::PromotionCode.stub(:list, [ promotion_code ]) do
+          post billing_promo_code_path, params: { code: "SAVE20" }
+        end
+
+        delete billing_promo_code_path
+      end
+    end
+
+    assert_redirected_to billing_path
+    assert_equal [], captured_args[1][:discounts]
+    assert_nil session[:promo_code_id]
+    assert AuditLog.exists?(event_type: :promotion_code_removed, resource_type: "Organization", resource_id: @organization.id)
+  end
+
   test "removing an applied promo code clears it" do
     post login_path, params: { email: @owner.email, password: "password123" }
 

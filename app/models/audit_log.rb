@@ -68,7 +68,9 @@ class AuditLog < ApplicationRecord
     subscription_downgrade_cancelled: "subscription_downgrade_cancelled",
     payment_method_updated: "payment_method_updated",
     payment_method_removed: "payment_method_removed",
-    billing_details_updated: "billing_details_updated"
+    billing_details_updated: "billing_details_updated",
+    promotion_code_applied: "promotion_code_applied",
+    promotion_code_removed: "promotion_code_removed"
   }
 
   validates :event_type, presence: true

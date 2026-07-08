@@ -64,6 +64,7 @@ module Billing
     def clear_promo_code!
       session.delete(:promo_code_id)
       session.delete(:promo_code_display)
+      session.delete(:promo_code_applied_live)
     end
 
     # A card that was just added specifically to subscribe to a plan needs the whole page

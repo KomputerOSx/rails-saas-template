@@ -294,14 +294,36 @@ stays in sync via webhooks. What's safe and what isn't:
   subscription in the Dashboard, **or self-applied by the org** via the "Have a promo code?"
   field on the billing page (`Billing::PromoCodesController`). Entering a code resolves it to a
   Stripe promotion code id (`Stripe::PromotionCode.list(code:, active: true)`, checking the
-  nested coupon's `valid` flag) and holds it in the session (not persisted - it's a
-  checkout-time convenience, not organization state) until the next subscribe/upgrade, which
-  passes it as `discounts: [{ promotion_code: id }]` to Stripe and then clears it. Only applies
-  to subscribe/upgrade (both invoice immediately); a scheduled downgrade has nothing to invoice
-  right now, so an applied code is simply left in the session for a later subscribe/upgrade.
-  Either way, the subscription's price id doesn't change, so plan mapping and member limits are
-  untouched, and the discounted amounts flow into synced invoices/charges automatically. (Plan
-  cards keep showing the list price - only invoices reflect the discount.)
+  nested coupon's `valid` flag), and what happens next depends on billing state:
+  - **Not yet subscribed (Free)**: the id is held in the session (not persisted - it's a
+    checkout-time convenience, not organization state) until the next subscribe/upgrade, which
+    passes it as `discounts: [{ promotion_code: id }]` to Stripe and then clears it.
+  - **Already subscribed**: applied immediately to the live subscription
+    (`Organization#apply_promotion_code!` → `Stripe::Subscription.update(id, discounts: [...])`)
+    with no plan change - this is how to give an *existing* customer the same discount a new
+    signup would get (e.g. "2 months off"), without them having to cancel/resubscribe. Removing
+    it (`#remove_promotion_code!`) strips the discount back off the live subscription the same
+    way. `discounts:` **replaces** whatever was there, not merges with it - fine here since only
+    one code is ever tracked per org at a time.
+  - Only applies to subscribe/upgrade/an already-active subscription (all have an invoice to
+    discount); a *scheduled* downgrade has nothing to invoice right now, so an applied code is
+    simply left in the session for a later subscribe/upgrade instead.
+  - Whichever path, the subscription's price id doesn't change, so plan mapping and member
+    limits are untouched, and the discounted amounts flow into synced invoices/charges
+    automatically. (Plan cards keep showing the list price - only invoices reflect the discount.)
+  - **Applying a coupon directly in the Dashboard on a customer mid-cycle** only affects the
+    *next* invoice Stripe generates - it never retroactively touches an invoice already
+    issued/paid for the current period. A coupon's `duration` (once / repeating N months /
+    forever, set when the coupon itself was created) controls how many future invoices it
+    applies to; Stripe tracks that automatically, no app code involved. To credit the *current*,
+    already-invoiced period, use a refund or credit note instead - a discount alone won't do it.
+  - The "Your next bill is $X on \<date\>" line on the billing page
+    (`app/views/billing/_next_bill.html.erb`, `Organization#upcoming_invoice_preview`) calls
+    Stripe's `Invoice.create_preview` live on every page load for an active subscription, so it
+    always reflects whatever's actually about to be charged (including any discount just
+    applied) rather than the plan's static list price. That's a deliberate extra API round-trip
+    per page view in exchange for accuracy - it's rescued to fall back to the static price on
+    any Stripe error, so a hiccup there never breaks the page.
 - **Changing an individual subscription to a one-off custom Price: DON'T.** The app maps
   `processor_plan` (the Stripe price id) back to `Billing::Plans` to resolve the org's plan and
   member limit - an unknown price id falls back to **Free** (1-member limit + over-limit

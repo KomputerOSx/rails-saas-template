@@ -55,6 +55,7 @@ module Billing
     def clear_promo_code!
       session.delete(:promo_code_id)
       session.delete(:promo_code_display)
+      session.delete(:promo_code_applied_live)
     end
 
     def redirect_with_alert(message)

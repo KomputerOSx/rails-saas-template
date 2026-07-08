@@ -192,6 +192,67 @@ class OrganizationTest < ActiveSupport::TestCase
     assert_equal [ { promotion_code: "promo_test123" } ], captured_params[:discounts]
   end
 
+  test "apply_promotion_code! attaches the discount to the live subscription" do
+    organization = Organization.create_personal_for!(users(:one))
+    captured_args = nil
+
+    with_active_subscription(organization, Billing::Plans::STARTER) do
+      subscription_id = organization.payment_processor.subscription.processor_id
+      Stripe::Subscription.stub(:update, ->(id, params) { captured_args = [ id, params ] }) do
+        organization.apply_promotion_code!("promo_test123")
+      end
+      assert_equal subscription_id, captured_args[0]
+    end
+
+    assert_equal [ { promotion_code: "promo_test123" } ], captured_args[1][:discounts]
+  end
+
+  test "apply_promotion_code! raises without an active subscription" do
+    organization = Organization.create_personal_for!(users(:one))
+    organization.set_payment_processor(:fake_processor, allow_fake: true)
+
+    assert_raises(ArgumentError) { organization.apply_promotion_code!("promo_test123") }
+  end
+
+  test "remove_promotion_code! clears discounts from the live subscription" do
+    organization = Organization.create_personal_for!(users(:one))
+    captured_args = nil
+
+    with_active_subscription(organization, Billing::Plans::STARTER) do
+      Stripe::Subscription.stub(:update, ->(id, params) { captured_args = [ id, params ] }) do
+        organization.remove_promotion_code!
+      end
+    end
+
+    assert_equal [], captured_args[1][:discounts]
+  end
+
+  test "upcoming_invoice_preview returns nil (not an error) when there's nothing active" do
+    organization = Organization.create_personal_for!(users(:one))
+    assert_nil organization.upcoming_invoice_preview
+  end
+
+  test "upcoming_invoice_preview reflects a live Stripe preview" do
+    organization = Organization.create_personal_for!(users(:one))
+    fake_preview = Struct.new(:total, :currency).new(0, "usd")
+
+    with_active_subscription(organization, Billing::Plans::STARTER) do
+      Stripe::Invoice.stub(:create_preview, fake_preview) do
+        assert_equal fake_preview, organization.upcoming_invoice_preview
+      end
+    end
+  end
+
+  test "upcoming_invoice_preview returns nil instead of raising when Stripe errors" do
+    organization = Organization.create_personal_for!(users(:one))
+
+    with_active_subscription(organization, Billing::Plans::STARTER) do
+      Stripe::Invoice.stub(:create_preview, ->(*) { raise Stripe::StripeError, "boom" }) do
+        assert_nil organization.upcoming_invoice_preview
+      end
+    end
+  end
+
   test "change_plan! schedules a downgrade at period end instead of applying it now" do
     organization = Organization.create_personal_for!(users(:one))
     customer = organization.set_payment_processor(:fake_processor, allow_fake: true)
