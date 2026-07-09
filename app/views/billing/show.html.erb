@@ -112,6 +112,16 @@
           </p>
         </div>
       </div>
+    <% elsif Current.organization.grandfathered? && !@current_plan.free? %>
+      <div class="card mt-4 border border-success/40 bg-success/10">
+        <div class="card-body flex-row items-center gap-3 py-4">
+          <span class="material-symbols-outlined text-success">loyalty</span>
+          <p class="text-sm text-base-content">
+            <strong>Legacy Pricing:</strong> You are grandfathered into an older price!
+            Your <%= @current_plan.name %> rate is locked in and unaffected by recent price increases.
+          </p>
+        </div>
+      </div>
     <% end %>
 
     <%# ── Next bill ── %>
