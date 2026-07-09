@@ -29,7 +29,10 @@ module Billing
       payment_method = Current.organization.payment_processor.default_payment_method
       return respond_with_failure("No payment method on file.") unless payment_method
 
-      unless Current.organization.current_plan.free?
+      subscription = Current.organization.payment_processor.subscription
+      is_free_or_canceling = Current.organization.current_plan.free? || subscription&.on_grace_period?
+
+      unless is_free_or_canceling
         return respond_with_failure("You can't remove your payment method while subscribed to a paid plan. Cancel your subscription first.")
       end
 
