@@ -1,36 +1,107 @@
-<section class="w-full max-w-3xl">
+<section class="w-full max-w-4xl">
   <p class="text-sm font-medium text-base-content/60">Admin</p>
   <h1 class="mt-3 text-4xl font-semibold tracking-normal">New Notification</h1>
 
-  <div class="mt-8 card bg-base-200 border border-base-300/30 shadow-sm">
-    <div class="card-body">
-      <%= form_with url: admin_notifications_path, method: :post, html: { class: "space-y-4" } do %>
-        <div class="form-control">
-          <label class="label"><span class="label-text">Title</span></label>
-          <%= text_field_tag "notification[title]", nil, class: "input-field" %>
+  <%= form_with url: admin_notifications_path, method: :post, data: { controller: "notification-form" } do |f| %>
+    <div class="mt-8 grid grid-cols-1 gap-8">
+
+      <%# --- Content Card --- %>
+      <div>
+        <h2 class="text-lg font-semibold">Message</h2>
+        <p class="mt-0.5 text-sm text-base-content/60">What do you want to say?</p>
+
+        <div class="card mt-4 border border-base-300">
+          <div class="card-body">
+            <div class="form-control">
+              <label class="label"><span class="label-text">Title</span></label>
+              <%= text_field_tag "notification[title]", nil, class: "input-field w-full", required: true %>
+            </div>
+
+            <div class="form-control mt-4">
+              <label class="label"><span class="label-text">Body</span></label>
+              <%= text_area_tag "notification[body]", nil, class: "textarea-field w-full", rows: 4, required: true %>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <%# --- Audience Card --- %>
+      <div>
+        <h2 class="text-lg font-semibold">Audience</h2>
+        <p class="mt-0.5 text-sm text-base-content/60">Who should receive this?</p>
+
+        <div class="card mt-4 border border-base-300">
+          <div class="card-body">
+            <div class="form-control">
+              <label class="label cursor-pointer justify-start gap-3">
+                <%= check_box_tag "notification[send_to_all]", "1", false, class: "checkbox-field",
+                      data: { action: "change->notification-form#toggleTable", notification_form_target: "sendToAll" } %>
+                <div>
+                  <span class="label-text font-medium">Send to all users</span>
+                  <p class="text-xs text-base-content/60 mt-0.5">Every registered user will receive this notification.</p>
+                </div>
+              </label>
+            </div>
+          </div>
         </div>
 
-        <div class="form-control">
-          <label class="label"><span class="label-text">Body</span></label>
-          <%= text_area_tag "notification[body]", nil, class: "textarea-field", rows: 4 %>
-        </div>
+        <%# --- Specific Users Table --- %>
+        <div class="mt-6" data-notification-form-target="tableContainer" data-controller="table-selection">
+          <div class="flex items-end justify-between gap-4 mb-4">
+            <div>
+              <h3 class="font-semibold">Select specific users</h3>
+            </div>
+            <div class="form-control w-full max-w-xs">
+              <input type="text" placeholder="Search users by name or email..."
+                     class="input-field input-sm"
+                     data-table-selection-target="searchInput"
+                     data-action="input->table-selection#filter">
+            </div>
+          </div>
 
-        <div class="form-control">
-          <label class="label cursor-pointer justify-start gap-2">
-            <%= check_box_tag "notification[send_to_all]", "1" %>
-            <span class="label-text">Send to all users</span>
-          </label>
+          <div class="card border border-base-300">
+            <div class="card-body p-0">
+              <div class="overflow-x-auto max-h-96">
+                <table class="table table-sm">
+                  <thead class="bg-base-200 text-sm font-semibold text-base-content sticky top-0 z-10">
+                    <tr class="border-b border-base-300">
+                      <th class="w-12 text-center bg-base-200">
+                        <input type="checkbox" class="checkbox-field"
+                               data-table-selection-target="selectAll"
+                               data-action="change->table-selection#toggleAll">
+                      </th>
+                      <th class="bg-base-200">User</th>
+                      <th class="bg-base-200">Joined</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-base-300">
+                    <% @users.each do |user| %>
+                      <tr class="hover:bg-base-200" data-table-selection-target="row">
+                        <td class="text-center">
+                          <input type="checkbox" name="notification[user_ids][]" value="<%= user.id %>"
+                                 class="checkbox-field"
+                                 data-table-selection-target="checkbox"
+                                 data-action="change->table-selection#updateSelectAllState">
+                        </td>
+                        <td>
+                          <div class="font-medium"><%= user&.first_name.present? ? "#{user.first_name} #{user.last_name}" : "Unnamed User" %></div>
+                          <div class="text-xs text-base-content/60"><%= user.email %></div>
+                        </td>
+                        <td class="text-base-content/60"><%= user.created_at.to_date.to_fs(:long) %></td>
+                      </tr>
+                    <% end %>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
         </div>
+      </div>
 
-        <div class="form-control">
-          <label class="label"><span class="label-text">Or pick specific users</span></label>
-          <%= select_tag "notification[user_ids][]", options_from_collection_for_select(@users, :id, :email),
-                multiple: true, class: "select-field h-40" %>
-          <p class="mt-1 text-xs text-base-content/60">If "Send to all users" is checked, this list is ignored.</p>
-        </div>
+      <div class="mt-4">
+        <%= submit_tag "Send notification", class: "btn btn-primary", data: { controller: "loading-button" } %>
+      </div>
 
-        <%= submit_tag "Send", class: "btn btn-primary" %>
-      <% end %>
     </div>
-  </div>
+  <% end %>
 </section>
