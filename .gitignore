@@ -38,3 +38,6 @@
 !/app/assets/builds/.keep
 
 node_modules
+.gem_rbs_collection
+CUsersramya**
+.idea
