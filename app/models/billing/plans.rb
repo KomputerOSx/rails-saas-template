@@ -9,10 +9,6 @@ module Billing
       end
     end
 
-    # `prices` is a currency => Price hash - a Stripe Price (and therefore a subscription) is
-    # always denominated in exactly one fixed currency, so switching currency on the billing
-    # page means picking a different Price entirely, not converting an amount. See
-    # docs/BILLING.md for the Stripe dashboard setup (one Price per plan per currency).
     Plan = Data.define(:key, :name, :member_limit, :prices) do
       def free? = key == "free"
 
@@ -28,17 +24,12 @@ module Billing
 
       def resolved_stripe_price_id(currency) = price_for(currency).resolved_stripe_price_id
 
-      # Every Stripe price id this plan has ever charged, in every currency - the currently
-      # configured one plus any retired ones from Plans.legacy_price_ids. Used only for
-      # *recognizing* an existing subscription's plan/limits, never for what a new subscribe
-      # charges (that's always resolved_stripe_price_id, the current one only).
       def all_stripe_price_ids
-        Plans::SUPPORTED_CURRENCIES.flat_map { |currency| [
-          resolved_stripe_price_id(currency), *Plans.legacy_price_ids(key, currency) ] }.compact
+        Plans::SUPPORTED_CURRENCIES.flat_map { |currency|
+          [resolved_stripe_price_id(currency), *Plans.legacy_price_ids(key, currency)]
+        }.compact
       end
-
-      end
-    end
+    end # Fixed: Removed the extra hanging 'end'
 
     FREE = Plan.new(key: "free", name: "Free", member_limit: 1, prices: {
       "usd" => Price.new(cents: 0, stripe_price_id: nil),
@@ -49,7 +40,7 @@ module Billing
       "gbp" => Price.new(cents: 999, stripe_price_id: -> { credential_price_id(:starter, :gbp) })
     })
     GROWTH = Plan.new(key: "growth", name: "Growth", member_limit: 20, prices: {
-      "usd" => Price.new(cents: 2999, stripe_price_id: -> { credential_price_id(:growth, :usd) }),
+      "usd" => Price.new(cents: 4999, stripe_price_id: -> { credential_price_id(:growth, :usd) }),
       "gbp" => Price.new(cents: 2999, stripe_price_id: -> { credential_price_id(:growth, :gbp) })
     })
 
@@ -60,32 +51,37 @@ module Billing
       ALL.find { |plan| plan.key == key.to_s }
     end
 
-    # Reads price_ids.<plan>.<currency> from credentials. Also tolerates the old flat format
-    # (price_ids.<plan> as a plain string, from before multi-currency support) by using it for
-    # every currency, rather than crashing on `String#dig` - update credentials.example's nested
-    # form when you get a chance so each currency has its own real Stripe price.
     def self.credential_price_id(plan_key, currency)
       value = Rails.application.credentials.dig(:stripe, :price_ids, plan_key)
       value.is_a?(Hash) ? value[currency] : value
     end
 
-    # Stripe price ids are unique per account regardless of currency, so a subscription's
-    # processor_plan alone is enough to find the right plan without already knowing which
-    # currency it was purchased in.
-    def self.for_stripe_price(stripe_price_id)
-      return nil if stripe_price_id.blank?
-      PAID.find { |plan| SUPPORTED_CURRENCIES.any? { |currency| plan.resolved_stripe_price_id(currency) == stripe_price_id } }
+    def self.legacy_price_ids(plan_key, currency)
+      legacy = {
+        "growth" => {
+          "usd" => ["price_1TqhWqRwyC7yy0N3ZtkgQg5U"]
+        }
+      }
+      # Fixed: Actually dig into the hash and stringify keys to match lookup
+      legacy.dig(plan_key.to_s, currency.to_s) || []
     end
 
-    # Which of SUPPORTED_CURRENCIES a given Stripe price id was configured under, if any.
+    def self.for_stripe_price(stripe_price_id)
+      return nil if stripe_price_id.blank?
+      PAID.find { |plan| plan.all_stripe_price_ids.include?(stripe_price_id) }
+    end
+
     def self.currency_for_stripe_price(stripe_price_id)
       return nil if stripe_price_id.blank?
       PAID.each do |plan|
         SUPPORTED_CURRENCIES.each do |currency|
-          return currency if plan.resolved_stripe_price_id(currency) == stripe_price_id
+          if plan.resolved_stripe_price_id(currency) == stripe_price_id ||
+             Plans.legacy_price_ids(plan.key, currency).include?(stripe_price_id)
+            return currency
+          end
         end
       end
       nil
     end
   end
-end
+end # Fixed: Added missing closing end for Billing module

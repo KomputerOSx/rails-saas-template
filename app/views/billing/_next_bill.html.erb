@@ -1,6 +1,6 @@
 <div id="next_bill">
   <% subscription = Current.organization.payment_processor&.subscription %>
-  <% if subscription&.active? && !subscription.on_grace_period? %>
+  <% if subscription&.active? && !subscription.on_grace_period? && !Current.organization.pending_price_cents %>
     <% preview = Current.organization.upcoming_invoice_preview %>
     <% next_date = (subscription.on_trial? ? subscription.trial_ends_at : subscription.current_period_end)&.to_date&.to_fs(:long) %>
     <% next_amount = preview ? Pay::Currency.format(preview.total, currency: preview.currency) : Current.organization.current_plan.formatted_price(Current.organization.billing_currency) %>

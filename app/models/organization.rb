@@ -297,9 +297,14 @@ class Organization < ApplicationRecord
   # Releases the schedule on Stripe (subscription continues on its current price as if the
   # downgrade/price migration was never requested) and clears the local pending state.
   def cancel_scheduled_downgrade!
-    if stripe_subscription_schedule_id.present?
+    # Fetch from the DB column first, fallback to checking Stripe directly in case
+    # the local DB column was cleared but the schedule was left infinitely running.
+    sub = payment_processor&.subscription
+    schedule_id = stripe_subscription_schedule_id || (sub&.active? ? sub.as_stripe_subscription.schedule : nil)
+
+    if schedule_id.present?
       begin
-        ::Stripe::SubscriptionSchedule.release(stripe_subscription_schedule_id)
+        ::Stripe::SubscriptionSchedule.release(schedule_id)
       rescue ::Stripe::InvalidRequestError
         # Already released/completed/canceled on Stripe's side - only the local pointer is stale.
       rescue ::Stripe::StripeError => e
@@ -364,15 +369,17 @@ class Organization < ApplicationRecord
 
     schedule = ::Stripe::SubscriptionSchedule.create(from_subscription: subscription.processor_id)
     current_phase = schedule.phases.first
+
     ::Stripe::SubscriptionSchedule.update(schedule.id, {
-      end_behavior: "release",
+      # We omit end_behavior: "release" and iterations: 1 to bypass the Stripe API validation quirk.
+      # This leaves Phase 2 open-ended, which is completely fine.
       phases: [
         {
           items: current_phase.items.map { |item| { price: item.price, quantity: item.quantity } },
           start_date: current_phase.start_date,
           end_date: current_phase.end_date
         },
-        { items: [ { price: new_price_id, quantity: 1 } ], iterations: 1 }
+        { items: [ { price: new_price_id, quantity: 1 } ] }
       ]
     })
 
