@@ -1,7 +1,7 @@
-<section class="w-full max-w-3xl">
+<section class="w-full max-w-5xl">
   <p class="text-sm font-medium text-base-content/60">Admin</p>
   <h1 class="mt-3 text-4xl font-semibold tracking-normal">Migrate subscribers to a new price</h1>
-  <p class="mt-2 text-sm text-base-content/60">
+  <p class="mt-2 text-sm text-base-content/60 max-w-3xl">
     Schedules every active subscriber currently on the given Stripe price to move to that
     plan's currently-configured price, effective at each subscriber's own next renewal - no
     mid-cycle charge. Organizations marked <strong>grandfathered</strong> are always skipped.
@@ -22,61 +22,135 @@
       <label class="label"><span class="label-text text-xs">Old Stripe price id</span></label>
       <%= f.text_field :old_price_id, value: @old_price_id, placeholder: "price_...", class: "input-field w-64" %>
     </div>
-    <%= f.submit "Preview", class: "btn btn-sm btn-outline" %>
+    <%= f.submit "Preview", class: "btn btn-outline" %>
   <% end %>
 
   <% if @preview %>
-    <div class="card mt-6 border border-base-300">
-      <div class="card-body">
-        <h2 class="text-lg font-semibold">Preview</h2>
-        <p class="mt-1 text-sm text-base-content/60">
-          New price: <strong><%= @preview[:plan].formatted_price(@currency) %>/mo</strong>
-          (<code><%= @preview[:new_price_id] %></code>)
-        </p>
+    <div class="mt-10" data-controller="migration-table">
+      <h2 class="text-lg font-semibold">Migration Preview</h2>
+      <p class="mt-0.5 text-sm text-base-content/60">
+        New price: <strong><%= @preview[:plan].formatted_price(@currency) %>/mo</strong>
+        (<code><%= @preview[:new_price_id] %></code>)
+      </p>
 
-        <div class="mt-4">
-          <h3 class="text-sm font-semibold">
-            Will be scheduled to migrate (<%= @preview[:eligible].size %>)
-          </h3>
-          <% if @preview[:eligible].any? %>
-            <ul class="mt-2 divide-y divide-base-300 rounded-lg border border-base-300">
-              <% @preview[:eligible].each do |organization| %>
-                <li class="flex items-center justify-between px-4 py-2 text-sm">
-                  <%= organization.name %>
-                  <%= button_to "Grandfather instead", admin_organization_grandfather_path(organization), method: :post,
-                        class: "btn btn-ghost btn-xs" %>
-                </li>
-              <% end %>
-            </ul>
-
-            <%= button_to "Migrate #{@preview[:eligible].size} organization(s)", admin_price_migrations_path,
-                  method: :post,
-                  params: { plan_key: @plan_key, currency: @currency, old_price_id: @old_price_id },
-                  class: "btn btn-primary mt-4",
-                  data: {
-                    controller: "confirm-modal loading-button", action: "click->confirm-modal#confirm",
-                    confirm_modal_message_value: "Schedule #{@preview[:eligible].size} organization(s) to move to #{@preview[:plan].formatted_price(@currency)}/mo at their own next renewal? Review the list above first - this runs in the background and can't be bulk-undone."
-                  } %>
-          <% else %>
-            <p class="mt-2 text-sm text-base-content/60">No active, non-grandfathered subscribers are on this price.</p>
-          <% end %>
+      <div class="mt-8 flex items-end justify-between gap-4">
+        <div>
+          <h3 class="font-semibold">Will be scheduled to migrate (<%= @preview[:eligible].size %>)</h3>
         </div>
 
-        <% if @preview[:grandfathered].any? %>
-          <div class="mt-6">
-            <h3 class="text-sm font-semibold">Grandfathered - will be skipped (<%= @preview[:grandfathered].size %>)</h3>
-            <ul class="mt-2 divide-y divide-base-300 rounded-lg border border-base-300">
-              <% @preview[:grandfathered].each do |organization| %>
-                <li class="flex items-center justify-between px-4 py-2 text-sm">
-                  <%= organization.name %>
-                  <%= button_to "Un-grandfather", admin_organization_grandfather_path(organization), method: :delete,
-                        class: "btn btn-ghost btn-xs" %>
-                </li>
-              <% end %>
-            </ul>
+        <% if @preview[:eligible].any? %>
+          <div class="flex items-center gap-2">
+            <input type="text" placeholder="Search..."
+                   class="input-field"
+                   data-migration-table-target="searchInput"
+                   data-action="input->migration-table#filter">
+
+            <button type="button" class="btn btn-outline btn-sm"
+                    data-migration-table-target="bulkButton"
+                    data-action="click->migration-table#bulkGrandfather" disabled>
+              Grandfather Selected (0)
+            </button>
           </div>
         <% end %>
       </div>
+
+      <% if @preview[:eligible].any? %>
+        <div class="card mt-4 border border-base-300">
+          <div class="card-body p-0">
+            <div class="overflow-x-auto">
+              <table class="table table-sm">
+                <thead class="bg-base-200 text-sm font-semibold text-base-content">
+                <tr class="border-b border-base-300">
+                  <th class="w-12 text-center">
+                    <input type="checkbox" class="checkbox-field"
+                           data-migration-table-target="selectAll"
+                           data-action="change->migration-table#toggleAll">
+                  </th>
+                  <th>Organization</th>
+                  <th>Owner Email</th>
+                  <th>Seats Used</th>
+                  <th class="text-right">Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                <% @preview[:eligible].each do |organization| %>
+                  <tr class="hover:bg-base-200" data-migration-table-target="row">
+                    <td class="text-center">
+                      <input type="checkbox" class="checkbox-field"
+                             value="<%= admin_organization_grandfather_path(organization) %>"
+                             data-migration-table-target="checkbox"
+                             data-action="change->migration-table#toggleBulkButton">
+                    </td>
+                    <td class="font-medium"><%= organization.name %></td>
+                    <td class="text-base-content/60"><%= organization.email || "No email" %></td>
+                    <td class="text-base-content/60"><%= organization.member_count_with_pending %> / <%= organization.member_limit %></td>
+                    <td>
+                      <div class="flex justify-end gap-1">
+                        <%= button_to "Grandfather", admin_organization_grandfather_path(organization), method: :post, class: "btn btn-ghost btn-xs" %>
+                      </div>
+                    </td>
+                  </tr>
+                <% end %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-lg bg-base-200 border border-base-300 p-4">
+          <p class="text-sm text-base-content/80 max-w-xl">
+            Any organizations not checked/grandfathered above will be automatically migrated to the new price when you run this batch.
+          </p>
+          <%= button_to "Migrate #{@preview[:eligible].size} organization(s)", admin_price_migrations_path,
+                        method: :post,
+                        params: { plan_key: @plan_key, currency: @currency, old_price_id: @old_price_id },
+                        class: "btn btn-primary shrink-0",
+                        data: {
+                          controller: "confirm-modal loading-button", action: "click->confirm-modal#confirm",
+                          confirm_modal_message_value: "Schedule #{@preview[:eligible].size} organization(s) to move to #{@preview[:plan].formatted_price(@currency)}/mo at their own next renewal? Review the list above first - this runs in the background and can't be bulk-undone."
+                        } %>
+        </div>
+      <% else %>
+        <p class="mt-4 text-sm text-base-content/60">No active, non-grandfathered subscribers are on this price.</p>
+      <% end %>
+
+      <%# --- Grandfathered Table --- %>
+      <% if @preview[:grandfathered].any? %>
+        <div class="mt-10">
+          <h3 class="font-semibold">Grandfathered - will be skipped (<%= @preview[:grandfathered].size %>)</h3>
+
+          <div class="card mt-4 border border-base-300">
+            <div class="card-body p-0">
+              <div class="overflow-x-auto">
+                <table class="table table-sm">
+                  <thead class="bg-base-200 text-sm font-semibold text-base-content">
+                  <tr class="border-b border-base-300">
+                    <th>Organization</th>
+                    <th>Owner Email</th>
+                    <th>Seats Used</th>
+                    <th class="text-right">Actions</th>
+                  </tr>
+                  </thead>
+                  <tbody>
+                  <% @preview[:grandfathered].each do |organization| %>
+                    <tr class="hover:bg-base-200">
+                      <td class="font-medium"><%= organization.name %></td>
+                      <td class="text-base-content/60"><%= organization.email || "No email" %></td>
+                      <td class="text-base-content/60"><%= organization.member_count_with_pending %> / <%= organization.member_limit %></td>
+                      <td>
+                        <div class="flex justify-end gap-1">
+                          <%= button_to "Un-grandfather", admin_organization_grandfather_path(organization), method: :delete, class: "btn btn-ghost btn-xs text-error" %>
+                        </div>
+                      </td>
+                    </tr>
+                  <% end %>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      <% end %>
     </div>
   <% end %>
 </section>

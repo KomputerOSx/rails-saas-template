@@ -62,7 +62,6 @@ module Billing
           "usd" => ["price_1TqhWqRwyC7yy0N3ZtkgQg5U"]
         }
       }
-      # Fixed: Actually dig into the hash and stringify keys to match lookup
       legacy.dig(plan_key.to_s, currency.to_s) || []
     end
 
@@ -84,4 +83,4 @@ module Billing
       nil
     end
   end
-end # Fixed: Added missing closing end for Billing module
+end
