@@ -37,8 +37,16 @@ Rails.application.configure do
   # Make template changes take effect immediately.
   config.action_mailer.perform_caching = false
 
-  # Set localhost to be used by links generated in mailer templates.
-  config.action_mailer.default_url_options = { host: "localhost", port: 3000 }
+  # Set localhost to be used by links generated in mailer templates. A "localhost:3000" URL
+  # embedded in a mailer-generated link/image can only ever resolve for requests originating from
+  # this machine - never for a real external recipient. To test real delivery (e.g. campaign
+  # images) against a public tunnel (ngrok, Cloudflare Tunnel, etc.) pointed at this dev server,
+  # run with APP_HOST set instead, e.g.: APP_HOST=abc123.ngrok-free.app bin/dev
+  config.action_mailer.default_url_options = if ENV["APP_HOST"]
+    { host: ENV["APP_HOST"], protocol: ENV.fetch("APP_PROTOCOL", "https") }
+  else
+    { host: "localhost", port: 3000 }
+  end
 
   # Azure Communication Services SMTP relay - see config/credentials.example for the
   # azure_email credentials this reads.
