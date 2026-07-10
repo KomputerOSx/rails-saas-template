@@ -24,7 +24,7 @@ gem "bcrypt", "~> 3.1.7"
 
 # TOTP-based two-factor authentication
 gem "rotp", "~> 6.3"
-gem "rqrcode", "~> 2.2"
+gem "rqrcode", "~> 3.2"
 
 # OmniAuth for "Sign in with Google/GitHub"
 gem "omniauth", "~> 2.1"
