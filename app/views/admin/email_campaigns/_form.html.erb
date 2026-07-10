@@ -43,7 +43,7 @@
           <div class="mx-1 h-4 w-px bg-base-300"></div>
           <div class="flex items-center gap-1">
             <button type="button" class="btn btn-xs btn-ghost" title="Insert image" data-action="click->rich-text-editor#triggerImageUpload">Image</button>
-            <input type="file" accept="image/*" class="hidden"
+            <input type="file" accept="image/png,image/jpeg,image/gif,image/webp" class="hidden"
                     data-rich-text-editor-target="fileInput" data-action="change->rich-text-editor#uploadImage">
             <button type="button" class="btn btn-xs btn-ghost" title="Small" data-action="click->rich-text-editor#setImageSizeSmall">S</button>
             <button type="button" class="btn btn-xs btn-ghost" title="Medium" data-action="click->rich-text-editor#setImageSizeMedium">M</button>
