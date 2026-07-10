@@ -34,13 +34,29 @@ module ActiveSupport
     # .currency_for_stripe_price so Organization#current_plan/#billing_currency resolve to
     # `plan`/`currency` without needing real Stripe price ids in test credentials. Wrap any
     # assertions that depend on the organization's plan/seat limit/currency in this block.
+    #
+    # Nesting-safe: Minitest's Object#stub cannot nest the same method (the inner call clobbers
+    # the outer's `__minitest_stub__*` alias and leaves the method undefined). A stack lets
+    # nested with_active_subscription calls share one outer stub that always returns the
+    # innermost plan/currency.
     def with_active_subscription(organization, plan, currency: Billing::Plans::DEFAULT_CURRENCY)
       customer = organization.set_payment_processor(:fake_processor, allow_fake: true)
       customer.subscribe(plan: "price_fake_#{plan.key}_#{currency}")
 
-      Billing::Plans.stub(:for_stripe_price, plan) do
-        Billing::Plans.stub(:currency_for_stripe_price, currency) { yield }
+      stack = (Thread.current[:billing_plans_price_stubs] ||= [])
+      outermost = stack.empty?
+      stack.push([ plan, currency ])
+
+      if outermost
+        Billing::Plans.stub(:for_stripe_price, ->(*) { stack.last[0] }) do
+          Billing::Plans.stub(:currency_for_stripe_price, ->(*) { stack.last[1] }) { yield }
+        end
+      else
+        yield
       end
+    ensure
+      stack&.pop
+      Thread.current[:billing_plans_price_stubs] = nil if stack&.empty?
     end
 
     # Makes Billing::Plans.find(plan.key) resolve to a plan with real (fake) Stripe price ids

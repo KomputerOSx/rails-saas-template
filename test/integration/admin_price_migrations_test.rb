@@ -49,9 +49,15 @@ class AdminPriceMigrationsTest < ActionDispatch::IntegrationTest
   end
 
   test "create refuses when Billing::Plans doesn't resolve a different price" do
-    post admin_price_migrations_path, params: { plan_key: "starter", currency: "usd", old_price_id: "price_old_starter_usd" }
+    # Credentials may carry real Stripe price ids in some environments - pin the resolved
+    # "new" price to the same id as old so the refuse path is what we exercise, not success.
+    with_resolvable_price(Billing::Plans::STARTER) do
+      post admin_price_migrations_path, params: {
+        plan_key: "starter", currency: "usd", old_price_id: "price_fake_starter_usd"
+      }
+    end
 
-    assert_redirected_to new_admin_price_migration_path(plan_key: "starter", currency: "usd", old_price_id: "price_old_starter_usd")
+    assert_redirected_to new_admin_price_migration_path(plan_key: "starter", currency: "usd", old_price_id: "price_fake_starter_usd")
     assert_no_enqueued_jobs
   end
 end

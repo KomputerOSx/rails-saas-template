@@ -180,11 +180,17 @@ class OrganizationTest < ActiveSupport::TestCase
       object: { id: "sub_test123", items: { object: "list", data: [ { id: "si_test123" } ] } }
     )
     captured_params = nil
+    # Pay::Stripe::Subscription#swap reads latest_invoice.payments off the Stripe::Subscription
+    # update result (for SCA validation), then sync!s it - return a minimal Stripe-shaped
+    # object and stub sync so this test only asserts the discounts kwargs we care about.
+    stripe_update_result = Struct.new(:latest_invoice).new(Struct.new(:payments).new([]))
 
-    Stripe::Subscription.stub(:update, ->(_id, params, _opts) { captured_params = params; fake_stripe_subscription }) do
-      Billing::Plans.stub(:for_stripe_price, Billing::Plans::STARTER) do
-        with_resolvable_price(Billing::Plans::GROWTH) do
-          organization.change_plan!(Billing::Plans.find("growth"), promotion_code: "promo_test123")
+    Stripe::Subscription.stub(:update, ->(_id, params, _opts = nil) { captured_params = params; stripe_update_result }) do
+      Pay::Stripe::Subscription.stub(:sync, fake_stripe_subscription) do
+        Billing::Plans.stub(:for_stripe_price, Billing::Plans::STARTER) do
+          with_resolvable_price(Billing::Plans::GROWTH) do
+            organization.change_plan!(Billing::Plans.find("growth"), promotion_code: "promo_test123")
+          end
         end
       end
     end

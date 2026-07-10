@@ -29,7 +29,7 @@ module Billing
           [resolved_stripe_price_id(currency), *Plans.legacy_price_ids(key, currency)]
         }.compact
       end
-    end # Fixed: Removed the extra hanging 'end'
+    end
 
     FREE = Plan.new(key: "free", name: "Free", member_limit: 1, prices: {
       "usd" => Price.new(cents: 0, stripe_price_id: nil),
@@ -40,7 +40,7 @@ module Billing
       "gbp" => Price.new(cents: 999, stripe_price_id: -> { credential_price_id(:starter, :gbp) })
     })
     GROWTH = Plan.new(key: "growth", name: "Growth", member_limit: 20, prices: {
-      "usd" => Price.new(cents: 4999, stripe_price_id: -> { credential_price_id(:growth, :usd) }),
+      "usd" => Price.new(cents: 2999, stripe_price_id: -> { credential_price_id(:growth, :usd) }),
       "gbp" => Price.new(cents: 2999, stripe_price_id: -> { credential_price_id(:growth, :gbp) })
     })
 

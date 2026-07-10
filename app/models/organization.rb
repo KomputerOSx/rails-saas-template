@@ -371,15 +371,14 @@ class Organization < ApplicationRecord
     current_phase = schedule.phases.first
 
     ::Stripe::SubscriptionSchedule.update(schedule.id, {
-      # We omit end_behavior: "release" and iterations: 1 to bypass the Stripe API validation quirk.
-      # This leaves Phase 2 open-ended, which is completely fine.
+      end_behavior: "release",
       phases: [
         {
           items: current_phase.items.map { |item| { price: item.price, quantity: item.quantity } },
           start_date: current_phase.start_date,
           end_date: current_phase.end_date
         },
-        { items: [ { price: new_price_id, quantity: 1 } ] }
+        { items: [ { price: new_price_id, quantity: 1 } ], iterations: 1 }
       ]
     })
 
