@@ -117,10 +117,20 @@ permission as everything else here), which wraps the uploaded file in an **unatt
 returns its URL. Unattached rather than `has_many_attached :images` on `EmailCampaign` because the
 editor is used on `new`, before a campaign record exists — attaching would force a premature save.
 Tradeoff: uploaded-but-unused images are never cleaned up (no association, no cascade) — a future
-periodic purge job is a roadmap item, not built. Also note: the generated URL uses whatever host
-served the upload request, so an image uploaded while testing on `localhost` embeds a URL that
-won't resolve for a real external recipient — expected, resolves correctly once deployed to a real
-domain.
+periodic purge job is a roadmap item, not built.
+
+The returned URL is built from `Rails.application.config.action_mailer.default_url_options` — the
+same host every other mailer link in this app already uses — **not** `request.base_url`. This
+matters: the admin composing a campaign might be reaching the app via an internal IP, VPN host, or
+`localhost`, none of which mean anything to an external email recipient's mail client; anchoring to
+the app's one configured canonical host keeps the embedded image URL correct regardless of how the
+admin got there. (This was a real bug in an earlier version of this endpoint — worth knowing if a
+future image/link-generating endpoint is added here: always use `default_url_options`, never
+`request.base_url`, for anything that ends up inside an emailed `body_html`.) Also note
+`config.action_mailer.default_url_options` must actually be set to your real domain in
+`config/environments/production.rb` — Rails ships this as the placeholder `"example.com"`, which
+silently breaks *every* mailer link app-wide (password resets, invitations, confirmations too, not
+just campaign images) until it's changed.
 
 **Image sizing** extends `Image` with a `width` attribute (`ResizableImage` in the controller) set
 via toolbar presets (S/M/L/Reset, 200/400/600px) applied to whichever image node is currently
@@ -130,19 +140,22 @@ ignore CSS sizing on `<img>` but reliably respect the HTML attribute. No drag-ha
 would need a custom ProseMirror NodeView) — preset sizes only, matching this feature's consistently
 minimal toolbar approach elsewhere (native color input over a swatch picker, etc.).
 
-**CTA button color** is a small toolbar `<select>` (green/blue/red/purple/black) read by
-`insertButton()` at insertion time only — it doesn't retroactively recolor a button already in the
-document, same "applies going forward" scope as the text color picker.
+**Selected image indicator**: ProseMirror automatically toggles a `ProseMirror-selectednode` class
+onto a clicked image's DOM element (built-in NodeSelection behavior, no JS needed) — styled with an
+outline ring so it's clear which image the size buttons will act on.
 
 **CTA buttons** are really just an `<a>` with a fixed inline style (real `<button>` elements don't
 render usefully in email). TipTap's `Link` mark only declares `href`/`target`/`rel`/`class` by
 default, so a bare `style` attribute would be silently dropped on every `getHTML()` serialization —
 the controller extends `Link` once (`CampaignLink`) to also declare a pass-through `style`
 attribute. Plain links created via the existing "Link" toolbar button never set `style`, so they're
-unaffected; only the "+ Button" action sets it, to one fixed, non-configurable CTA style
-approximating this app's primary button color as a plain hex (`#009e3c` — email clients don't
-reliably support `oklch()`/CSS custom properties, so the app's actual `--color-primary` can't be
-used directly).
+unaffected. The "+ Button" toolbar action opens a dialog (`data-controller="modal"`, same pattern
+as `org/settings/_name_editor.html.erb`) with label/URL inputs and a color `<select>`
+(green/blue/red/purple/black, applied at insertion time only — doesn't retroactively recolor a
+button already in the document) — replacing an earlier version that used `window.prompt()`, which
+doesn't fit this app's UI and offered no way to pick a color without cramming a second control into
+the toolbar itself. Colors are plain hex, not this app's actual `--color-primary` etc.: email
+clients don't reliably support `oklch()`/CSS custom properties.
 
 **Verification note:** this app's dev sandbox proxy blocks `esm.sh`/`cdn.jsdelivr.net` outbound
 (org egress policy — not a bug), so the CDN module resolution could not be live-verified from

@@ -11,7 +11,11 @@ module Admin
         filename: file.original_filename,
         content_type: file.content_type
       )
-      render json: { url: rails_blob_url(blob, host: request.base_url) }
+      # Anchored to the same host every other mailer link in this app already uses
+      # (config.action_mailer.default_url_options), not request.base_url - the admin composing a
+      # campaign might be browsing via an internal IP/localhost/VPN host that's meaningless to an
+      # external email recipient, so the embedded image URL can't depend on that.
+      render json: { url: rails_blob_url(blob, **Rails.application.config.action_mailer.default_url_options) }
     rescue ActionController::ParameterMissing
       render json: { error: "Please choose an image file." }, status: :unprocessable_entity
     end

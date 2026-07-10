@@ -57,7 +57,7 @@ const IMAGE_WIDTHS = { small: "200", medium: "400", full: "600" }
 // is trimmed to exactly the tag set EmailCampaign's server-side sanitizer allow-lists (see
 // EmailCampaign::ALLOWED_TAGS) so nothing a user can type gets silently stripped on save.
 export default class extends Controller {
-  static targets = [ "editor", "hiddenField", "fileInput", "buttonColor" ]
+  static targets = [ "editor", "hiddenField", "fileInput", "buttonColor", "buttonDialog", "buttonLabelInput", "buttonUrlInput" ]
 
   connect() {
     this.editor = new Editor({
@@ -156,12 +156,12 @@ export default class extends Controller {
     this.editor.chain().focus().unsetColor().run()
   }
 
+  // Triggered by the "Insert button" action inside the +Button dialog (data-controller="modal"
+  // handles the dialog's own open/close; this just reads its fields, inserts, then closes it).
   insertButton() {
-    const label = window.prompt("Button label")
-    if (!label) return
-
-    const url = window.prompt("Button URL")
-    if (!url) return
+    const label = this.buttonLabelInputTarget.value.trim()
+    const url = this.buttonUrlInputTarget.value.trim()
+    if (!label || !url) return
 
     const color = BUTTON_COLORS[this.buttonColorTarget.value] || BUTTON_COLORS.green
 
@@ -170,6 +170,10 @@ export default class extends Controller {
       text: label,
       marks: [ { type: "link", attrs: { href: url, style: buttonStyle(color) } } ]
     }).run()
+
+    this.buttonLabelInputTarget.value = ""
+    this.buttonUrlInputTarget.value = ""
+    this.buttonDialogTarget.close()
   }
 
   triggerImageUpload() {

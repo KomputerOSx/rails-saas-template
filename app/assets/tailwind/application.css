@@ -420,6 +420,13 @@
   @apply ring-2 ring-primary;
 }
 
+/* ProseMirror automatically toggles this class on a NodeSelection's DOM element (e.g. a clicked
+   image) - no JS needed on our end, just style the class it already applies, so the size toolbar
+   buttons have something to visibly act on. */
+.tiptap-editor-area .ProseMirror-selectednode {
+  @apply outline-2 outline-primary outline-offset-2 rounded-sm;
+}
+
 /* Hidden toasts (beyond 3rd) */
 .toast-item[data-expanded="false"][data-visible="false"] {
   --toast-opacity: 0;
