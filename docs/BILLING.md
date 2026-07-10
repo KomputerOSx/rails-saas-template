@@ -48,16 +48,17 @@ Stripe.js sends it directly to Stripe and the app only ever handles Stripe's opa
 Defined in `app/models/billing/plans.rb` as a small, hand-editable registry - not a
 database-driven plan builder, since a template only needs a couple of fixed tiers:
 
-| Plan | Price | Member limit |
-|---|---|---|
-| Free | $0 / £0 | 1 |
-| Starter | $9.99/mo or £9.99/mo | 5 |
-| Growth | $29.99/mo or £29.99/mo | 20 |
+| Plan | Price | Member limit | Custom domain |
+|---|---|---|---|
+| Free | $0 / £0 | 1 | No |
+| Starter | $9.99/mo or £9.99/mo | 5 | No |
+| Growth | $49.99/mo or £29.99/mo | 20 | Yes (one per org) |
 
-The only thing a plan currently controls is `member_limit` (see
-[Member limit enforcement](#7-member-limit-enforcement)). To add a feature-gated plan later,
-extend the `Plan` `Data.define` in `app/models/billing/plans.rb` with more fields and read them
-wherever `Organization#current_plan` is already consulted.
+Plans control `member_limit` and the Growth-only `custom_domain` flag (see
+[Member limit enforcement](#7-member-limit-enforcement) and
+[`docs/CUSTOM_DOMAINS.md`](CUSTOM_DOMAINS.md)). To add another plan-gated capability,
+extend the `Plan` `Data.define` in `app/models/billing/plans.rb` with more fields and
+read them wherever `Organization#current_plan` is already consulted.
 
 **Free is a local-only phantom plan** - there is no Stripe Product/Price for it, and no
 `Pay::Subscription` row is ever created for an org on Free. `Organization#current_plan` returns

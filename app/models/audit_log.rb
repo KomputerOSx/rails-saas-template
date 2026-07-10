@@ -74,7 +74,9 @@ class AuditLog < ApplicationRecord
     price_migration_started: "price_migration_started",
     price_migration_scheduled: "price_migration_scheduled",
     organization_grandfathered: "organization_grandfathered",
-    organization_ungrandfathered: "organization_ungrandfathered"
+    organization_ungrandfathered: "organization_ungrandfathered",
+    custom_domain_updated: "custom_domain_updated",
+    custom_domain_removed: "custom_domain_removed"
   }
 
   validates :event_type, presence: true

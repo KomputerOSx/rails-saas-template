@@ -1,4 +1,15 @@
 Rails.application.routes.draw do
+  # Caddy on-demand TLS ask endpoint (internal Docker / localhost only).
+  namespace :internal do
+    get "domain_validations", to: "domain_validations#show"
+  end
+
+  # Custom domains serve a public org site (placeholder for future shopfront/booking).
+  constraints CustomDomainConstraint do
+    root to: "sites#show", as: :custom_domain_root
+    get "*path", to: "sites#show", as: :custom_domain_catch_all
+  end
+
   # --- Authentication ---
   resource :session, only: [ :new, :create, :destroy ], controller: "sessions"
   get    "login",  to: "sessions#new"
@@ -97,6 +108,7 @@ Rails.application.routes.draw do
   # --- Org-facing members/invitations management (distinct from the system-scope Admin:: namespace) ---
   namespace :org do
     resource :organization, only: [ :update ], controller: "organizations"
+    resource :custom_domain, only: [ :create, :destroy ], controller: "custom_domains"
     get "settings", to: "settings#index", as: :settings
     resources :members, only: [ :destroy ] do
       member do

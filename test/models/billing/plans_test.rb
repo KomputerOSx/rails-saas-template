@@ -19,6 +19,12 @@ class Billing::PlansTest < ActiveSupport::TestCase
     assert_equal 20, Billing::Plans::GROWTH.member_limit
   end
 
+  test "custom_domain is Growth-only" do
+    assert_not Billing::Plans::FREE.custom_domain?
+    assert_not Billing::Plans::STARTER.custom_domain?
+    assert Billing::Plans::GROWTH.custom_domain?
+  end
+
   test "for_stripe_price returns nil for a blank or unmatched price id" do
     assert_nil Billing::Plans.for_stripe_price(nil)
     assert_nil Billing::Plans.for_stripe_price("")
@@ -54,7 +60,7 @@ class Billing::PlansTest < ActiveSupport::TestCase
     assert_not Billing::Plans::STARTER.free?
     assert_equal "$9.99", Billing::Plans::STARTER.formatted_price("usd")
     assert_equal "£9.99", Billing::Plans::STARTER.formatted_price("gbp")
-    assert_equal "$29.99", Billing::Plans::GROWTH.formatted_price("usd")
+    assert_equal "$49.99", Billing::Plans::GROWTH.formatted_price("usd")
   end
 
   test "formatted_price shows cents correctly for non-round amounts" do
@@ -65,8 +71,8 @@ class Billing::PlansTest < ActiveSupport::TestCase
 
   private
 
-  def build_plan(cents: 500, usd_id: "price_test_usd", gbp_id: "price_test_gbp")
-    Billing::Plans::Plan.new(key: "test", name: "Test", member_limit: 3, prices: {
+  def build_plan(cents: 500, usd_id: "price_test_usd", gbp_id: "price_test_gbp", custom_domain: false)
+    Billing::Plans::Plan.new(key: "test", name: "Test", member_limit: 3, custom_domain: custom_domain, prices: {
       "usd" => Billing::Plans::Price.new(cents: cents, stripe_price_id: usd_id),
       "gbp" => Billing::Plans::Price.new(cents: cents, stripe_price_id: gbp_id)
     })

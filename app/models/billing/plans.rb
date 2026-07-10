@@ -9,8 +9,10 @@ module Billing
       end
     end
 
-    Plan = Data.define(:key, :name, :member_limit, :prices) do
+    Plan = Data.define(:key, :name, :member_limit, :custom_domain, :prices) do
       def free? = key == "free"
+
+      def custom_domain? = custom_domain
 
       def price_for(currency)
         prices.fetch(currency.to_s) { prices.fetch(Plans::DEFAULT_CURRENCY) }
@@ -29,17 +31,17 @@ module Billing
           [resolved_stripe_price_id(currency), *Plans.legacy_price_ids(key, currency)]
         }.compact
       end
-    end # Fixed: Removed the extra hanging 'end'
+    end
 
-    FREE = Plan.new(key: "free", name: "Free", member_limit: 1, prices: {
+    FREE = Plan.new(key: "free", name: "Free", member_limit: 1, custom_domain: false, prices: {
       "usd" => Price.new(cents: 0, stripe_price_id: nil),
       "gbp" => Price.new(cents: 0, stripe_price_id: nil)
     })
-    STARTER = Plan.new(key: "starter", name: "Starter", member_limit: 5, prices: {
+    STARTER = Plan.new(key: "starter", name: "Starter", member_limit: 5, custom_domain: false, prices: {
       "usd" => Price.new(cents: 999, stripe_price_id: -> { credential_price_id(:starter, :usd) }),
       "gbp" => Price.new(cents: 999, stripe_price_id: -> { credential_price_id(:starter, :gbp) })
     })
-    GROWTH = Plan.new(key: "growth", name: "Growth", member_limit: 20, prices: {
+    GROWTH = Plan.new(key: "growth", name: "Growth", member_limit: 20, custom_domain: true, prices: {
       "usd" => Price.new(cents: 4999, stripe_price_id: -> { credential_price_id(:growth, :usd) }),
       "gbp" => Price.new(cents: 2999, stripe_price_id: -> { credential_price_id(:growth, :gbp) })
     })

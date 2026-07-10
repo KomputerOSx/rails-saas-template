@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_08_130000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_10_220000) do
   create_table "audit_logs", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "event_type", null: false
@@ -136,6 +136,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_08_130000) do
     t.string "billing_address_state"
     t.string "billing_name"
     t.datetime "created_at", null: false
+    t.string "custom_domain"
     t.text "features"
     t.datetime "grandfathered_at"
     t.string "name", null: false
@@ -148,6 +149,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_08_130000) do
     t.string "stripe_subscription_schedule_id"
     t.datetime "trial_used_at"
     t.datetime "updated_at", null: false
+    t.index ["custom_domain"], name: "index_organizations_on_custom_domain", unique: true
     t.index ["slug"], name: "index_organizations_on_slug", unique: true
   end
 

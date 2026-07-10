@@ -53,7 +53,13 @@ module ActiveSupport
       resolvable_prices = plan.prices.to_h { |currency, price|
         [ currency, Billing::Plans::Price.new(cents: price.cents, stripe_price_id: "price_fake_#{plan.key}_#{currency}") ]
       }
-      resolvable_plan = Billing::Plans::Plan.new(key: plan.key, name: plan.name, member_limit: plan.member_limit, prices: resolvable_prices)
+      resolvable_plan = Billing::Plans::Plan.new(
+        key: plan.key,
+        name: plan.name,
+        member_limit: plan.member_limit,
+        custom_domain: plan.custom_domain,
+        prices: resolvable_prices
+      )
 
       Billing::Plans.stub(:find, ->(key) { key.to_s == plan.key ? resolvable_plan : Billing::Plans::ALL.find { |p| p.key == key.to_s } }) do
         yield
