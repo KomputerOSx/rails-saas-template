@@ -3,6 +3,7 @@ permissions:
   system.roles.manage: "View/manage roles and permissions"
   system.audit_logs.view: "View audit logs"
   system.billing.manage: "Manage platform-wide billing (price migrations, grandfathering)"
+  system.email_campaigns.manage: "Compose and send platform-wide email campaigns"
   app.members.invite: "Invite people to the organization"
   app.members.remove: "Remove members from the organization"
   app.members.promote: "Promote/demote members between admin and user"
@@ -14,7 +15,7 @@ roles:
     system_admin:
       permanent: true
       description: "Permanent platform operator role"
-      permissions: [system.users.manage, system.roles.manage, system.audit_logs.view, system.billing.manage]
+      permissions: [system.users.manage, system.roles.manage, system.audit_logs.view, system.billing.manage, system.email_campaigns.manage]
     system_user:
       permanent: true
       description: "Permanent basic platform operator role"

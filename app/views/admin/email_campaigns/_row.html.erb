@@ -1,0 +1,16 @@
+<tr id="<%= dom_id(email_campaign) %>" class="hover:bg-base-200">
+  <td class="font-medium"><%= link_to email_campaign.subject, admin_email_campaign_path(email_campaign), class: "hover:underline" %></td>
+  <td class="text-base-content/60"><%= email_campaign.created_by&.email || "System" %></td>
+  <td><%= email_campaign.email_campaign_recipients.size %></td>
+  <td>
+    <% case email_campaign.status
+       when "draft" %>
+      <span class="badge badge-neutral badge-sm">Draft</span>
+    <% when "sending" %>
+      <span class="badge badge-warning badge-sm">Sending</span>
+    <% when "sent" %>
+      <span class="badge badge-success badge-sm">Sent</span>
+    <% end %>
+  </td>
+  <td class="text-base-content/60"><%= time_ago_in_words(email_campaign.created_at) %> ago</td>
+</tr>

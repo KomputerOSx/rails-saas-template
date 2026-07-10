@@ -1,0 +1,77 @@
+<section class="w-full max-w-4xl">
+  <p class="text-sm font-medium text-base-content/60">Admin</p>
+  <div class="mt-3 flex items-center gap-3">
+    <h1 class="text-4xl font-semibold tracking-normal"><%= @email_campaign.subject %></h1>
+    <% case @email_campaign.status
+       when "draft" %>
+      <span class="badge badge-neutral">Draft</span>
+    <% when "sending" %>
+      <span class="badge badge-warning">Sending</span>
+    <% when "sent" %>
+      <span class="badge badge-success">Sent</span>
+    <% end %>
+  </div>
+  <p class="mt-1 text-sm text-base-content/60">
+    <%= @email_campaign.email_campaign_recipients.size %> recipient(s)
+    &middot; created by <%= @email_campaign.created_by&.email || "System" %>
+  </p>
+
+  <div class="mt-6 flex gap-2">
+    <% if @email_campaign.deliverable? %>
+      <%= button_to "Send now", deliver_admin_email_campaign_path(@email_campaign), method: :post,
+            data: { turbo_confirm: "Send this campaign to #{@email_campaign.email_campaign_recipients.size} user(s) now? This cannot be undone." },
+            class: "btn btn-primary btn-sm" %>
+      <%= link_to "Edit", edit_admin_email_campaign_path(@email_campaign), class: "btn btn-outline btn-sm" %>
+      <%= button_to "Delete", admin_email_campaign_path(@email_campaign), method: :delete,
+            data: { turbo_confirm: "Delete this draft campaign?" },
+            class: "btn btn-error btn-outline btn-sm" %>
+    <% end %>
+  </div>
+
+  <div class="mt-8">
+    <h2 class="text-lg font-semibold">Preview</h2>
+    <div class="card mt-4 border border-base-300">
+      <div class="card-body email-body-content">
+        <%= raw @email_campaign.body_html %>
+      </div>
+    </div>
+  </div>
+
+  <% unless @email_campaign.draft? %>
+    <div class="mt-8">
+      <h2 class="text-lg font-semibold">Delivery status</h2>
+      <div class="card mt-4 border border-base-300">
+        <div class="card-body p-0">
+          <div class="overflow-x-auto">
+            <table class="table table-sm">
+              <thead class="text-sm font-semibold text-base-content bg-base-200">
+                <tr class="border-b border-base-300">
+                  <th>User</th>
+                  <th>Status</th>
+                  <th>Details</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% @email_campaign_recipients.each do |recipient| %>
+                  <tr class="hover:bg-base-200">
+                    <td><%= recipient.user.email %></td>
+                    <td>
+                      <% if recipient.sent_at? %>
+                        <span class="badge badge-success badge-sm">Sent</span>
+                      <% elsif recipient.failed_at? %>
+                        <span class="badge badge-error badge-sm">Failed</span>
+                      <% else %>
+                        <span class="badge badge-neutral badge-sm">Pending</span>
+                      <% end %>
+                    </td>
+                    <td class="text-base-content/60 text-xs"><%= recipient.error_message %></td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+</section>

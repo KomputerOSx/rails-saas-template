@@ -1,0 +1,6 @@
+<section class="w-full max-w-4xl">
+  <p class="text-sm font-medium text-base-content/60">Admin</p>
+  <h1 class="mt-3 text-4xl font-semibold tracking-normal">Edit Email Campaign</h1>
+
+  <%= render "form", url: admin_email_campaign_path(@email_campaign), http_method: :patch, submit_label: "Save changes" %>
+</section>

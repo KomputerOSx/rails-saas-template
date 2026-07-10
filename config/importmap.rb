@@ -19,3 +19,7 @@ pin "emoji-mart", to: "https://cdn.jsdelivr.net/npm/emoji-mart@latest/dist/brows
 pin "@emoji-mart/data", to: "https://cdn.jsdelivr.net/npm/@emoji-mart/data@latest/+esm"
 pin "photoswipe", to: "https://cdn.jsdelivr.net/npm/photoswipe/dist/photoswipe.esm.js"
 pin "motion", to: "https://cdn.jsdelivr.net/npm/motion@latest/+esm"
+pin "@tiptap/core", to: "https://esm.sh/@tiptap/core@2.11.5"
+pin "@tiptap/starter-kit", to: "https://esm.sh/@tiptap/starter-kit@2.11.5"
+pin "@tiptap/extension-underline", to: "https://esm.sh/@tiptap/extension-underline@2.11.5"
+pin "@tiptap/extension-link", to: "https://esm.sh/@tiptap/extension-link@2.11.5"
