@@ -194,12 +194,14 @@ export default class extends Controller {
       body: formData
     })
 
+    const body = await response.json()
+
     if (!response.ok) {
-      window.alert("Image upload failed.")
+      window.alert(body.error || "Image upload failed.")
       return
     }
 
-    const { url } = await response.json()
+    const { url } = body
     this.editor.chain().focus().setImage({ src: url }).run()
   }
 
