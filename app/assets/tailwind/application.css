@@ -404,8 +404,16 @@
   @apply text-primary underline;
 }
 
+/* flex + flex-1 makes the actual contenteditable child fill the wrapper's min-height, not just
+   its own content - otherwise clicking in the empty space below short content lands on the
+   wrapper (no-op) instead of the editable element. See RichTextEditorController's click
+   passthrough for the remaining padding-gutter case this can't cover on its own. */
+.tiptap-editor-area {
+  @apply flex flex-col cursor-text;
+}
+
 .tiptap-editor-area .ProseMirror {
-  @apply outline-hidden;
+  @apply flex-1 outline-hidden;
 }
 
 .tiptap-editor-area:focus-within {

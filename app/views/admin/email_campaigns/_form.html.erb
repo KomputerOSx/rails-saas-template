@@ -31,6 +31,15 @@
               <div class="mx-1 h-4 w-px bg-base-300"></div>
               <button type="button" class="btn btn-xs btn-ghost" data-action="click->rich-text-editor#setLink">Link</button>
               <button type="button" class="btn btn-xs btn-ghost" data-action="click->rich-text-editor#unsetLink">Unlink</button>
+              <div class="mx-1 h-4 w-px bg-base-300"></div>
+              <input type="color" value="#000000" title="Text color" class="h-6 w-6 cursor-pointer rounded border border-base-300 bg-transparent p-0"
+                     data-action="input->rich-text-editor#setColor">
+              <button type="button" class="btn btn-xs btn-ghost" data-action="click->rich-text-editor#unsetColor">Clear color</button>
+              <div class="mx-1 h-4 w-px bg-base-300"></div>
+              <button type="button" class="btn btn-xs btn-ghost" data-action="click->rich-text-editor#triggerImageUpload">Image</button>
+              <input type="file" accept="image/*" class="hidden"
+                     data-rich-text-editor-target="fileInput" data-action="change->rich-text-editor#uploadImage">
+              <button type="button" class="btn btn-xs btn-ghost" data-action="click->rich-text-editor#insertButton">+ Button</button>
             </div>
 
             <div class="tiptap-editor-area email-body-content min-h-48 w-full rounded-b-lg border border-t-0 border-base-300 bg-base-100 px-3 py-2"

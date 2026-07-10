@@ -1,7 +1,7 @@
 module Admin
   class EmailCampaignsController < BaseController
     before_action { authorize :system, :manage_email_campaigns?, policy_class: SystemPolicy }
-    before_action :set_email_campaign, only: [ :show, :edit, :update, :destroy, :deliver ]
+    before_action :set_email_campaign, only: [ :show, :edit, :update, :destroy, :deliver, :recipients ]
     before_action :require_draft!, only: [ :edit, :update, :destroy, :deliver ]
 
     def index
@@ -35,7 +35,11 @@ module Admin
     end
 
     def show
-      @email_campaign_recipients = @email_campaign.email_campaign_recipients.includes(:user)
+      @recipient_counts = @email_campaign.recipient_counts
+    end
+
+    def recipients
+      @email_campaign_recipients = @email_campaign.email_campaign_recipients.includes(:user).order(:id)
     end
 
     def edit

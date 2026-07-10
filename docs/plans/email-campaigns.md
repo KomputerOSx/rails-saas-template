@@ -60,8 +60,10 @@ two-tier pattern documented in `docs/rbac.md` §7.
    `user_ids`, same picker UI as `Admin::NotificationsController#new`) are submitted together.
    `EmailCampaign.create_draft!` persists the campaign and one `EmailCampaignRecipient` row per
    target user, but sends nothing yet.
-2. `show` — a review screen: subject, rendered body preview, recipient count, and (once sending
-   has started) a live per-recipient status table.
+2. `show` — a review screen: subject, rendered body preview, and (once sending has started) summary
+   stat cards (total/sent/failed/pending). A "View all recipients" link goes to a separate
+   `recipients` page with the full per-recipient table (email, status badge, error message) — kept
+   off the main show page so it doesn't dominate the screen for large campaigns.
 3. `deliver` (explicit, confirmed action, `draft` only) — flips status to `sending` and enqueues
    the send. Splitting compose from send is deliberate: an in-app `Notification` can be withdrawn
    after the fact, but email cannot be recalled once delivered, so campaigns get an explicit
@@ -86,18 +88,49 @@ built for email-safe HTML in the first place.
 
 This app has no Node build step (`importmap-rails`; JS is pinned via CDN ESM URLs — see
 `config/importmap.rb`). TipTap is pinned the same way as `tom-select`/`embla-carousel`/`motion`:
-`@tiptap/core`, `@tiptap/starter-kit`, and (since StarterKit does not bundle these two)
-`@tiptap/extension-underline` and `@tiptap/extension-link`, all via `esm.sh`. A Stimulus
-controller
-(`app/javascript/controllers/rich_text_editor_controller.js`) mounts the editor and mirrors its
-HTML into a hidden form field on every update, the same "Stimulus writes a plain form field, the
-form POSTs normally" convention used everywhere else in this app (no fetch/JSON).
+`@tiptap/core`, `@tiptap/starter-kit`, `@tiptap/extension-underline`, `@tiptap/extension-link`,
+`@tiptap/extension-text-style`, `@tiptap/extension-color`, and `@tiptap/extension-image`, all via
+`esm.sh`. A Stimulus controller (`app/javascript/controllers/rich_text_editor_controller.js`)
+mounts the editor and mirrors its HTML into a hidden form field on every update, the same
+"Stimulus writes a plain form field, the form POSTs normally" convention used everywhere else in
+this app (no fetch/JSON for the body itself).
 
 `StarterKit` is configured with `codeBlock`, `code`, `horizontalRule`, and `strike` disabled so
 the editor can't produce markup outside what `EmailCampaign`'s server-side sanitizer allow-lists
-(`p br strong em u a ul ol li h1 h2 h3 blockquote`, `href` only). Sanitization happens once, in a
-`before_save` callback — the mailer view renders the stored `body_html` with `raw` on the
-assumption it was already cleaned at write time.
+(`p br strong em u a ul ol li h1 h2 h3 blockquote span img`, attributes `href style src alt`).
+Sanitization happens once, in a `before_save` callback — the mailer view renders the stored
+`body_html` with `raw` on the assumption it was already cleaned at write time. Opening up `style`
+(for text color and CTA buttons) and `img` widened the attack surface slightly; Rails' Loofah-backed
+sanitizer scrubs dangerous CSS (`expression()`, `javascript:`, `behavior`, etc.) from `style` values
+and strips non-allow-listed `img` attributes like `onerror` — verified with `rails runner` against
+both a benign CTA-button snippet (preserved byte-for-byte) and adversarial input (stripped) before
+shipping.
+
+**Text color** uses `@tiptap/extension-color` + `@tiptap/extension-text-style` with a native
+`<input type="color">` in the toolbar (no custom swatch picker — deliberately minimal) plus a
+"Clear color" button, since a native color input has no way to represent "unset."
+
+**Images** upload through a small dedicated endpoint, `POST /admin/email_campaign_images`
+(`Admin::EmailCampaignImagesController`, gated by the same `system.email_campaigns.manage`
+permission as everything else here), which wraps the uploaded file in an **unattached**
+`ActiveStorage::Blob` (`ActiveStorage::Blob.create_and_upload!`, not associated with any model) and
+returns its URL. Unattached rather than `has_many_attached :images` on `EmailCampaign` because the
+editor is used on `new`, before a campaign record exists — attaching would force a premature save.
+Tradeoff: uploaded-but-unused images are never cleaned up (no association, no cascade) — a future
+periodic purge job is a roadmap item, not built. Also note: the generated URL uses whatever host
+served the upload request, so an image uploaded while testing on `localhost` embeds a URL that
+won't resolve for a real external recipient — expected, resolves correctly once deployed to a real
+domain.
+
+**CTA buttons** are really just an `<a>` with a fixed inline style (real `<button>` elements don't
+render usefully in email). TipTap's `Link` mark only declares `href`/`target`/`rel`/`class` by
+default, so a bare `style` attribute would be silently dropped on every `getHTML()` serialization —
+the controller extends `Link` once (`CampaignLink`) to also declare a pass-through `style`
+attribute. Plain links created via the existing "Link" toolbar button never set `style`, so they're
+unaffected; only the "+ Button" action sets it, to one fixed, non-configurable CTA style
+approximating this app's primary button color as a plain hex (`#009e3c` — email clients don't
+reliably support `oklch()`/CSS custom properties, so the app's actual `--color-primary` can't be
+used directly).
 
 **Verification note:** this app's dev sandbox proxy blocks `esm.sh`/`cdn.jsdelivr.net` outbound
 (org egress policy — not a bug), so the CDN module resolution could not be live-verified from
@@ -116,10 +149,12 @@ pin that locally instead, same as `turbo.min.js`/`stimulus.min.js`.
   but would need addressing before this is used for anything resembling marketing email at
   volume (see CAN-SPAM/opt-out roadmap item below).
 - **No analytics** — no open/click tracking.
-- **No image embedding** — the editor and sanitizer allow-list are both text/formatting only, no
-  `<img>`. Adding images means Active Storage plus an upload UI in the editor toolbar.
+- **No orphaned-image cleanup** — uploaded images not embedded in any saved campaign (or embedded
+  in a campaign that's later deleted) are never purged from storage.
 - **No test-send-to-self** — the only way to see the final email is to send it for real, or read
   the rendered `show` page preview.
+- **No recipient pagination** — the `recipients` detail page loads every recipient at once; fine
+  at this scale, would need pagination for campaigns with very large audiences.
 - **No CSS inlining** — `body_html` is rendered as-is inside the shared `mailer` layout, which has
   no inlining step. Fine for the simple tag set the sanitizer allows today; would need
   `premailer-rails` or similar if the allowed markup ever grows to include layout-heavy HTML.
@@ -165,8 +200,9 @@ Open tracking (1x1 pixel) and click tracking (redirect links through a signed sh
 each need their own table (`email_campaign_opens`, `email_campaign_clicks`) and a tracking
 controller — meaningful additional surface area, deliberately deferred.
 
-### Image embedding
+### Orphaned image cleanup
 
-Requires Active Storage integration in the TipTap toolbar (upload → attach → insert `<img>`) and
-expanding the sanitizer allow-list to permit `img[src,alt]` — needs care since it also changes
-what the editor's `StarterKit` config permits.
+A periodic Solid Queue task (following the existing `config/recurring.yml` pattern) purging
+unattached `ActiveStorage::Blob`s older than N days that were uploaded via
+`Admin::EmailCampaignImagesController` but never ended up embedded in a saved campaign's
+`body_html` (or whose campaign was later deleted).
