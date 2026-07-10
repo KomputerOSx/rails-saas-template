@@ -13,16 +13,15 @@ servers:
   #     - 192.168.0.1
   #   cmd: bin/jobs
 
-# Enable SSL auto certification via Let's Encrypt and allow for multiple apps on a single web server.
-# If used with Cloudflare, set encryption mode in SSL/TLS setting to "Full" to enable CF-to-app encryption.
-#
-# Using an SSL proxy like this requires turning on config.assume_ssl and config.force_ssl in production.rb!
-#
-# Don't use this when deploying to multiple web servers (then you have to terminate SSL at your load balancer).
-#
-# proxy:
-#   ssl: true
-#   host: app.example.com
+# Caddy terminates TLS (including on-demand certs for custom domains) on 80/443.
+# kamal-proxy stays for gapless deploys but binds to localhost only, without SSL.
+proxy:
+  ssl: false
+  run:
+    http_port: 3000
+    https_port: 3001
+    bind_ips:
+      - 127.0.0.1
 
 # Where you keep your container images.
 registry:
@@ -44,6 +43,11 @@ env:
     # Run the Solid Queue Supervisor inside the web server's Puma process to do jobs.
     # When you start using multiple servers, you should split out job processing to a dedicated machine.
     SOLID_QUEUE_IN_PUMA: true
+
+    # Primary hostname used by AppHost and DNS instructions in org settings.
+    # APP_HOST: app.example.com
+    # Public server IP shown for apex A-record DNS instructions.
+    # APP_SERVER_IP: 192.168.0.1
 
     # Set number of processes dedicated to Solid Queue (default: 1)
     # JOB_CONCURRENCY: 3
@@ -94,7 +98,25 @@ builder:
 # ssh:
 #   user: app
 
-# Use accessory services (secrets come from .kamal/secrets).
+# Caddy sits in front of kamal-proxy for on-demand TLS custom domains.
+# Persist caddy_data so Let's Encrypt certificates survive accessory restarts.
+accessories:
+  caddy:
+    image: caddy:2-alpine
+    host: 192.168.0.1
+    network: host
+    env:
+      clear:
+        # ACME account email for Let's Encrypt (required for production).
+        # ACME_EMAIL: admin@example.com
+        # Must match the primary host block / Rails APP_HOST.
+        # APP_HOST: app.example.com
+    files:
+      - config/Caddyfile:/etc/caddy/Caddyfile
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+
 # accessories:
 #   db:
 #     image: mysql:8.0

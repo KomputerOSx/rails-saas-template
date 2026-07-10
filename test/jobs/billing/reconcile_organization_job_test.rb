@@ -105,4 +105,16 @@ class Billing::ReconcileOrganizationJobTest < ActiveJob::TestCase
     audit_log = AuditLog.where(resource_type: "Organization", resource_id: @organization.id).last
     assert_equal "price_unknown_custom_123", audit_log.metadata["unrecognized_price"]
   end
+
+  test "clears custom_domain when the organization is no longer on Growth" do
+    with_active_subscription(@organization, Billing::Plans::GROWTH) do
+      @organization.update!(custom_domain: "shop.example.com")
+    end
+
+    @organization.payment_processor.subscription.update!(status: "canceled", ends_at: 1.day.ago)
+
+    Billing::ReconcileOrganizationJob.perform_now(@organization.id)
+
+    assert_nil @organization.reload.custom_domain
+  end
 end

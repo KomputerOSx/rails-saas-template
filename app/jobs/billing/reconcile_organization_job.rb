@@ -40,6 +40,8 @@ module Billing
         organization.update!(over_member_limit_at: nil)
       end
 
+      organization.clear_custom_domain_if_disallowed!
+
       metadata = { plan: organization.current_plan.key, over_member_limit: now_over_limit }
       metadata[:unrecognized_price] = subscription.processor_plan if unrecognized_price
 

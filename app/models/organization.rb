@@ -2,7 +2,9 @@ class Organization < ApplicationRecord
   include FeatureToggleable
 
   SLUG_FORMAT = /\A[a-z0-9](?:[a-z0-9\-]*[a-z0-9])?\z/
+  CUSTOM_DOMAIN_FORMAT = /\A(?:[a-z0-9](?:[a-z0-9\-]*[a-z0-9])?\.)+[a-z]{2,}\z/
   RESERVED_SLUGS = %w[admin org invitations login logout password confirmations registration profile up rails].freeze
+  DOMAIN_ORG_CACHE_PREFIX = "domain_org_id:"
 
   # Pay::Customer#email delegates to owner.email (Pay::Customer#api_record_attributes reads it
   # unconditionally), so Organization needs its own #email even though we have no email column -
@@ -25,12 +27,19 @@ class Organization < ApplicationRecord
   has_many :organization_invitations, dependent: :destroy
   has_many :feature_organization_accesses, dependent: :destroy
 
+  before_validation :normalize_custom_domain
+  after_save :clear_custom_domain_cache, if: :saved_change_to_custom_domain?
+
   validates :name, presence: true
   validates :slug, presence: true, uniqueness: true,
     format: { with: SLUG_FORMAT },
     length: { maximum: 63 },
     exclusion: { in: RESERVED_SLUGS }
   validates :preferred_currency, inclusion: { in: Billing::Plans::SUPPORTED_CURRENCIES }
+  validates :custom_domain, uniqueness: { allow_nil: true },
+    format: { with: CUSTOM_DOMAIN_FORMAT, allow_nil: true },
+    length: { maximum: 253, allow_nil: true }
+  validate :custom_domain_requires_growth_plan, if: -> { custom_domain.present? && will_save_change_to_custom_domain? }
 
   # Every user gets exactly one of these at signup - see ConfirmationsController#create.
   # Name/slug are derived from the email local-part since registration only collects
@@ -102,8 +111,13 @@ class Organization < ApplicationRecord
   end
 
   def current_plan
-    subscription = payment_processor&.subscription
+    # Read Pay::Customer by id so plan checks never lock this record (Pay's
+    # payment_processor can with_lock, which breaks when attributes are dirty —
+    # e.g. re-rendering org settings after a failed name update).
+    customer = id && Pay::Customer.find_by(owner_type: "Organization", owner_id: id)
+    subscription = customer&.subscription
     return Billing::Plans::FREE unless subscription&.active?
+
     Billing::Plans.for_stripe_price(subscription.processor_plan) || Billing::Plans::FREE
   end
 
@@ -120,6 +134,25 @@ class Organization < ApplicationRecord
 
   def member_limit
     current_plan.member_limit
+  end
+
+  def custom_domain_allowed?
+    current_plan.custom_domain?
+  end
+
+  def clear_custom_domain_if_disallowed!
+    return if custom_domain.blank? || custom_domain_allowed?
+
+    update!(custom_domain: nil)
+  end
+
+  def self.find_id_by_custom_domain(host)
+    domain = host.to_s.downcase.strip.sub(/\Awww\./, "")
+    return nil if domain.blank?
+
+    Rails.cache.fetch("#{DOMAIN_ORG_CACHE_PREFIX}#{domain}", expires_in: 10.minutes) do
+      find_by(custom_domain: domain)&.id
+    end
   end
 
   def member_count_with_pending
@@ -359,6 +392,28 @@ class Organization < ApplicationRecord
   end
 
   private
+
+  def normalize_custom_domain
+    domain = custom_domain.to_s.downcase.strip.sub(/\Awww\./, "")
+    self.custom_domain = domain.presence
+  end
+
+  def custom_domain_requires_growth_plan
+    return if custom_domain.blank?
+
+    # Pay's payment_processor may lock the owner row; avoid that while this
+    # record still has unsaved custom_domain changes.
+    allowed = persisted? ? self.class.find(id).custom_domain_allowed? : false
+    return if allowed
+
+    errors.add(:custom_domain, "requires the Growth plan")
+  end
+
+  def clear_custom_domain_cache
+    previous, current = saved_change_to_custom_domain
+    Rails.cache.delete("#{DOMAIN_ORG_CACHE_PREFIX}#{previous}") if previous.present?
+    Rails.cache.delete("#{DOMAIN_ORG_CACHE_PREFIX}#{current}") if current.present?
+  end
 
   # Shared by schedule_downgrade! and schedule_price_migration! - both are "move the live
   # subscription to a different Price at its own next renewal, no proration" under the hood.

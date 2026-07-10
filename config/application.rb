@@ -28,6 +28,9 @@ module Windtunnel
     # config.time_zone = "Central Time (US & Canada)"
     # config.eager_load_paths << Rails.root.join("extras")
 
+    require Rails.root.join("app/middleware/custom_domain_resolver")
+    config.middleware.use CustomDomainResolver
+
     config.middleware.use Rack::Attack
 
     config.action_dispatch.default_headers = config.action_dispatch.default_headers.merge(

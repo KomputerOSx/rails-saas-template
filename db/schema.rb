@@ -10,35 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_12_020001) do
-  create_table "active_storage_attachments", force: :cascade do |t|
-    t.bigint "blob_id", null: false
-    t.datetime "created_at", null: false
-    t.string "name", null: false
-    t.bigint "record_id", null: false
-    t.string "record_type", null: false
-    t.index ["blob_id"], name: "index_active_storage_attachments_on_blob_id"
-    t.index ["record_type", "record_id", "name", "blob_id"], name: "index_active_storage_attachments_uniqueness", unique: true
-  end
-
-  create_table "active_storage_blobs", force: :cascade do |t|
-    t.bigint "byte_size", null: false
-    t.string "checksum"
-    t.string "content_type"
-    t.datetime "created_at", null: false
-    t.string "filename", null: false
-    t.string "key", null: false
-    t.text "metadata"
-    t.string "service_name", null: false
-    t.index ["key"], name: "index_active_storage_blobs_on_key", unique: true
-  end
-
-  create_table "active_storage_variant_records", force: :cascade do |t|
-    t.bigint "blob_id", null: false
-    t.string "variation_digest", null: false
-    t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
-  end
-
+ActiveRecord::Schema[8.1].define(version: 2026_07_10_220000) do
   create_table "audit_logs", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "event_type", null: false
@@ -194,6 +166,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_12_020001) do
     t.string "billing_address_state"
     t.string "billing_name"
     t.datetime "created_at", null: false
+    t.string "custom_domain"
     t.text "features"
     t.datetime "grandfathered_at"
     t.string "name", null: false
@@ -206,6 +179,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_12_020001) do
     t.string "stripe_subscription_schedule_id"
     t.datetime "trial_used_at"
     t.datetime "updated_at", null: false
+    t.index ["custom_domain"], name: "index_organizations_on_custom_domain", unique: true
     t.index ["slug"], name: "index_organizations_on_slug", unique: true
   end
 
