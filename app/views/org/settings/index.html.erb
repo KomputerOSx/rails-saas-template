@@ -29,5 +29,7 @@
   </div>
 
   <%# ── Pending invitations ── %>
-  <%= render "org/invitations/section", pending_invitations: @pending_invitations %>
+  <% if current_user.has_permission?("app.members.invite", organization: Current.organization) %>
+    <%= render "org/invitations/section", pending_invitations: @pending_invitations %>
+  <% end %>
 </div>
