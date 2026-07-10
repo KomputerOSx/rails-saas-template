@@ -15,9 +15,7 @@ class EmailCampaign < ApplicationRecord
   ALLOWED_TAGS = %w[p br strong em u a ul ol li h1 h2 h3 blockquote span img].freeze
   ALLOWED_ATTRIBUTES = %w[href style src alt width].freeze
 
-  # Persists the campaign and snapshots its recipient list, but sends nothing - sending is a
-  # deliberate separate step (#deliver on the controller) since email, unlike Notification, can't
-  # be withdrawn after the fact.
+  # Snapshots recipients but sends nothing - sending is a deliberate separate step (see #deliver).
   def self.create_draft!(subject:, body_html:, to:, created_by: nil)
     recipients = Array(to.respond_to?(:find_each) ? to.to_a : to).uniq
     raise ArgumentError, "no recipients given" if recipients.empty?
@@ -33,10 +31,7 @@ class EmailCampaign < ApplicationRecord
     draft?
   end
 
-  # Recipient-level delivery counts for the summary cards on the show page. Note: .sent/.failed/
-  # .pending here are EmailCampaignRecipient's scopes (keyed off sent_at/failed_at), not this
-  # class's own `enum :status` scope of the same name - unambiguous since email_campaign_recipients
-  # is a different model's association, but easy to misread at a glance.
+  # .sent/.failed/.pending are EmailCampaignRecipient's scopes, not this class's status enum scope.
   def recipient_counts
     scope = email_campaign_recipients
     { total: scope.count, sent: scope.sent.count, failed: scope.failed.count, pending: scope.pending.count }
@@ -44,10 +39,7 @@ class EmailCampaign < ApplicationRecord
 
   private
 
-  # Single sanitization point - the mailer view renders body_html with `raw` on the assumption
-  # it was already cleaned here, once, at write time. Allow-list mirrors the editor's enabled
-  # formatting (see RichTextEditorController's StarterKit config) so nothing a user can type gets
-  # silently stripped on save.
+  # Single sanitization point - the mailer view renders body_html with `raw`, trusting this ran.
   def sanitize_body_html
     self.body_html = ActionController::Base.helpers.sanitize(
       body_html, tags: ALLOWED_TAGS, attributes: ALLOWED_ATTRIBUTES

@@ -1,6 +1,5 @@
-# Sends one campaign to every snapshotted recipient. One job per campaign, not one per
-# recipient - keeps the draft -> sending -> sent status transition a simple before/after the
-# loop, with each recipient's own send isolated so one bad address can't halt the batch.
+# One job per campaign, not one per recipient - each recipient's send is isolated so one bad
+# address can't halt the batch, and status stays a simple before/after around the loop.
 class SendEmailCampaignJob < ApplicationJob
   queue_as :default
 

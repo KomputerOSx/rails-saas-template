@@ -7,9 +7,8 @@ import TextStyle from "@tiptap/extension-text-style"
 import Color from "@tiptap/extension-color"
 import Image from "@tiptap/extension-image"
 
-// Link's default schema only declares href/target/rel/class, so a bare `style` attribute would
-// be silently dropped on every getHTML() serialization - extend it once so insertButton() below
-// can carry a fixed inline style. Plain links (setLink()) never set `style`, so they're unaffected.
+// Link's default schema drops any attribute it doesn't declare, so a bare `style` set via
+// insertButton() below would vanish on the next getHTML() - extend it to keep one.
 const CampaignLink = Link.extend({
   addAttributes() {
     return {
@@ -23,9 +22,8 @@ const CampaignLink = Link.extend({
   }
 })
 
-// Image's default schema only declares src/alt/title - no width. Email clients (notably Outlook
-// desktop) often ignore CSS width/max-width on <img> but reliably respect the legacy HTML
-// `width` attribute, so that's what the size buttons below set rather than an inline style.
+// Image's default schema has no width attribute. Uses the legacy HTML attribute, not a CSS
+// style, since Outlook desktop often ignores CSS sizing on <img> but respects the attribute.
 const ResizableImage = Image.extend({
   addAttributes() {
     return {
@@ -52,10 +50,8 @@ const buttonStyle = (color) =>
 
 const IMAGE_WIDTHS = { small: "200", medium: "400", full: "600" }
 
-// Mounts a TipTap editor and mirrors its HTML into a hidden form field on every change, so the
-// enclosing form posts the body like any other plain field - no fetch/JSON involved. StarterKit
-// is trimmed to exactly the tag set EmailCampaign's server-side sanitizer allow-lists (see
-// EmailCampaign::ALLOWED_TAGS) so nothing a user can type gets silently stripped on save.
+// Mirrors editor.getHTML() into a hidden field on every change, so the form posts the body like
+// any other plain field. Enabled marks/nodes must stay in sync with EmailCampaign::ALLOWED_TAGS.
 export default class extends Controller {
   static targets = [ "editor", "hiddenField", "fileInput", "buttonColor", "buttonDialog", "buttonLabelInput", "buttonUrlInput" ]
 
@@ -80,10 +76,8 @@ export default class extends Controller {
       onUpdate: () => this.syncHiddenField()
     })
 
-    // Dead-zone fallback: the CSS fix (.tiptap-editor-area .ProseMirror { flex: 1 }) covers most
-    // of the wrapper, but a click landing exactly on the wrapper's own padding still misses the
-    // contenteditable child. Only fire when the click target is the wrapper itself, so this never
-    // interferes with normal clicks/drags inside actual content.
+    // Dead-zone fallback for clicks landing on the wrapper's own padding, not covered by the
+    // flex-1 CSS fix. Guarded to the wrapper itself so it never fights clicks inside content.
     this.editorTarget.addEventListener("click", (event) => {
       if (event.target === this.editorTarget) this.editor.commands.focus()
     })
@@ -156,8 +150,6 @@ export default class extends Controller {
     this.editor.chain().focus().unsetColor().run()
   }
 
-  // Triggered by the "Insert button" action inside the +Button dialog (data-controller="modal"
-  // handles the dialog's own open/close; this just reads its fields, inserts, then closes it).
   insertButton() {
     const label = this.buttonLabelInputTarget.value.trim()
     const url = this.buttonUrlInputTarget.value.trim()
@@ -205,8 +197,7 @@ export default class extends Controller {
     this.editor.chain().focus().setImage({ src: url }).run()
   }
 
-  // Applies to whichever image node is currently selected (click an image in the editor first
-  // to select it, same as any other ProseMirror node selection) - a no-op if nothing is selected.
+  // Applies to whichever image node is currently selected - a no-op if none is.
   setImageSizeSmall() {
     this.editor.chain().focus().updateAttributes("image", { width: IMAGE_WIDTHS.small }).run()
   }
