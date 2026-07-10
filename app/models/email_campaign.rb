@@ -12,8 +12,8 @@ class EmailCampaign < ApplicationRecord
 
   before_save :sanitize_body_html
 
-  ALLOWED_TAGS = %w[p br strong em u a ul ol li h1 h2 h3 blockquote].freeze
-  ALLOWED_ATTRIBUTES = %w[href].freeze
+  ALLOWED_TAGS = %w[p br strong em u a ul ol li h1 h2 h3 blockquote span img].freeze
+  ALLOWED_ATTRIBUTES = %w[href style src alt].freeze
 
   # Persists the campaign and snapshots its recipient list, but sends nothing - sending is a
   # deliberate separate step (#deliver on the controller) since email, unlike Notification, can't
@@ -31,6 +31,15 @@ class EmailCampaign < ApplicationRecord
 
   def deliverable?
     draft?
+  end
+
+  # Recipient-level delivery counts for the summary cards on the show page. Note: .sent/.failed/
+  # .pending here are EmailCampaignRecipient's scopes (keyed off sent_at/failed_at), not this
+  # class's own `enum :status` scope of the same name - unambiguous since email_campaign_recipients
+  # is a different model's association, but easy to misread at a glance.
+  def recipient_counts
+    scope = email_campaign_recipients
+    { total: scope.count, sent: scope.sent.count, failed: scope.failed.count, pending: scope.pending.count }
   end
 
   private

@@ -84,8 +84,10 @@ Rails.application.routes.draw do
     resources :email_campaigns, only: [ :index, :new, :create, :show, :edit, :update, :destroy ] do
       member do
         post :deliver
+        get  :recipients
       end
     end
+    resources :email_campaign_images, only: [ :create ]
     resource :maintenance_mode, only: [ :edit, :update ], controller: "maintenance_mode" do
       post :force_logout_all
     end
