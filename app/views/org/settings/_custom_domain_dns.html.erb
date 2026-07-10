@@ -1,0 +1,17 @@
+<div class="rounded-lg bg-base-200/60 p-4 text-sm">
+  <p class="font-medium">DNS setup</p>
+  <ul class="mt-2 list-disc space-y-1.5 pl-5 text-base-content/70">
+    <li>
+      <span class="font-medium text-base-content">Subdomain</span>
+      (e.g. <code class="text-xs">app.example.com</code>): add a
+      <span class="font-medium text-base-content">CNAME</span> pointing to
+      <code class="text-xs"><%= AppHost.primary_host %></code>.
+    </li>
+    <li>
+      <span class="font-medium text-base-content">Apex / root domain</span>
+      (e.g. <code class="text-xs">example.com</code>): add an
+      <span class="font-medium text-base-content">A</span> record pointing to
+      <code class="text-xs"><%= AppHost.server_ip %></code>.
+    </li>
+  </ul>
+</div>

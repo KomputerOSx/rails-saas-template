@@ -1,0 +1,61 @@
+<div class="mt-10">
+  <h2 class="text-lg font-semibold">Custom domain</h2>
+  <p class="mt-0.5 text-sm text-base-content/60">
+    Serve a public site for this organization on your own domain. Growth plan only — one domain per organization.
+  </p>
+
+  <div class="card mt-4 border border-base-300">
+    <div class="card-body gap-4">
+      <% if Current.organization.custom_domain_allowed? %>
+        <% if Current.organization.custom_domain.present? %>
+          <div>
+            <p class="text-xs font-medium uppercase tracking-wide text-base-content/50">Current domain</p>
+            <p class="mt-1 text-sm font-medium"><%= Current.organization.custom_domain %></p>
+            <p class="mt-2 text-sm text-base-content/60">
+              SSL is issued automatically once DNS points here. Visit
+              <a href="https://<%= Current.organization.custom_domain %>" class="link link-primary" target="_blank" rel="noopener">
+                https://<%= Current.organization.custom_domain %>
+              </a>
+              after DNS propagates.
+            </p>
+          </div>
+
+          <%= render "org/settings/custom_domain_dns" %>
+
+          <% if current_user.has_permission?("app.organization.manage", organization: Current.organization) %>
+            <%= button_to "Remove domain", org_custom_domain_path, method: :delete,
+                  class: "btn btn-sm btn-error btn-outline w-fit",
+                  data: { turbo_confirm: "Remove this custom domain? SSL for it will stop working." } %>
+          <% end %>
+        <% elsif current_user.has_permission?("app.organization.manage", organization: Current.organization) %>
+          <%= form_with url: org_custom_domain_path, method: :post, class: "space-y-4" do %>
+            <div class="form-control">
+              <label class="label" for="organization_custom_domain">
+                <span class="label-text">Domain</span>
+              </label>
+              <input type="text" name="organization[custom_domain]" id="organization_custom_domain"
+                     placeholder="app.yourpharmacy.com" class="input-field w-full max-w-md"
+                     autocomplete="off" spellcheck="false">
+              <p class="mt-1.5 text-xs text-base-content/50">Use a hostname only — no https:// or path.</p>
+            </div>
+
+            <%= render "org/settings/custom_domain_dns" %>
+
+            <button type="submit" class="btn btn-sm btn-primary">Save domain</button>
+          <% end %>
+        <% else %>
+          <p class="text-sm text-base-content/60">No custom domain configured.</p>
+        <% end %>
+      <% else %>
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p class="text-sm text-base-content/60">
+            Custom domains are available on the Growth plan.
+          </p>
+          <% if current_user.has_permission?("app.billing.manage", organization: Current.organization) %>
+            <%= link_to "Upgrade to Growth", billing_path, class: "btn btn-sm btn-primary w-fit" %>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
