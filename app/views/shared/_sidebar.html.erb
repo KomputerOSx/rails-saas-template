@@ -12,12 +12,12 @@
       </button>
     </div>
 
-    <%= render "shared/sidebar_nav" %>
-
-    <div class="grow"></div>
+    <div class="sidebar-scroll min-h-0 flex-1 overflow-y-auto">
+      <%= render "shared/sidebar_nav" %>
+    </div>
 
     <!-- Footer: account menu -->
-    <div class="border-t border-base-300 p-3">
+    <div class="shrink-0 border-t border-base-300 p-3">
       <% if authenticated? %>
         <div class="dropdown dropdown-top w-full">
           <div tabindex="0" role="button" class="flex w-full cursor-pointer items-center gap-2 rounded-lg p-2 hover:bg-base-200" aria-label="Account menu">
@@ -69,12 +69,12 @@
     </button>
   </div>
 
-  <%= render "shared/sidebar_nav" %>
-
-  <div class="grow"></div>
+  <div class="sidebar-scroll min-h-0 flex-1 overflow-y-auto">
+    <%= render "shared/sidebar_nav" %>
+  </div>
 
   <!-- Footer: account menu -->
-  <div class="border-t border-base-300 p-3 group-data-[collapsed]/sidebar:p-2">
+  <div class="shrink-0 border-t border-base-300 p-3 group-data-[collapsed]/sidebar:p-2">
     <div class="dropdown dropdown-top w-full">
       <%# data-controller="tooltip" is added/removed by sidebar_controller.js, so the
           email tooltip only appears while the sidebar is collapsed (email hidden). %>
