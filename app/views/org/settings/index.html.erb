@@ -7,6 +7,19 @@
     <p class="mt-0.5 text-sm text-base-content/60">People with access to this organization.</p>
 
     <%= turbo_frame_tag "members_table" do %>
+      <%= form_with url: org_settings_path, method: :get, html: { class: "mt-4 flex flex-wrap items-end gap-2" } do %>
+        <%= hidden_field_tag :sort, @sort %>
+        <%= hidden_field_tag :direction, @direction %>
+        <div class="form-control">
+          <label class="label"><span class="label-text text-xs">Search</span></label>
+          <input type="text" name="q" value="<%= @q %>" placeholder="Email" class="input-field w-56">
+        </div>
+        <%= submit_tag "Filter", class: "btn btn-sm btn-primary" %>
+        <% if @q.present? %>
+          <%= link_to "Clear", org_settings_path(sort: @sort, direction: @direction), class: "btn btn-sm btn-ghost" %>
+        <% end %>
+      <% end %>
+
       <div class="card mt-4 border border-base-300">
         <div class="card-body p-0">
         <div class="overflow-x-auto">
@@ -15,13 +28,21 @@
             <tr class="border-b border-base-300">
               <th><%= sort_link "Member", "email", current_sort: @sort, current_dir: @direction %></th>
               <th><%= sort_link "Role",   "role",  current_sort: @sort, current_dir: @direction %></th>
-              <th class="text-right">Actions</th>
+              <% if can_manage_org_members? %>
+                <th class="text-right">Actions</th>
+              <% end %>
             </tr>
           </thead>
           <tbody>
-            <%= render partial: "org/members/membership_row", collection: @memberships, as: :membership %>
+            <%= render partial: "org/members/membership_row", collection: @memberships, as: :membership,
+                       locals: { show_actions: can_manage_org_members? } %>
           </tbody>
         </table>
+        <% if @memberships.none? %>
+          <p class="px-8 py-6 text-sm text-base-content/60">
+            <%= @q.present? ? "No members match your search." : "No members." %>
+          </p>
+        <% end %>
         </div>
         </div>
       </div>
@@ -32,4 +53,7 @@
   <% if current_user.has_permission?("app.members.invite", organization: Current.organization) %>
     <%= render "org/invitations/section", pending_invitations: @pending_invitations %>
   <% end %>
+
+  <%# ── Leave organization ── %>
+  <%= render "org/settings/leave_section" %>
 </div>

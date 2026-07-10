@@ -38,4 +38,16 @@ module ApplicationHelper
     return base_class if object.nil? || !object.respond_to?(:errors) || object.errors[field].empty?
     "#{base_class} error"
   end
+
+  def can_manage_org_members?
+    can_remove_org_members? || can_promote_org_members?
+  end
+
+  def can_remove_org_members?
+    current_user.has_permission?("app.members.remove", organization: Current.organization)
+  end
+
+  def can_promote_org_members?
+    current_user.has_permission?("app.members.promote", organization: Current.organization)
+  end
 end

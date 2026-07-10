@@ -7,7 +7,7 @@
   <fieldset class="form-control mt-4">
     <label class="label"><span class="label-text">Role</span></label>
     <%= form_with url: demote_org_member_path(membership), method: :patch,
-          html: { class: "space-y-2", data: { controller: "auto-submit", action: "turbo:submit-end->modal#closeOnSuccess" } } do %>
+          html: { class: "space-y-2", data: { turbo_frame: "_top", controller: "auto-submit", action: "turbo:submit-end->modal#closeOnSuccess" } } do %>
       <label class="flex items-center gap-2.5 cursor-pointer">
         <input type="radio" name="role" value="user" class="radio-field"
                data-action="change->auto-submit#submit"

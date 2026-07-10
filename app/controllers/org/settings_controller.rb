@@ -6,10 +6,12 @@ module Org
     def index
       skip_authorization # visible to any org member, no permission required
 
+      @q         = params[:q].to_s.strip
       @sort      = params[:sort].presence_in(SORT_COLUMNS) || "email"
       @direction = params[:direction].presence_in(SORT_DIRECTIONS) || "asc"
 
       base = Current.organization.memberships.includes(:user, :roles)
+      base = base.joins(:user).where("users.email LIKE ?", "%#{User.sanitize_sql_like(@q)}%") if @q.present?
 
       @memberships = case @sort
       when "email"

@@ -1,0 +1,24 @@
+<div class="mt-10">
+  <div class="card border border-error">
+    <div class="card-body p-0">
+      <div class="flex items-center justify-between px-8 py-4">
+        <div>
+          <p class="font-medium text-error">Leave organization</p>
+          <p class="mt-0.5 text-sm text-base-content/60">
+            Removes your access to <%= Current.organization.name %>. You can rejoin only if invited again.
+          </p>
+        </div>
+        <%= button_to leave_org_members_path, method: :delete,
+              form: { data: { turbo_frame: "_top" } },
+              data: {
+                controller: "confirm-modal",
+                action: "click->confirm-modal#confirm",
+                confirm_modal_message_value: "Leave #{Current.organization.name}?"
+              },
+              class: "btn btn-error btn-outline btn-sm shrink-0" do %>
+          Leave organization
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
