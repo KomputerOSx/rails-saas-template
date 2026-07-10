@@ -39,6 +39,19 @@
               <button type="button" class="btn btn-xs btn-ghost" data-action="click->rich-text-editor#triggerImageUpload">Image</button>
               <input type="file" accept="image/*" class="hidden"
                      data-rich-text-editor-target="fileInput" data-action="change->rich-text-editor#uploadImage">
+              <span class="text-xs text-base-content/60">size:</span>
+              <button type="button" class="btn btn-xs btn-ghost" title="Small" data-action="click->rich-text-editor#setImageSizeSmall">S</button>
+              <button type="button" class="btn btn-xs btn-ghost" title="Medium" data-action="click->rich-text-editor#setImageSizeMedium">M</button>
+              <button type="button" class="btn btn-xs btn-ghost" title="Full width" data-action="click->rich-text-editor#setImageSizeFull">L</button>
+              <button type="button" class="btn btn-xs btn-ghost" title="Original size" data-action="click->rich-text-editor#unsetImageSize">Reset</button>
+              <div class="mx-1 h-4 w-px bg-base-300"></div>
+              <select class="select-field select-xs w-auto" title="Button color" data-rich-text-editor-target="buttonColor">
+                <option value="green">Green</option>
+                <option value="blue">Blue</option>
+                <option value="red">Red</option>
+                <option value="purple">Purple</option>
+                <option value="black">Black</option>
+              </select>
               <button type="button" class="btn btn-xs btn-ghost" data-action="click->rich-text-editor#insertButton">+ Button</button>
             </div>
 

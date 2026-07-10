@@ -13,7 +13,7 @@ class EmailCampaign < ApplicationRecord
   before_save :sanitize_body_html
 
   ALLOWED_TAGS = %w[p br strong em u a ul ol li h1 h2 h3 blockquote span img].freeze
-  ALLOWED_ATTRIBUTES = %w[href style src alt].freeze
+  ALLOWED_ATTRIBUTES = %w[href style src alt width].freeze
 
   # Persists the campaign and snapshots its recipient list, but sends nothing - sending is a
   # deliberate separate step (#deliver on the controller) since email, unlike Notification, can't

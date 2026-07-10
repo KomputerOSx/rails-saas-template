@@ -97,7 +97,7 @@ this app (no fetch/JSON for the body itself).
 
 `StarterKit` is configured with `codeBlock`, `code`, `horizontalRule`, and `strike` disabled so
 the editor can't produce markup outside what `EmailCampaign`'s server-side sanitizer allow-lists
-(`p br strong em u a ul ol li h1 h2 h3 blockquote span img`, attributes `href style src alt`).
+(`p br strong em u a ul ol li h1 h2 h3 blockquote span img`, attributes `href style src alt width`).
 Sanitization happens once, in a `before_save` callback — the mailer view renders the stored
 `body_html` with `raw` on the assumption it was already cleaned at write time. Opening up `style`
 (for text color and CTA buttons) and `img` widened the attack surface slightly; Rails' Loofah-backed
@@ -121,6 +121,18 @@ periodic purge job is a roadmap item, not built. Also note: the generated URL us
 served the upload request, so an image uploaded while testing on `localhost` embeds a URL that
 won't resolve for a real external recipient — expected, resolves correctly once deployed to a real
 domain.
+
+**Image sizing** extends `Image` with a `width` attribute (`ResizableImage` in the controller) set
+via toolbar presets (S/M/L/Reset, 200/400/600px) applied to whichever image node is currently
+selected. This uses the legacy HTML `width` attribute rather than a CSS `width`/`max-width` style —
+deliberately, since email clients (notably Outlook desktop, which renders via Word's engine) often
+ignore CSS sizing on `<img>` but reliably respect the HTML attribute. No drag-handle resizing (that
+would need a custom ProseMirror NodeView) — preset sizes only, matching this feature's consistently
+minimal toolbar approach elsewhere (native color input over a swatch picker, etc.).
+
+**CTA button color** is a small toolbar `<select>` (green/blue/red/purple/black) read by
+`insertButton()` at insertion time only — it doesn't retroactively recolor a button already in the
+document, same "applies going forward" scope as the text color picker.
 
 **CTA buttons** are really just an `<a>` with a fixed inline style (real `<button>` elements don't
 render usefully in email). TipTap's `Link` mark only declares `href`/`target`/`rel`/`class` by

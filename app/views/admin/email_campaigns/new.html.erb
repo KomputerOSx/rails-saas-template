@@ -1,6 +1,15 @@
 <section class="w-full max-w-4xl">
-  <p class="text-sm font-medium text-base-content/60">Admin</p>
-  <h1 class="mt-3 text-4xl font-semibold tracking-normal">New Email Campaign</h1>
+  <div class="flex items-start justify-between">
+    <div>
+      <p class="text-sm font-medium text-base-content/60">
+        <%= link_to "Email Campaigns", admin_email_campaigns_path, class: "hover:text-base-content" %>
+        <span class="mx-1">/</span>
+        <span>New</span>
+      </p>
+      <h1 class="mt-3 text-4xl font-semibold tracking-normal">New Email Campaign</h1>
+    </div>
+    <%= link_to "Back", admin_email_campaigns_path, class: "btn btn-outline btn-sm shrink-0" %>
+  </div>
 
   <%= render "form", url: admin_email_campaigns_path, http_method: :post, submit_label: "Save draft" %>
 </section>

@@ -23,14 +23,41 @@ const CampaignLink = Link.extend({
   }
 })
 
-const BUTTON_STYLE = "display:inline-block;padding:10px 20px;background-color:#009e3c;color:#ffffff;border-radius:6px;text-decoration:none;font-weight:600;"
+// Image's default schema only declares src/alt/title - no width. Email clients (notably Outlook
+// desktop) often ignore CSS width/max-width on <img> but reliably respect the legacy HTML
+// `width` attribute, so that's what the size buttons below set rather than an inline style.
+const ResizableImage = Image.extend({
+  addAttributes() {
+    return {
+      ...this.parent(),
+      width: {
+        default: null,
+        parseHTML: element => element.getAttribute("width"),
+        renderHTML: attributes => attributes.width ? { width: attributes.width } : {}
+      }
+    }
+  }
+})
+
+const BUTTON_COLORS = {
+  green: "#009e3c",
+  blue: "#0066cc",
+  red: "#dc2626",
+  purple: "#7c3aed",
+  black: "#111111"
+}
+
+const buttonStyle = (color) =>
+  `display:inline-block;padding:10px 20px;background-color:${color};color:#ffffff;border-radius:6px;text-decoration:none;font-weight:600;`
+
+const IMAGE_WIDTHS = { small: "200", medium: "400", full: "600" }
 
 // Mounts a TipTap editor and mirrors its HTML into a hidden form field on every change, so the
 // enclosing form posts the body like any other plain field - no fetch/JSON involved. StarterKit
 // is trimmed to exactly the tag set EmailCampaign's server-side sanitizer allow-lists (see
 // EmailCampaign::ALLOWED_TAGS) so nothing a user can type gets silently stripped on save.
 export default class extends Controller {
-  static targets = [ "editor", "hiddenField", "fileInput" ]
+  static targets = [ "editor", "hiddenField", "fileInput", "buttonColor" ]
 
   connect() {
     this.editor = new Editor({
@@ -47,7 +74,7 @@ export default class extends Controller {
         CampaignLink.configure({ openOnClick: false }),
         TextStyle,
         Color,
-        Image
+        ResizableImage
       ],
       content: this.hiddenFieldTarget.value || "",
       onUpdate: () => this.syncHiddenField()
@@ -136,10 +163,12 @@ export default class extends Controller {
     const url = window.prompt("Button URL")
     if (!url) return
 
+    const color = BUTTON_COLORS[this.buttonColorTarget.value] || BUTTON_COLORS.green
+
     this.editor.chain().focus().insertContent({
       type: "text",
       text: label,
-      marks: [ { type: "link", attrs: { href: url, style: BUTTON_STYLE } } ]
+      marks: [ { type: "link", attrs: { href: url, style: buttonStyle(color) } } ]
     }).run()
   }
 
@@ -168,5 +197,23 @@ export default class extends Controller {
 
     const { url } = await response.json()
     this.editor.chain().focus().setImage({ src: url }).run()
+  }
+
+  // Applies to whichever image node is currently selected (click an image in the editor first
+  // to select it, same as any other ProseMirror node selection) - a no-op if nothing is selected.
+  setImageSizeSmall() {
+    this.editor.chain().focus().updateAttributes("image", { width: IMAGE_WIDTHS.small }).run()
+  }
+
+  setImageSizeMedium() {
+    this.editor.chain().focus().updateAttributes("image", { width: IMAGE_WIDTHS.medium }).run()
+  }
+
+  setImageSizeFull() {
+    this.editor.chain().focus().updateAttributes("image", { width: IMAGE_WIDTHS.full }).run()
+  }
+
+  unsetImageSize() {
+    this.editor.chain().focus().updateAttributes("image", { width: null }).run()
   }
 }
