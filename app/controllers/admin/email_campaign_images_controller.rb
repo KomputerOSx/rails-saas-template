@@ -2,9 +2,19 @@ module Admin
   class EmailCampaignImagesController < BaseController
     before_action { authorize :system, :manage_email_campaigns?, policy_class: SystemPolicy }
 
+    # ActiveStorage only serves a curated set of formats with Content-Disposition: inline (see
+    # ActiveStorage.content_types_allowed_inline) - anything else gets forced to :attachment, which
+    # browsers/mail clients refuse to render as <img> (a broken-image icon, not a download prompt,
+    # since the request is coming from an <img src>). image/* alone let through formats like HEIC
+    # (common for iPhone photos) or SVG that either aren't inline-served or aren't renderable as a
+    # plain <img> everywhere - restrict to the exact set Rails itself curates as web-safe.
+    ALLOWED_CONTENT_TYPES = ActiveStorage.web_image_content_types
+
     def create
       file = params.require(:file)
-      raise ActionController::ParameterMissing, :file unless file.content_type.to_s.start_with?("image/")
+      unless ALLOWED_CONTENT_TYPES.include?(file.content_type.to_s)
+        return render json: { error: "Please upload a PNG, JPEG, GIF, or WebP image." }, status: :unprocessable_entity
+      end
 
       blob = ActiveStorage::Blob.create_and_upload!(
         io: file.to_io,
