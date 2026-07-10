@@ -108,6 +108,7 @@ permissions:
   system.roles.manage: "View/manage roles and permissions"
   system.audit_logs.view: "View audit logs"
   system.billing.manage: "Manage platform-wide billing (price migrations, grandfathering)"
+  system.email_campaigns.manage: "Compose and send platform-wide email campaigns"
   app.members.invite: "Invite people to the organization"
   app.members.remove: "Remove members from the organization"
   app.members.promote: "Promote/demote members between admin and user"
@@ -133,6 +134,10 @@ Permission keys must match `\A[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+\z` (dot-separa
 |------|-------------|
 | `system_admin` (permanent) | All `system.*` permissions |
 | `system_user` (permanent) | `system.users.manage`, `system.roles.manage` |
+
+`system.email_campaigns.manage` is granted to `system_admin` only — mass-emailing every platform
+user is high-blast-radius enough to sit alongside `system.billing.manage`, which `system_user`
+also lacks. See `docs/plans/email-campaigns.md` for the feature this permission gates.
 
 ---
 

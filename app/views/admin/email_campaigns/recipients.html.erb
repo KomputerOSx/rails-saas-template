@@ -1,0 +1,50 @@
+<section class="w-full max-w-4xl">
+  <div class="flex items-start justify-between">
+    <div>
+      <p class="text-sm font-medium text-base-content/60">
+        <%= link_to "Email Campaigns", admin_email_campaigns_path, class: "hover:text-base-content" %>
+        <span class="mx-1">/</span>
+        <%= link_to @email_campaign.subject, admin_email_campaign_path(@email_campaign), class: "hover:text-base-content" %>
+        <span class="mx-1">/</span>
+        <span>Recipients</span>
+      </p>
+      <h1 class="mt-3 text-4xl font-semibold tracking-normal">Recipients</h1>
+    </div>
+    <%= link_to "Back", admin_email_campaign_path(@email_campaign), class: "btn btn-outline btn-sm shrink-0" %>
+  </div>
+
+  <div class="mt-8">
+    <div class="card border border-base-300">
+      <div class="card-body p-0">
+        <div class="overflow-x-auto">
+          <table class="table table-sm">
+            <thead class="text-sm font-semibold text-base-content bg-base-200">
+              <tr class="border-b border-base-300">
+                <th>User</th>
+                <th>Status</th>
+                <th>Details</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @email_campaign_recipients.each do |recipient| %>
+                <tr class="hover:bg-base-200">
+                  <td><%= recipient.user.email %></td>
+                  <td>
+                    <% if recipient.sent_at? %>
+                      <span class="badge badge-success badge-sm">Sent</span>
+                    <% elsif recipient.failed_at? %>
+                      <span class="badge badge-error badge-sm">Failed</span>
+                    <% else %>
+                      <span class="badge badge-neutral badge-sm">Pending</span>
+                    <% end %>
+                  </td>
+                  <td class="text-base-content/60 text-xs"><%= recipient.error_message %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

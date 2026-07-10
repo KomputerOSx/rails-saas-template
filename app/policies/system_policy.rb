@@ -29,4 +29,8 @@ class SystemPolicy < ApplicationPolicy
   def manage_billing?
     user&.has_permission?("system.billing.manage") || false
   end
+
+  def manage_email_campaigns?
+    user&.has_permission?("system.email_campaigns.manage") || false
+  end
 end

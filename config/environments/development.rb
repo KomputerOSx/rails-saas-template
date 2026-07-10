@@ -31,14 +31,31 @@ Rails.application.configure do
   # Store uploaded files on the local file system (see config/storage.yml for options).
   config.active_storage.service = :local
 
-  # Don't care if the mailer can't send.
-  config.action_mailer.raise_delivery_errors = false
+  # Raise delivery errors so a broken SMTP setup is visible rather than silent.
+  config.action_mailer.raise_delivery_errors = true
 
   # Make template changes take effect immediately.
   config.action_mailer.perform_caching = false
 
-  # Set localhost to be used by links generated in mailer templates.
-  config.action_mailer.default_url_options = { host: "localhost", port: 3000 }
+  # Set localhost to be used by links generated in mailer templates. Override with APP_HOST (e.g.
+  # a public tunnel URL) to test real delivery: APP_HOST=abc123.ngrok-free.app bin/dev
+  config.action_mailer.default_url_options = if ENV["APP_HOST"]
+    { host: ENV["APP_HOST"], protocol: ENV.fetch("APP_PROTOCOL", "https") }
+  else
+    { host: "localhost", port: 3000 }
+  end
+
+  # Azure Communication Services SMTP relay - see config/credentials.example for the
+  # azure_email credentials this reads.
+  config.action_mailer.smtp_settings = {
+    address:              "smtp.azurecomm.net",
+    port:                 587,
+    domain:               "rxterminal.co.uk",
+    user_name:            Rails.application.credentials.dig(:azure_email, :smtp_username),
+    password:             Rails.application.credentials.dig(:azure_email, :smtp_password),
+    authentication:       :login,
+    enable_starttls_auto: true
+  }
 
   # Print deprecation notices to the Rails logger.
   config.active_support.deprecation = :log

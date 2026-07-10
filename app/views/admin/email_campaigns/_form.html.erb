@@ -1,0 +1,180 @@
+<%= form_with url: url, method: http_method, data: { controller: "notification-form" } do %>
+  <div class="mt-8 grid grid-cols-1 gap-8">
+
+    <%# --- Message Card --- %>
+    <div>
+      <div class="form-control">
+        <h2 class="text-lg font-semibold mb-2">Subject</h2>
+        <%= text_field_tag "email_campaign[subject]", @email_campaign.subject, class: "input-field w-full", required: true %>
+      </div>
+
+      <div class="form-control mt-4" data-controller="rich-text-editor">
+        <h2 class="text-lg font-semibold mb-2">Body</h2>
+
+        <div class="flex flex-wrap items-center gap-x-1 gap-y-1.5 rounded-t-lg border border-base-300 bg-base-200 p-1.5">
+          <div class="flex items-center gap-1">
+            <button type="button" class="btn btn-xs btn-ghost font-bold" title="Bold" data-action="click->rich-text-editor#toggleBold">B</button>
+            <button type="button" class="btn btn-xs btn-ghost italic" title="Italic" data-action="click->rich-text-editor#toggleItalic">I</button>
+            <button type="button" class="btn btn-xs btn-ghost underline" title="Underline" data-action="click->rich-text-editor#toggleUnderline">U</button>
+          </div>
+          <div class="mx-1 h-4 w-px bg-base-300"></div>
+          <div class="flex items-center gap-1">
+            <button type="button" class="btn btn-xs btn-ghost" data-action="click->rich-text-editor#toggleH1">H1</button>
+            <button type="button" class="btn btn-xs btn-ghost" data-action="click->rich-text-editor#toggleH2">H2</button>
+            <button type="button" class="btn btn-xs btn-ghost" data-action="click->rich-text-editor#toggleH3">H3</button>
+          </div>
+          <div class="mx-1 h-4 w-px bg-base-300"></div>
+          <div class="flex items-center gap-1">
+            <button type="button" class="btn btn-xs btn-ghost" title="Bullet list" data-action="click->rich-text-editor#toggleBulletList">• List</button>
+            <button type="button" class="btn btn-xs btn-ghost" title="Numbered list" data-action="click->rich-text-editor#toggleOrderedList">1. List</button>
+            <button type="button" class="btn btn-xs btn-ghost" title="Quote" data-action="click->rich-text-editor#toggleBlockquote">Quote</button>
+          </div>
+          <div class="mx-1 h-4 w-px bg-base-300"></div>
+          <div class="flex items-center gap-1">
+            <button type="button" class="btn btn-xs btn-ghost" title="Link" data-action="click->rich-text-editor#setLink">Link</button>
+            <button type="button" class="btn btn-xs btn-ghost" title="Remove link" data-action="click->rich-text-editor#unsetLink">Unlink</button>
+          </div>
+          <div class="mx-1 h-4 w-px bg-base-300"></div>
+          <div class="flex items-center gap-1">
+            <input type="color" value="#000000" title="Text color" class="h-6 w-6 cursor-pointer rounded border border-base-300 bg-transparent p-0"
+                    data-action="input->rich-text-editor#setColor">
+            <button type="button" class="btn btn-xs btn-ghost" title="Clear text color" data-action="click->rich-text-editor#unsetColor">Clear</button>
+          </div>
+          <div class="mx-1 h-4 w-px bg-base-300"></div>
+          <div class="flex items-center gap-1">
+            <button type="button" class="btn btn-xs btn-ghost" title="Insert image" data-action="click->rich-text-editor#triggerImageUpload">Image</button>
+            <input type="file" accept="image/png,image/jpeg,image/gif,image/webp" class="hidden"
+                    data-rich-text-editor-target="fileInput" data-action="change->rich-text-editor#uploadImage">
+            <button type="button" class="btn btn-xs btn-ghost" title="Small" data-action="click->rich-text-editor#setImageSizeSmall">S</button>
+            <button type="button" class="btn btn-xs btn-ghost" title="Medium" data-action="click->rich-text-editor#setImageSizeMedium">M</button>
+            <button type="button" class="btn btn-xs btn-ghost" title="Full width" data-action="click->rich-text-editor#setImageSizeFull">L</button>
+            <button type="button" class="btn btn-xs btn-ghost" title="Original size" data-action="click->rich-text-editor#unsetImageSize">Reset</button>
+          </div>
+          <div class="mx-1 h-4 w-px bg-base-300"></div>
+          <div data-controller="modal">
+            <button type="button" class="btn btn-xs btn-ghost" data-action="click->modal#open">+ Button</button>
+
+            <dialog data-modal-target="dialog" data-rich-text-editor-target="buttonDialog" class="modal">
+              <div class="modal-box max-w-sm">
+                <form method="dialog"><button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" data-action="click->modal#close">✕</button></form>
+
+                <h3 class="font-bold text-lg mb-4">Insert button</h3>
+
+                <div class="space-y-4">
+                  <div class="form-control">
+                    <label class="label"><span class="label-text">Button text</span></label>
+                    <input type="text" class="input-field w-full" placeholder="Shop now"
+                            data-rich-text-editor-target="buttonLabelInput">
+                  </div>
+                  <div class="form-control">
+                    <label class="label"><span class="label-text">URL</span></label>
+                    <input type="text" class="input-field w-full" placeholder="https://example.com"
+                            data-rich-text-editor-target="buttonUrlInput">
+                  </div>
+                  <div class="form-control">
+                    <label class="label"><span class="label-text">Color</span></label>
+                    <select class="select-field w-full" data-rich-text-editor-target="buttonColor">
+                      <option value="green">Green</option>
+                      <option value="blue">Blue</option>
+                      <option value="red">Red</option>
+                      <option value="purple">Purple</option>
+                      <option value="black">Black</option>
+                    </select>
+                  </div>
+                  <div class="form-control mt-2">
+                    <button type="button" class="btn btn-primary w-full" data-action="click->rich-text-editor#insertButton">Insert button</button>
+                  </div>
+                </div>
+              </div>
+              <form method="dialog" class="modal-backdrop"><button>close</button></form>
+            </dialog>
+          </div>
+        </div>
+
+        <div class="tiptap-editor-area email-body-content min-h-48 w-full rounded-b-lg border border-t-0 border-base-300 bg-base-100 px-3 py-2"
+              data-rich-text-editor-target="editor"></div>
+
+        <%= hidden_field_tag "email_campaign[body_html]", @email_campaign.body_html, data: { rich_text_editor_target: "hiddenField" } %>
+      </div>
+    </div>
+
+    <%# --- Audience Card --- %>
+    <div>
+      <h2 class="text-lg font-semibold">Audience</h2>
+      <p class="mt-0.5 text-sm text-base-content/60">Who should receive this?</p>
+
+      <div class="card mt-4 border border-base-300">
+        <div class="card-body">
+          <div class="form-control">
+            <label class="label cursor-pointer justify-start gap-3">
+              <%= check_box_tag "email_campaign[send_to_all]", "1", false, class: "checkbox-field",
+                    data: { action: "change->notification-form#toggleTable", notification_form_target: "sendToAll" } %>
+              <div>
+                <span class="label-text font-medium">Send to all users</span>
+                <p class="text-xs text-base-content/60 mt-0.5">Every registered user will receive this email.</p>
+              </div>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <%# --- Specific Users Table --- %>
+      <div class="mt-6" data-notification-form-target="tableContainer" data-controller="table-selection">
+        <div class="flex items-end justify-between gap-4 mb-4">
+          <div>
+            <h3 class="font-semibold">Select specific users</h3>
+          </div>
+          <div class="form-control w-full max-w-xs">
+            <input type="text" placeholder="Search users by name or email..."
+                   class="input-field input-sm"
+                   data-table-selection-target="searchInput"
+                   data-action="input->table-selection#filter">
+          </div>
+        </div>
+
+        <div class="card border border-base-300">
+          <div class="card-body p-0">
+            <div class="overflow-x-auto max-h-96">
+              <table class="table table-sm">
+                <thead class="bg-base-200 text-sm font-semibold text-base-content sticky top-0 z-10">
+                  <tr class="border-b border-base-300">
+                    <th class="w-12 text-center bg-base-200">
+                      <input type="checkbox" class="checkbox-field"
+                             data-table-selection-target="selectAll"
+                             data-action="change->table-selection#toggleAll">
+                    </th>
+                    <th class="bg-base-200">User</th>
+                    <th class="bg-base-200">Joined</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-base-300">
+                  <% @users.each do |user| %>
+                    <tr class="hover:bg-base-200" data-table-selection-target="row">
+                      <td class="text-center">
+                        <input type="checkbox" name="email_campaign[user_ids][]" value="<%= user.id %>"
+                               class="checkbox-field"
+                               <%= "checked" if @selected_user_ids&.include?(user.id) %>
+                               data-table-selection-target="checkbox"
+                               data-action="change->table-selection#updateSelectAllState">
+                      </td>
+                      <td>
+                        <div class="font-medium"><%= user&.first_name.present? ? "#{user.first_name} #{user.last_name}" : "Unnamed User" %></div>
+                        <div class="text-xs text-base-content/60"><%= user.email %></div>
+                      </td>
+                      <td class="text-base-content/60"><%= user.created_at.to_date.to_fs(:long) %></td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-4">
+      <%= submit_tag submit_label, class: "btn btn-primary", data: { controller: "loading-button" } %>
+    </div>
+
+  </div>
+<% end %>

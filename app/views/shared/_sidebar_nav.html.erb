@@ -36,6 +36,7 @@
     admin_items << { icon: "history",       label: "Audit Logs",  path: admin_audit_logs_path }  if current_user.has_permission?("system.audit_logs.view")
     admin_items << { icon: "payments",      label: "Price Migrations", path: new_admin_price_migration_path } if current_user.has_permission?("system.billing.manage")
     admin_items << { icon: "campaign",      label: "Notifications", path: admin_notifications_path }
+    admin_items << { icon: "mail",          label: "Email Campaigns", path: admin_email_campaigns_path } if current_user.has_permission?("system.email_campaigns.manage")
     admin_items << { icon: "engineering",   label: "Maintenance", path: edit_admin_maintenance_mode_path }
 
     sections << { title: "Admin", items: admin_items }

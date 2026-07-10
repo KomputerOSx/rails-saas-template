@@ -403,6 +403,60 @@
   justify-content: flex-end; /* Content at bottom, top gets cut */
 }
 
+/* Email campaign rich text - shared by the TipTap editor (.tiptap-editor-area) and the sent-
+   campaign preview (.email-body-content), so composing and previewing look the same. */
+.email-body-content p {
+  @apply my-2;
+}
+
+.email-body-content h1 {
+  @apply mt-4 mb-2 text-2xl font-semibold;
+}
+
+.email-body-content h2 {
+  @apply mt-4 mb-2 text-xl font-semibold;
+}
+
+.email-body-content h3 {
+  @apply mt-3 mb-2 text-lg font-semibold;
+}
+
+.email-body-content ul {
+  @apply my-2 ml-5 list-disc;
+}
+
+.email-body-content ol {
+  @apply my-2 ml-5 list-decimal;
+}
+
+.email-body-content blockquote {
+  @apply my-2 border-l-2 border-base-300 pl-3 text-base-content/70;
+}
+
+.email-body-content a {
+  @apply text-primary underline;
+}
+
+/* flex-1 makes the contenteditable child fill the wrapper's min-height, not just its own content -
+   otherwise clicks in the empty space below short content land on the wrapper and do nothing. */
+.tiptap-editor-area {
+  @apply flex flex-col cursor-text;
+}
+
+.tiptap-editor-area .ProseMirror {
+  @apply flex-1 outline-hidden;
+}
+
+.tiptap-editor-area:focus-within {
+  @apply ring-2 ring-primary;
+}
+
+/* ProseMirror auto-toggles this on a selected node's element (e.g. a clicked image) - just styling
+   the class it already applies. */
+.tiptap-editor-area .ProseMirror-selectednode {
+  @apply outline-2 outline-primary outline-offset-2 rounded-sm;
+}
+
 /* Hidden toasts (beyond 3rd) */
 .toast-item[data-expanded="false"][data-visible="false"] {
   --toast-opacity: 0;

@@ -1,0 +1,52 @@
+<section class="w-full max-w-5xl">
+  <p class="text-sm font-medium text-base-content/60">Admin</p>
+  <h1 class="mt-3 text-4xl font-semibold tracking-normal">Email Campaigns</h1>
+
+  <div class="mt-4">
+    <%= link_to "New campaign", new_admin_email_campaign_path, class: "btn btn-primary btn-sm" %>
+  </div>
+
+  <%= form_with url: admin_email_campaigns_path, method: :get, html: { class: "mt-6 flex flex-wrap items-end gap-2" } do %>
+    <div class="form-control">
+      <label class="label"><span class="label-text text-xs">Search</span></label>
+      <input type="text" name="q" value="<%= @q %>" placeholder="Subject" class="input-field w-56">
+    </div>
+    <div class="form-control">
+      <label class="label"><span class="label-text text-xs">Status</span></label>
+      <select name="status" class="select-field">
+        <option value="">All statuses</option>
+        <option value="draft" <%= "selected" if @status == "draft" %>>Draft</option>
+        <option value="sending" <%= "selected" if @status == "sending" %>>Sending</option>
+        <option value="sent" <%= "selected" if @status == "sent" %>>Sent</option>
+      </select>
+    </div>
+    <%= submit_tag "Filter", class: "btn btn-sm btn-primary" %>
+    <% if @q.present? || @status.present? %>
+      <%= link_to "Clear", admin_email_campaigns_path, class: "btn btn-sm btn-ghost" %>
+    <% end %>
+  <% end %>
+
+  <div class="card mt-4 border border-base-300">
+    <div class="card-body p-0">
+      <div class="overflow-x-auto">
+        <table class="table table-sm">
+          <thead class="text-sm font-semibold text-base-content bg-base-200">
+            <tr class="border-b border-base-300">
+              <th>Subject</th>
+              <th>Created by</th>
+              <th>Recipients</th>
+              <th>Status</th>
+              <th>Created at</th>
+            </tr>
+          </thead>
+          <tbody>
+            <%= render partial: "admin/email_campaigns/row", collection: @email_campaigns, as: :email_campaign %>
+          </tbody>
+        </table>
+        <% if @email_campaigns.none? %>
+          <p class="px-8 py-6 text-sm text-base-content/60">No campaigns match your search.</p>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</section>
