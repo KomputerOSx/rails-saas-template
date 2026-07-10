@@ -58,19 +58,19 @@ Rails.application.configure do
   # config.action_mailer.raise_delivery_errors = false
 
   # Set host to be used by links generated in mailer templates.
-  config.action_mailer.default_url_options = { host: "rxterminal.co.uk" }
+  config.action_mailer.default_url_options = { host: "domain.com" }
 
   # Azure Communication Services SMTP relay - see config/credentials.example for the
   # azure_email credentials this reads.
-  config.action_mailer.smtp_settings = {
-    address:              "smtp.azurecomm.net",
-    port:                 587,
-    domain:               "rxterminal.co.uk",
-    user_name:            Rails.application.credentials.dig(:azure_email, :smtp_username),
-    password:             Rails.application.credentials.dig(:azure_email, :smtp_password),
-    authentication:       :login,
-    enable_starttls_auto: true
-  }
+  # config.action_mailer.smtp_settings = {
+  #   address:              "smtp.azurecomm.net",
+  #   port:                 587,
+  #   domain:               "domain.com",
+  #   user_name:            Rails.application.credentials.dig(:azure_email, :smtp_username),
+  #   password:             Rails.application.credentials.dig(:azure_email, :smtp_password),
+  #   authentication:       :login,
+  #   enable_starttls_auto: true
+  # }
 
   # Enable locale fallbacks for I18n (makes lookups for any locale fall back to
   # the I18n.default_locale when a translation cannot be found).
