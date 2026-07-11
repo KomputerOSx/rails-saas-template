@@ -6,6 +6,11 @@ class EmailCampaign < ApplicationRecord
   MAX_WIDTHS = { narrow: 480, standard: 600, wide: 720 }.freeze
   HEX_COLOR_REGEX = /\A#[0-9a-fA-F]{6}\z/
 
+  # Images are sent as inline (CID) attachments (see EmailCampaignMailer), so their raw bytes go
+  # out with every recipient's copy. Budgeted well under the Azure SMTP relay's 10 MB message cap
+  # to leave headroom for base64's ~33% inflation plus the HTML/MIME overhead around them.
+  MAX_TOTAL_INLINE_IMAGE_BYTES = 6.megabytes
+
   validates :subject, presence: true
   validates :body_html, presence: true
   validates :max_width, inclusion: { in: MAX_WIDTHS.values }
@@ -57,6 +62,14 @@ class EmailCampaign < ApplicationRecord
 
   def referenced_image_blobs
     referenced_image_blobs_by_signed_id.values
+  end
+
+  def referenced_images_total_bytes
+    referenced_image_blobs.sum(&:byte_size)
+  end
+
+  def images_too_large_to_send?
+    referenced_images_total_bytes > MAX_TOTAL_INLINE_IMAGE_BYTES
   end
 
   def body_html_with_cid_images(cid_by_signed_id)

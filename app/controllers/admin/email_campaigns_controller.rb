@@ -86,6 +86,14 @@ module Admin
     end
 
     def deliver
+      if @email_campaign.images_too_large_to_send?
+        total_mb = (@email_campaign.referenced_images_total_bytes / 1.megabyte.to_f).round(1)
+        max_mb = EmailCampaign::MAX_TOTAL_INLINE_IMAGE_BYTES / 1.megabyte
+        return redirect_to admin_email_campaign_path(@email_campaign),
+          alert: "This campaign's images total #{total_mb} MB - over the #{max_mb} MB limit. " \
+                 "Images are embedded directly in every recipient's email, so remove or shrink some before sending."
+      end
+
       recipient_count = @email_campaign.email_campaign_recipients.count
       @email_campaign.update!(status: :sending)
       SendEmailCampaignJob.perform_later(@email_campaign.id)

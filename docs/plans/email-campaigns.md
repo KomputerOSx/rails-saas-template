@@ -114,6 +114,19 @@ and cached), so a large image on a large campaign multiplies SMTP payload size â
 current scale (internal broadcast tool, not a marketing list); revisit if campaigns start recurring
 at real marketing-list scale.
 
+There's a second, sharper version of this same trade-off: SMTP relays (Azure Communication
+Services included) cap the size of a **single** message, independent of recipient count - Azure's
+limit is 10 MB per message, and base64 (how MIME encodes binary attachments) inflates raw bytes by
+~33%, so the *referenced images' combined raw size*, not their sent size, is what has to stay under
+budget. This was hit in practice (`501 5.6.0 Email payload must be less than 10 MB`), and because
+`SendEmailCampaignJob` rescues per-recipient and always flips the campaign to `sent` once every
+recipient's been attempted (see below), the failure mode was silent from the UI's perspective - the
+campaign showed as sent while every single recipient had actually failed. Two guards now exist:
+`Admin::EmailCampaignImagesController::MAX_FILE_SIZE` caps a single upload at 5 MB, and
+`EmailCampaign#images_too_large_to_send?` (checked in `Admin::EmailCampaignsController#deliver`,
+budget `EmailCampaign::MAX_TOTAL_INLINE_IMAGE_BYTES` = 6 MB raw) blocks the send outright with a
+clear flash instead of enqueueing a batch that's guaranteed to fail for every recipient.
+
 ## 6. Editor
 
 The rich text editor is [TipTap](https://tiptap.dev) (ProseMirror-based), chosen over

@@ -52,9 +52,29 @@
             <button type="button" class="btn btn-xs btn-ghost" title="Quote" data-action="click->rich-text-editor#toggleBlockquote">Quote</button>
           </div>
           <div class="mx-1 h-4 w-px bg-base-300"></div>
-          <div class="flex items-center gap-1">
-            <button type="button" class="btn btn-xs btn-ghost" title="Link" data-action="click->rich-text-editor#setLink">Link</button>
+          <div class="flex items-center gap-1" data-controller="modal">
+            <button type="button" class="btn btn-xs btn-ghost" title="Link" data-action="click->rich-text-editor#openLinkDialog">Link</button>
             <button type="button" class="btn btn-xs btn-ghost" title="Remove link" data-action="click->rich-text-editor#unsetLink">Unlink</button>
+
+            <dialog data-modal-target="dialog" data-rich-text-editor-target="linkDialog" class="modal">
+              <div class="modal-box max-w-sm">
+                <form method="dialog"><button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" data-action="click->modal#close">✕</button></form>
+
+                <h3 class="font-bold text-lg mb-4">Insert link</h3>
+
+                <div class="space-y-4">
+                  <div class="form-control">
+                    <label class="label"><span class="label-text">URL</span></label>
+                    <input type="text" class="input-field w-full" placeholder="https://example.com"
+                            data-rich-text-editor-target="linkUrlInput">
+                  </div>
+                  <div class="form-control mt-2">
+                    <button type="button" class="btn btn-primary w-full" data-action="click->rich-text-editor#insertLink">Insert link</button>
+                  </div>
+                </div>
+              </div>
+              <form method="dialog" class="modal-backdrop"><button>close</button></form>
+            </dialog>
           </div>
           <div class="mx-1 h-4 w-px bg-base-300"></div>
           <div class="flex items-center gap-1">
