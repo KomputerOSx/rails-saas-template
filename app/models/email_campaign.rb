@@ -18,6 +18,12 @@ class EmailCampaign < ApplicationRecord
   validates :fg_color, format: { with: HEX_COLOR_REGEX }
 
   enum :status, { draft: "draft", sending: "sending", sent: "sent" }, default: "draft"
+  enum :category, { marketing: "marketing", product_updates: "product_updates", important: "important" },
+       default: "marketing"
+
+  # Categories a user can opt out of. "important" is deliberately excluded - always delivered,
+  # never shown in the unsubscribe/preference-center UI, never checked against user preferences.
+  OPTIONAL_CATEGORIES = categories.keys - [ "important" ]
 
   scope :recent, -> { order(created_at: :desc) }
 
@@ -29,7 +35,7 @@ class EmailCampaign < ApplicationRecord
   BLOB_REDIRECT_URL_REGEX = %r{https?://[^\s"']*/rails/active_storage/blobs/redirect/([^/\s"']+)/[^\s"']*}
 
   # Snapshots recipients but sends nothing - sending is a deliberate separate step (see #deliver).
-  def self.create_draft!(subject:, body_html:, to:, created_by: nil, max_width: nil, bg_color: nil, fg_color: nil)
+  def self.create_draft!(subject:, body_html:, to:, created_by: nil, max_width: nil, bg_color: nil, fg_color: nil, category: nil)
     recipients = Array(to.respond_to?(:find_each) ? to.to_a : to).uniq
     raise ArgumentError, "no recipients given" if recipients.empty?
 
@@ -37,6 +43,7 @@ class EmailCampaign < ApplicationRecord
     attrs[:max_width] = max_width if max_width.present?
     attrs[:bg_color] = bg_color if bg_color.present?
     attrs[:fg_color] = fg_color if fg_color.present?
+    attrs[:category] = category if category.present?
 
     transaction do
       campaign = create!(attrs)
@@ -49,10 +56,11 @@ class EmailCampaign < ApplicationRecord
     draft?
   end
 
-  # .sent/.failed/.pending are EmailCampaignRecipient's scopes, not this class's status enum scope.
+  # .sent/.failed/.skipped/.pending are EmailCampaignRecipient's scopes, not this class's status enum scope.
   def recipient_counts
     scope = email_campaign_recipients
-    { total: scope.count, sent: scope.sent.count, failed: scope.failed.count, pending: scope.pending.count }
+    { total: scope.count, sent: scope.sent.count, failed: scope.failed.count,
+      skipped: scope.skipped.count, pending: scope.pending.count }
   end
 
   def referenced_image_blobs_by_signed_id

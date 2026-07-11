@@ -11,8 +11,9 @@ explicitly **not** built yet.
 - [4. Composing and sending](#4-composing-and-sending)
 - [5. Delivery mechanism](#5-delivery-mechanism)
 - [6. Editor](#6-editor)
-- [7. Known limitations (MVP)](#7-known-limitations-mvp)
-- [8. Roadmap (not built yet)](#8-roadmap-not-built-yet)
+- [7. Email preferences & unsubscribe](#7-email-preferences--unsubscribe)
+- [8. Known limitations (MVP)](#8-known-limitations-mvp)
+- [9. Roadmap (not built yet)](#9-roadmap-not-built-yet)
 
 ---
 
@@ -36,8 +37,9 @@ EmailCampaign ──< EmailCampaignRecipient >── User
 
 | Table | Purpose |
 |-------|---------|
-| `email_campaigns` | `subject`, `body_html` (sanitized), `status` (`draft`/`sending`/`sent`), `created_by`, `sent_at` |
-| `email_campaign_recipients` | Per-recipient delivery state: `sent_at`, `failed_at`, `error_message` |
+| `email_campaigns` | `subject`, `body_html` (sanitized), `status` (`draft`/`sending`/`sent`), `category` (`marketing`/`product_updates`/`important` — see §7), `max_width`/`bg_color`/`fg_color`, `created_by`, `sent_at` |
+| `email_campaign_recipients` | Per-recipient delivery state: `sent_at`, `failed_at`, `skipped_at` (recipient had opted out of this campaign's category — see §7), `error_message` |
+| `users.email_preferences` | Not a separate table — a `json` column on `users`, keyed by category string. See §7. |
 
 A campaign starts as `draft` (created, recipients snapshotted, nothing sent). `deliver` flips it
 to `sending` and enqueues delivery; the job flips it to `sent` once every recipient has been
@@ -279,13 +281,82 @@ dependency across two separately-pinned packages). If it doesn't hold up, fall b
 single pre-bundled ESM file into `vendor/javascript/` (built once via a local `esbuild` step) and
 pin that locally instead, same as `turbo.min.js`/`stimulus.min.js`.
 
-## 7. Known limitations (MVP)
+## 7. Email preferences & unsubscribe
+
+Every campaign has a `category` (`EmailCampaign` enum: `marketing` / `product_updates` /
+`important`, default `marketing`). `EmailCampaign::OPTIONAL_CATEGORIES` (`categories.keys -
+["important"]`) is the single list every other piece of this feature iterates over — the admin
+compose form's type selector, the user-facing preference checkboxes, the send-time skip check — so
+adding a fourth category later is one enum entry, nothing else to touch. `important` is deliberately
+excluded everywhere: always delivered, never shown as something a user can opt out of, no
+`List-Unsubscribe` header, no link in the footer.
+
+**Storage**: `users.email_preferences` is a `json` column, a hash keyed by category string.
+Semantics are deliberately "absent key = subscribed" (`false` = opted out, no other values used) —
+`User#subscribed_to_email_category?`/`#unsubscribe_from_email_category!`/
+`#resubscribe_to_email_category!` (`app/models/user.rb`) encode this. This means a newly-added
+category needs **zero backfill**: every existing user is implicitly subscribed to a category they've
+never expressed an opinion on, since their hash simply has no key for it yet.
+
+**Send-time enforcement**: `SendEmailCampaignJob` checks `!campaign.important? &&
+!recipient.user.subscribed_to_email_category?(campaign.category)` before attempting delivery: if
+true, `recipient.mark_skipped!` and move on, no mailer call at all. `skipped_at` is a third terminal
+state on `EmailCampaignRecipient`, distinct from `sent_at`/`failed_at` — an opt-out isn't a delivery
+failure and shouldn't count against failure-rate numbers. `recipient_counts` and the `show`/
+`recipients` admin views surface it separately ("Skipped (unsubscribed)").
+
+**The unsubscribe link**: `User#signed_id(purpose: :email_unsubscribe, expires_in: nil)` — no new
+token table. This is a deliberate deviation from how this app's other emailed-link flows work
+(`PasswordResetToken`, `OrganizationInvitation` both use a dedicated digest table with `expires_at`
+and single-use semantics). An unsubscribe link should keep working indefinitely (expiring it would be
+actively bad), and flipping a preference is idempotent/replayable in a way redeeming a password
+reset isn't — so `signed_id`'s built-in non-expiring, stateless verification is the better fit, not
+an inferior shortcut. Trade-off, stated plainly: because the token isn't stored/revocable, a leaked
+link (forwarded email, shared computer, a corporate link-scanning proxy) lets whoever has it flip
+that user's category preferences indefinitely. Accepted because the blast radius is "which marketing
+emails you get," not account access — and `EmailPreferencesController`'s pages show nothing else
+about the account (no name, no other settings) to keep that blast radius narrow.
+
+**`EmailPreferencesController`** (`app/controllers/email_preferences_controller.rb`, public,
+`allow_unauthenticated_access`, mirrors the existing `get "invitations/:token"` convention):
+- `GET /email_preferences/:token` — never mutates. Corporate email security gateways pre-fetch/scan
+  links in incoming mail; a mutating GET would cause accidental mass-unsubscribes across every
+  recipient of every campaign the moment it's sent. Renders checkboxes for each
+  `OPTIONAL_CATEGORIES`, current state pre-filled, the category from `?category=` (whitelisted
+  against `OPTIONAL_CATEGORIES`, never trusted blindly) called out as the one that was clicked.
+- `PATCH /email_preferences/:token` — that page's own form submission. Same "unauthenticated but
+  same-request CSRF token" pattern `PasswordResetsController#update` already uses — the token
+  embedded in the page it just rendered is valid, so this needs no special CSRF handling.
+- `POST /email_preferences/:token/one_click` — the [RFC 8058](https://www.rfc-editor.org/rfc/rfc8058)
+  `List-Unsubscribe-Post` target: what Gmail/Outlook/Yahoo's native "Unsubscribe" button next to the
+  sender name actually calls, server-to-server, with **no CSRF token or cookies at all**. Without
+  `skip_forgery_protection only: :one_click` on this controller (this app's `ApplicationController`
+  otherwise has zero CSRF carve-outs anywhere), every native-button unsubscribe would 422. Safe to
+  exempt because RFC 8058 defines this exact endpoint to be a no-confirmation, side-effect-bearing
+  POST by design — unlike the bare-GET case above, this one *is* meant to mutate on a single hit.
+- `EmailCampaignMailer#campaign` sets `List-Unsubscribe`/`List-Unsubscribe-Post` headers pointing at
+  the one-click endpoint, and passes the (non-`important`) preference-center URL into the footer
+  partial as an explicit `unsubscribe_url:` local — not a shared instance variable — so the
+  dependency between what the mailer computes and what the footer renders is visible at the render
+  call site, not implicit shared state between two otherwise-unrelated controllers (the mailer and
+  `Admin::EmailCampaignsController#show`'s preview, which always passes `unsubscribe_url: nil`).
+
+**Profile page**: logged-in users manage the same preferences without a token, via a "Notifications"
+card on `/profile` (`ProfileController#update_email_preferences`) — same checkbox-array semantics as
+the public preference center, operating on `current_user` directly.
+
+**Not built**: audit-logging unsubscribe events (`AuditLog#event_type`'s enum is admin-action shaped
+— every existing use is an admin acting on a resource, not a user's own self-service change; didn't
+force the fit), a `mailto:` fallback in `List-Unsubscribe` (this app has no real unsubscribe mailbox
+configured — a fake one would be worse for deliverability than a single working URL), and open/click
+analytics (see §9 Roadmap — separate, larger, deliberately deferred).
+
+## 8. Known limitations (MVP)
 
 - **No scheduling** — `deliver` sends immediately; there is no "send at a future time."
-- **No unsubscribe/opt-out** — every targeted `User` receives the email; there is no per-user
-  preference or suppression list. Acceptable for an internal/admin broadcast tool at this scale,
-  but would need addressing before this is used for anything resembling marketing email at
-  volume (see CAN-SPAM/opt-out roadmap item below).
+- **Unsubscribe links don't expire or revoke** — see §7. A leaked preference-center link lets
+  whoever has it flip that user's category preferences indefinitely; accepted because the blast
+  radius is "which marketing emails you get," not account access.
 - **No analytics** — no open/click tracking.
 - **No orphaned-image cleanup** — uploaded images not embedded in any saved campaign (or embedded
   in a campaign that's later deleted) are never purged from storage.
@@ -306,7 +377,7 @@ pin that locally instead, same as `turbo.min.js`/`stimulus.min.js`.
   relay accordingly. Reasonable at this app's current scale, worth revisiting only if campaigns
   start recurring at real marketing-list scale.
 
-## 8. Roadmap (not built yet)
+## 9. Roadmap (not built yet)
 
 Concepts sketched here to guide future work, not implemented:
 
@@ -322,7 +393,9 @@ users — the "welcome series" / onboarding drip pattern.
   point — e.g. a one-line call from `ConfirmationsController#create`, right where
   `Organization.create_personal_for!(user)` already runs today.
 - `EmailSequenceDelivery` (per enrollment, per step) — same per-recipient tracking role as
-  `EmailCampaignRecipient`, prevents double-sends.
+  `EmailCampaignRecipient`, prevents double-sends. Should check `User#subscribed_to_email_category?`
+  before each send the same way `SendEmailCampaignJob` does now (see §7) - a sequence step needs a
+  `category` too, not just a `subject`/`body_html`.
 - Delivery is **not** request-triggered — a recurring Solid Queue task (following the existing
   pattern in `config/recurring.yml`) polls periodically for enrollments whose next step is due
   and sends it. This decouples send-time from enrollment-time, so a step's copy can still be
@@ -334,12 +407,6 @@ users — the "welcome series" / onboarding drip pattern.
 
 Add a nullable `scheduled_at` to `email_campaigns`; a recurring job picks up drafts whose
 `scheduled_at` has passed and calls the same `deliver!` path a manual click uses today.
-
-### Unsubscribe / opt-out
-
-A `users.email_campaigns_opt_out` boolean (or a dedicated preferences table if per-category
-opt-out is ever needed) plus a footer link in the mailer view, checked before each send in both
-the one-off campaign job and the sequence delivery job.
 
 ### Analytics
 

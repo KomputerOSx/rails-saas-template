@@ -25,6 +25,7 @@ module Admin
         max_width: params[:email_campaign][:max_width],
         bg_color: params[:email_campaign][:bg_color],
         fg_color: params[:email_campaign][:fg_color],
+        category: params[:email_campaign][:category],
         to: recipients_from_params,
         created_by: current_user
       )
@@ -35,6 +36,7 @@ module Admin
       new_attrs[:max_width] = params.dig(:email_campaign, :max_width) if params.dig(:email_campaign, :max_width).present?
       new_attrs[:bg_color] = params.dig(:email_campaign, :bg_color) if params.dig(:email_campaign, :bg_color).present?
       new_attrs[:fg_color] = params.dig(:email_campaign, :fg_color) if params.dig(:email_campaign, :fg_color).present?
+      new_attrs[:category] = params.dig(:email_campaign, :category) if params.dig(:email_campaign, :category).present?
       @email_campaign = EmailCampaign.new(new_attrs)
       @users = User.order(:email)
       flash.now[:alert] = e.message
@@ -64,7 +66,8 @@ module Admin
           body_html: params[:email_campaign][:body_html],
           max_width: params[:email_campaign][:max_width],
           bg_color: params[:email_campaign][:bg_color],
-          fg_color: params[:email_campaign][:fg_color]
+          fg_color: params[:email_campaign][:fg_color],
+          category: params[:email_campaign][:category]
         )
         @email_campaign.email_campaign_recipients.where.not(user_id: recipient_ids).destroy_all
         existing_user_ids = @email_campaign.recipients.pluck(:id)

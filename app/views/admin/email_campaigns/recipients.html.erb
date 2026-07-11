@@ -34,6 +34,8 @@
                       <span class="badge badge-success badge-sm">Sent</span>
                     <% elsif recipient.failed_at? %>
                       <span class="badge badge-error badge-sm">Failed</span>
+                    <% elsif recipient.skipped_at? %>
+                      <span class="badge badge-outline badge-sm">Skipped (unsubscribed)</span>
                     <% else %>
                       <span class="badge badge-neutral badge-sm">Pending</span>
                     <% end %>

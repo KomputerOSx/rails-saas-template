@@ -8,6 +8,11 @@ class SendEmailCampaignJob < ApplicationJob
     return unless campaign&.sending?
 
     campaign.email_campaign_recipients.includes(:user).find_each do |recipient|
+      if !campaign.important? && !recipient.user.subscribed_to_email_category?(campaign.category)
+        recipient.mark_skipped!
+        next
+      end
+
       begin
         EmailCampaignMailer.campaign(campaign, recipient.user).deliver_now
         recipient.mark_sent!

@@ -154,6 +154,23 @@ class User < ApplicationRecord
     Onboarding.find(onboarding_step) || Onboarding.first_step
   end
 
+  # --- Email notification preferences ---
+  # email_preferences is a hash keyed by EmailCampaign category string. Absent key means
+  # subscribed - a category added to EmailCampaign::OPTIONAL_CATEGORIES later needs no backfill,
+  # since everyone is implicitly subscribed to a category they've never expressed an opinion on.
+
+  def subscribed_to_email_category?(category)
+    email_preferences[category.to_s] != false
+  end
+
+  def unsubscribe_from_email_category!(category)
+    update!(email_preferences: email_preferences.merge(category.to_s => false))
+  end
+
+  def resubscribe_to_email_category!(category)
+    update!(email_preferences: email_preferences.except(category.to_s))
+  end
+
   # --- Email change (requires a code confirmed from both the old and new address) ---
 
   def email_change_pending?

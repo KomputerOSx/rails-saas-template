@@ -82,6 +82,29 @@
       </div>
     </div>
 
+    <%# ── Notifications ── %>
+    <div class="card border border-base-300">
+      <div class="card-body">
+        <p class="font-medium">Email notifications</p>
+        <p class="text-sm text-base-content/60 mt-0.5">Choose which emails you'd like to receive. Required account and service notices are always sent.</p>
+
+        <%= form_with url: profile_email_preferences_path, method: :patch, html: { class: "mt-4 space-y-3" } do %>
+          <% EmailCampaign::OPTIONAL_CATEGORIES.each do |category| %>
+            <label class="label cursor-pointer justify-start gap-3 rounded-lg border border-base-300 p-3">
+              <input type="checkbox" name="subscribed[<%= category %>]" value="1"
+                     class="checkbox-field"
+                     <%= "checked" if current_user.subscribed_to_email_category?(category) %>>
+              <span class="label-text"><%= category.titleize %></span>
+            </label>
+          <% end %>
+
+          <div class="form-control mt-2">
+            <%= submit_tag "Save preferences", class: "btn btn-sm btn-primary" %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
     <%# ── Danger Zone ── %>
     <div class="card border border-error">
       <div class="card-body p-0">

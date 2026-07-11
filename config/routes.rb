@@ -39,6 +39,7 @@ Rails.application.routes.draw do
   post   "profile/totp",         to: "profile#create_totp",       as: :profile_totp
   delete "profile/totp",         to: "profile#destroy_totp"
   post   "profile/deletion_code", to: "profile#send_deletion_code", as: :profile_deletion_code
+  patch  "profile/email_preferences", to: "profile#update_email_preferences", as: :profile_email_preferences
 
   resource :profile_email_change, only: [ :new, :create, :destroy ], controller: "email_changes", path: "profile/email_change"
   post "profile/email_change/confirm_old", to: "email_changes#confirm_old", as: :confirm_old_profile_email_change
@@ -100,6 +101,11 @@ Rails.application.routes.draw do
   # --- Organization invitations (public acceptance endpoint) ---
   get  "invitations/:token",        to: "invitations#show",   as: :invitation
   post "invitations/:token/accept", to: "invitations#accept", as: :accept_invitation
+
+  # --- Email preference center (public, unauthenticated - reached from an emailed unsubscribe link) ---
+  get   "email_preferences/:token",           to: "email_preferences#show",   as: :email_preference
+  patch "email_preferences/:token",           to: "email_preferences#update"
+  post  "email_preferences/:token/one_click", to: "email_preferences#one_click", as: :one_click_email_preference
 
   # --- Org-facing members/invitations management (distinct from the system-scope Admin:: namespace) ---
   namespace :org do

@@ -8,6 +8,16 @@
         <%= text_field_tag "email_campaign[subject]", @email_campaign.subject, class: "input-field w-full", required: true %>
       </div>
 
+      <div class="form-control mt-4">
+        <h2 class="text-lg font-semibold mb-2">Email type</h2>
+        <select name="email_campaign[category]" class="select-field w-full">
+          <option value="marketing" <%= "selected" if @email_campaign.category == "marketing" %>>Marketing - recipients can opt out</option>
+          <option value="product_updates" <%= "selected" if @email_campaign.category == "product_updates" %>>Product updates - recipients can opt out</option>
+          <option value="important" <%= "selected" if @email_campaign.category == "important" %>>Important - always delivered, no opt-out</option>
+        </select>
+        <p class="mt-1 text-xs text-base-content/60">Controls whether the email includes an unsubscribe link and whether recipients who've opted out still receive it.</p>
+      </div>
+
       <div class="form-control mt-4" data-controller="rich-text-editor"
             data-rich-text-editor-max-width-value="<%= @email_campaign.max_width %>">
         <div class="mb-2 flex items-center justify-between">

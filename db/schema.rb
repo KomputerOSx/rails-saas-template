@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_11_090726) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_11_214449) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -62,6 +62,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_11_090726) do
     t.string "error_message"
     t.datetime "failed_at"
     t.datetime "sent_at"
+    t.datetime "skipped_at"
     t.datetime "updated_at", null: false
     t.integer "user_id", null: false
     t.index ["email_campaign_id", "user_id"], name: "idx_email_campaign_recipients_unique", unique: true
@@ -72,6 +73,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_11_090726) do
   create_table "email_campaigns", force: :cascade do |t|
     t.string "bg_color", default: "#ffffff", null: false
     t.text "body_html", null: false
+    t.string "category", default: "marketing", null: false
     t.datetime "created_at", null: false
     t.integer "created_by_id"
     t.string "fg_color", default: "#ffffff", null: false
@@ -80,6 +82,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_11_090726) do
     t.string "status", default: "draft", null: false
     t.string "subject", null: false
     t.datetime "updated_at", null: false
+    t.index ["category"], name: "index_email_campaigns_on_category"
     t.index ["created_at"], name: "index_email_campaigns_on_created_at"
     t.index ["created_by_id"], name: "index_email_campaigns_on_created_by_id"
     t.index ["status"], name: "index_email_campaigns_on_status"
@@ -415,6 +418,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_11_090726) do
     t.string "email_change_old_code_digest"
     t.datetime "email_change_old_confirmed_at"
     t.datetime "email_change_requested_at"
+    t.json "email_preferences", default: {}, null: false
     t.integer "failed_login_attempts", default: 0, null: false
     t.string "first_name"
     t.string "last_name"

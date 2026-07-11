@@ -3,6 +3,13 @@
   <td class="text-base-content/60"><%= email_campaign.created_by&.email || "System" %></td>
   <td><%= email_campaign.email_campaign_recipients.size %></td>
   <td>
+    <% if email_campaign.important? %>
+      <span class="badge badge-outline badge-warning badge-sm">Important</span>
+    <% else %>
+      <span class="badge badge-outline badge-sm"><%= email_campaign.category.titleize %></span>
+    <% end %>
+  </td>
+  <td>
     <% case email_campaign.status
        when "draft" %>
       <span class="badge badge-neutral badge-sm">Draft</span>

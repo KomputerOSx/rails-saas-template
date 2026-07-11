@@ -16,6 +16,11 @@
         <% when "sent" %>
           <span class="badge badge-success">Sent</span>
         <% end %>
+        <% if @email_campaign.important? %>
+          <span class="badge badge-outline badge-warning">Important</span>
+        <% else %>
+          <span class="badge badge-outline"><%= @email_campaign.category.titleize %></span>
+        <% end %>
       </div>
       <p class="mt-1 text-sm text-base-content/60">
         <%= @email_campaign.email_campaign_recipients.size %> recipient(s)
@@ -51,7 +56,7 @@
                   <%= raw @email_campaign.body_html %>
                 </td>
               </tr>
-              <%= render "email_campaign_mailer/footer" %>
+              <%= render "email_campaign_mailer/footer", unsubscribe_url: nil %>
             </table>
           </td>
         </tr>
@@ -65,7 +70,7 @@
         <h2 class="text-lg font-semibold">Delivery status</h2>
         <%= link_to "View all recipients", recipients_admin_email_campaign_path(@email_campaign), class: "btn btn-outline btn-sm" %>
       </div>
-      <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <div class="card border border-base-300">
           <div class="card-body p-5">
             <p class="text-sm text-base-content/60">Total</p>
@@ -82,6 +87,12 @@
           <div class="card-body p-5">
             <p class="text-sm text-base-content/60">Failed</p>
             <p class="mt-1 text-3xl font-semibold text-error"><%= number_with_delimiter(@recipient_counts[:failed]) %></p>
+          </div>
+        </div>
+        <div class="card border border-base-300">
+          <div class="card-body p-5">
+            <p class="text-sm text-base-content/60">Skipped (unsubscribed)</p>
+            <p class="mt-1 text-3xl font-semibold text-base-content/60"><%= number_with_delimiter(@recipient_counts[:skipped]) %></p>
           </div>
         </div>
         <div class="card border border-base-300">
