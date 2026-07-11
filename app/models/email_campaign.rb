@@ -15,6 +15,7 @@ class EmailCampaign < ApplicationRecord
   validates :body_html, presence: true
   validates :max_width, inclusion: { in: MAX_WIDTHS.values }
   validates :bg_color, format: { with: HEX_COLOR_REGEX }
+  validates :fg_color, format: { with: HEX_COLOR_REGEX }
 
   enum :status, { draft: "draft", sending: "sending", sent: "sent" }, default: "draft"
 
@@ -28,13 +29,14 @@ class EmailCampaign < ApplicationRecord
   BLOB_REDIRECT_URL_REGEX = %r{https?://[^\s"']*/rails/active_storage/blobs/redirect/([^/\s"']+)/[^\s"']*}
 
   # Snapshots recipients but sends nothing - sending is a deliberate separate step (see #deliver).
-  def self.create_draft!(subject:, body_html:, to:, created_by: nil, max_width: nil, bg_color: nil)
+  def self.create_draft!(subject:, body_html:, to:, created_by: nil, max_width: nil, bg_color: nil, fg_color: nil)
     recipients = Array(to.respond_to?(:find_each) ? to.to_a : to).uniq
     raise ArgumentError, "no recipients given" if recipients.empty?
 
     attrs = { subject: subject, body_html: body_html, created_by: created_by }
     attrs[:max_width] = max_width if max_width.present?
     attrs[:bg_color] = bg_color if bg_color.present?
+    attrs[:fg_color] = fg_color if fg_color.present?
 
     transaction do
       campaign = create!(attrs)

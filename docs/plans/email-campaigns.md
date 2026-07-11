@@ -214,6 +214,26 @@ doesn't fit this app's UI and offered no way to pick a color without cramming a 
 the toolbar itself. Colors are plain hex, not this app's actual `--color-primary` etc.: email
 clients don't reliably support `oklch()`/CSS custom properties.
 
+**Links** use the same dialog pattern as "+ Button" (`data-controller="modal"`, a single URL field)
+instead of `window.prompt()` — opening the dialog pre-fills the field with the current link's `href`
+if the selection is already a link, so it doubles as an edit flow. "Unlink" stays a direct one-click
+toolbar action outside the dialog, since removing a link needs no input.
+
+**Email width and colors** are three campaign-level (not per-node) controls in the "Body" card
+header, distinct from everything else in the toolbar: `EmailCampaign::MAX_WIDTHS` (narrow/standard/
+wide — 480/600/720px) picks the content column's width, and two native `<input type="color">`
+pickers set `bg_color` (the canvas behind the content column) and `fg_color` (the content column's
+own background, rounded `12px` at send time) — separately, so there's visible contrast between the
+two by default whenever an admin picks a non-white background. All three persist as plain columns
+on `email_campaigns` (`max_width` integer, `bg_color`/`fg_color` hex strings, validated against
+`EmailCampaign::MAX_WIDTHS.values` / `HEX_COLOR_REGEX`) rather than living inside `body_html` itself,
+since they apply to the email as a whole, not to any one node the sanitizer/editor schema governs.
+Picking a preset live-resizes/recolors the compose canvas (`rich-text-editor` Stimulus controller:
+`applyEmailWidth`, `setBgColor`, `setFgColor`) so composing previews the actual layout, and the same
+three values drive both the mailer's email-safe centered-table wrapper (`campaign.html.erb` — HTML
+`width` attribute + CSS `max-width` for Outlook/mobile, `bgcolor` + `background-color` for both
+table layers) and the admin `show.html.erb` preview, so all three surfaces agree.
+
 **Verification note:** this app's dev sandbox proxy blocks `esm.sh`/`cdn.jsdelivr.net` outbound
 (org egress policy — not a bug), so the CDN module resolution could not be live-verified from
 inside that environment. Verify in a real browser on first run: open `/admin/email_campaigns/new`,
