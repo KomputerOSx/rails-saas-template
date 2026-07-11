@@ -437,6 +437,17 @@
   @apply text-primary underline;
 }
 
+/* The admin preview's body sits on a fixed (non-theme-reactive) background, unlike the compose
+   editor's - so unlike the editor, its text can't be allowed to follow the app's own light/dark
+   toggle (that's what made unstyled text turn white and unreadable against the still-light preview
+   background). Re-declaring the variable, not just `color`, also pins text that reads the variable
+   directly (e.g. the blockquote rule above). A plain inherited default never overrides an element's
+   own explicit style, so text an admin deliberately colored via the editor still renders correctly. */
+.email-preview-content {
+  --color-base-content: #1a1a1a;
+  color: var(--color-base-content);
+}
+
 /* flex-1 makes the contenteditable child fill the wrapper's min-height, not just its own content -
    otherwise clicks in the empty space below short content land on the wrapper and do nothing. */
 .tiptap-editor-area {

@@ -260,6 +260,23 @@ white text, body renders at the lighter `BODY_BG` tint, and none of the three ro
 from card-shaped insets. `campaign.html.erb`'s outer table (full page width, `#ffffff`, purely for
 horizontal centering) is unchanged; only the inner `max_width` column's per-row backgrounds changed.
 
+**The admin preview's body is deliberately isolated from this app's own light/dark theme toggle** —
+`app/views/admin/email_campaigns/show.html.erb`'s body `<td>` carries both `email-body-content`
+(the shared typography rules also used by the compose editor) and `email-preview-content` (preview
+only, `app/assets/tailwind/application.css`), which pins `--color-base-content` to a fixed dark
+value. Without it, unstyled preview text inherited `<body>`'s theme-reactive `text-base-content`
+class from `application.html.erb` and turned white when the admin switched the app to dark theme —
+illegible against the preview's fixed light-green `BODY_BG`, which (correctly) never changes with
+the app's theme, since it's supposed to always show what the actual, theme-agnostic email looks
+like. The compose editor doesn't need this: its background (`bg-base-100`) *is* theme-reactive, so
+its text and background move together and stay legible regardless of theme — this is a
+preview-only fix, not a bug in the shared `.email-body-content` typography rules or the editor.
+Re-declaring the `--color-base-content` custom property (not just setting `color`) matters because
+some rules (e.g. the blockquote's `text-base-content/70`) resolve the variable directly rather than
+inheriting a computed `color` — and admin-picked custom text colors (via the editor's color picker)
+still render correctly regardless, since a plain inherited default never overrides an element's own
+explicit style.
+
 **Header and footer are static ERB, not admin-editable** — a deliberate departure from everything
 else on this page, which is either TipTap-authored (`body_html`) or a per-campaign field (width).
 TipTap is block-based rich text; it has no good way to express a header/footer's more deliberate

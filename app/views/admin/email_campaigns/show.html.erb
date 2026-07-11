@@ -52,7 +52,7 @@
                    style="width: 100%; max-width: <%= @email_campaign.max_width %>px;">
               <%= render "email_campaign_mailer/header" %>
               <tr>
-                <td class="email-body-content" style="background-color: <%= EmailCampaign::BODY_BG %>; padding: 24px;">
+                <td class="email-body-content email-preview-content" style="background-color: <%= EmailCampaign::BODY_BG %>; padding: 24px;">
                   <%= raw @email_campaign.body_html %>
                 </td>
               </tr>
