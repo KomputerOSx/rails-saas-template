@@ -6,6 +6,7 @@ import Link from "@tiptap/extension-link"
 import TextStyle from "@tiptap/extension-text-style"
 import Color from "@tiptap/extension-color"
 import Image from "@tiptap/extension-image"
+import TextAlign from "@tiptap/extension-text-align"
 
 // Link's default schema drops any attribute it doesn't declare, so a bare `style` set via
 // insertButton() below would vanish on the next getHTML() - extend it to keep one.
@@ -22,8 +23,18 @@ const CampaignLink = Link.extend({
   }
 })
 
-// Image's default schema has no width attribute. Uses the legacy HTML attribute, not a CSS
-// style, since Outlook desktop often ignores CSS sizing on <img> but respects the attribute.
+// Images are block-level (not inline text), so unlike paragraphs/headings a CSS text-align does
+// nothing to them - centering/right-aligning a block element needs margin instead. This is the
+// same margin:auto technique email clients (including Outlook desktop) reliably respect on <img>.
+const IMAGE_ALIGN_STYLES = {
+  left: "display:block;margin:0;",
+  center: "display:block;margin-left:auto;margin-right:auto;",
+  right: "display:block;margin-left:auto;margin-right:0;"
+}
+
+// Image's default schema has no width/align attributes. width uses the legacy HTML attribute,
+// not a CSS style, since Outlook desktop often ignores CSS sizing on <img> but respects the
+// attribute; align has no HTML-attribute equivalent, so that one stays a style.
 const ResizableImage = Image.extend({
   addAttributes() {
     return {
@@ -32,6 +43,17 @@ const ResizableImage = Image.extend({
         default: null,
         parseHTML: element => element.getAttribute("width"),
         renderHTML: attributes => attributes.width ? { width: attributes.width } : {}
+      },
+      align: {
+        default: null,
+        parseHTML: element => {
+          const style = element.getAttribute("style") || ""
+          if (style.includes("margin-left:auto") && style.includes("margin-right:auto")) return "center"
+          if (style.includes("margin-left:auto")) return "right"
+          if (style.includes("display:block")) return "left"
+          return null
+        },
+        renderHTML: attributes => attributes.align ? { style: IMAGE_ALIGN_STYLES[attributes.align] } : {}
       }
     }
   }
@@ -71,7 +93,8 @@ export default class extends Controller {
         CampaignLink.configure({ openOnClick: false }),
         TextStyle,
         Color,
-        ResizableImage
+        ResizableImage,
+        TextAlign.configure({ types: [ "heading", "paragraph" ] })
       ],
       content: this.hiddenFieldTarget.value || "",
       onUpdate: () => this.syncHiddenField()
@@ -128,6 +151,18 @@ export default class extends Controller {
 
   toggleBlockquote() {
     this.editor.chain().focus().toggleBlockquote().run()
+  }
+
+  setTextAlignLeft() {
+    this.editor.chain().focus().setTextAlign("left").run()
+  }
+
+  setTextAlignCenter() {
+    this.editor.chain().focus().setTextAlign("center").run()
+  }
+
+  setTextAlignRight() {
+    this.editor.chain().focus().setTextAlign("right").run()
   }
 
   openLinkDialog() {
@@ -217,6 +252,18 @@ export default class extends Controller {
 
   unsetImageSize() {
     this.editor.chain().focus().updateAttributes("image", { width: null }).run()
+  }
+
+  setImageAlignLeft() {
+    this.editor.chain().focus().updateAttributes("image", { align: "left" }).run()
+  }
+
+  setImageAlignCenter() {
+    this.editor.chain().focus().updateAttributes("image", { align: "center" }).run()
+  }
+
+  setImageAlignRight() {
+    this.editor.chain().focus().updateAttributes("image", { align: "right" }).run()
   }
 
   setEmailWidth(event) {

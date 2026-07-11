@@ -53,6 +53,12 @@
           </div>
           <div class="mx-1 h-4 w-px bg-base-300"></div>
           <div class="flex items-center gap-1">
+            <button type="button" class="btn btn-xs btn-ghost" title="Align left" data-action="click->rich-text-editor#setTextAlignLeft">Left</button>
+            <button type="button" class="btn btn-xs btn-ghost" title="Align center" data-action="click->rich-text-editor#setTextAlignCenter">Center</button>
+            <button type="button" class="btn btn-xs btn-ghost" title="Align right" data-action="click->rich-text-editor#setTextAlignRight">Right</button>
+          </div>
+          <div class="mx-1 h-4 w-px bg-base-300"></div>
+          <div class="flex items-center gap-1">
             <button type="button" class="btn btn-xs btn-ghost" title="Bullet list" data-action="click->rich-text-editor#toggleBulletList">• List</button>
             <button type="button" class="btn btn-xs btn-ghost" title="Numbered list" data-action="click->rich-text-editor#toggleOrderedList">1. List</button>
             <button type="button" class="btn btn-xs btn-ghost" title="Quote" data-action="click->rich-text-editor#toggleBlockquote">Quote</button>
@@ -97,6 +103,10 @@
             <button type="button" class="btn btn-xs btn-ghost" title="Medium" data-action="click->rich-text-editor#setImageSizeMedium">M</button>
             <button type="button" class="btn btn-xs btn-ghost" title="Full width" data-action="click->rich-text-editor#setImageSizeFull">L</button>
             <button type="button" class="btn btn-xs btn-ghost" title="Original size" data-action="click->rich-text-editor#unsetImageSize">Reset</button>
+            <span class="mx-0.5 text-xs text-base-content/40">|</span>
+            <button type="button" class="btn btn-xs btn-ghost" title="Align image left" data-action="click->rich-text-editor#setImageAlignLeft">Left</button>
+            <button type="button" class="btn btn-xs btn-ghost" title="Align image center" data-action="click->rich-text-editor#setImageAlignCenter">Center</button>
+            <button type="button" class="btn btn-xs btn-ghost" title="Align image right" data-action="click->rich-text-editor#setImageAlignRight">Right</button>
           </div>
           <div class="mx-1 h-4 w-px bg-base-300"></div>
           <div data-controller="modal">

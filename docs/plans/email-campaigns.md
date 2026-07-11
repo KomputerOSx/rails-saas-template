@@ -214,6 +214,20 @@ doesn't fit this app's UI and offered no way to pick a color without cramming a 
 the toolbar itself. Colors are plain hex, not this app's actual `--color-primary` etc.: email
 clients don't reliably support `oklch()`/CSS custom properties.
 
+**Text and image alignment** are separate controls because a per-node CSS `text-align` only affects
+inline content — TipTap's `Image` node is block-level, so aligning an image needs margin, not
+`text-align`, to actually move it. Left/Center/Right for paragraphs and headings uses the official
+`@tiptap/extension-text-align` (pinned via importmap like every other TipTap piece here, `types:
+['heading', 'paragraph']`), which renders a plain `style="text-align: ..."` — already inside
+`ALLOWED_ATTRIBUTES`, no sanitizer change needed. Left/Center/Right for images is a custom `align`
+attribute on `ResizableImage` (`app/javascript/controllers/rich_text_editor_controller.js`) that
+renders `display:block` plus `margin:0` / `margin:0 auto` / `margin-left:auto` respectively — the
+same `margin:auto` technique used broadly in HTML email because it (unlike `float`) holds up in
+Outlook desktop. Its `parseHTML` recognizes those same three style strings on load, so alignment
+round-trips correctly when reopening a saved campaign for editing. The image-align buttons sit
+inside the existing "Image" toolbar group, next to the S/M/L/Reset size buttons — same "applies to
+whichever image node is currently selected" behavior.
+
 **Links** use the same dialog pattern as "+ Button" (`data-controller="modal"`, a single URL field)
 instead of `window.prompt()` — opening the dialog pre-fills the field with the current link's `href`
 if the selection is already a link, so it doubles as an edit flow. "Unlink" stays a direct one-click
