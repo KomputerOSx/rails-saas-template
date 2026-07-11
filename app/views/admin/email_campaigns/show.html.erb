@@ -39,9 +39,11 @@
 
   <div class="mt-8">
     <h2 class="text-lg font-semibold">Preview</h2>
-    <div class="card mt-4 border border-base-300">
-      <div class="card-body email-body-content">
-        <%= raw @email_campaign.body_html %>
+    <div class="card mt-4 border border-base-300 overflow-hidden">
+      <div class="p-6" style="background-color: <%= @email_campaign.bg_color %>;">
+        <div class="mx-auto email-body-content" style="max-width: <%= @email_campaign.max_width %>px;">
+          <%= raw @email_campaign.body_html %>
+        </div>
       </div>
     </div>
   </div>

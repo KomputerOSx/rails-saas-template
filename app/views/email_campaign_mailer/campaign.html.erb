@@ -1,1 +1,15 @@
-<%= raw @email_campaign.body_html_with_cid_images(@cid_by_signed_id) %>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="<%= @email_campaign.bg_color %>" style="background-color: <%= @email_campaign.bg_color %>;">
+  <tr>
+    <td align="center">
+      <table role="presentation" width="<%= @email_campaign.max_width %>" cellpadding="0" cellspacing="0" border="0"
+             bgcolor="<%= @email_campaign.bg_color %>"
+             style="width: 100%; max-width: <%= @email_campaign.max_width %>px; background-color: <%= @email_campaign.bg_color %>;">
+        <tr>
+          <td style="padding: 24px;">
+            <%= raw @email_campaign.body_html_with_cid_images(@cid_by_signed_id) %>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>

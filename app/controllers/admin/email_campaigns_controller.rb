@@ -22,13 +22,18 @@ module Admin
       email_campaign = EmailCampaign.create_draft!(
         subject: params[:email_campaign][:subject],
         body_html: params[:email_campaign][:body_html],
+        max_width: params[:email_campaign][:max_width],
+        bg_color: params[:email_campaign][:bg_color],
         to: recipients_from_params,
         created_by: current_user
       )
       log_audit(:email_campaign_created, resource: email_campaign, metadata: { recipient_count: email_campaign.email_campaign_recipients.count })
       redirect_to admin_email_campaign_path(email_campaign), notice: "Campaign saved as draft with #{email_campaign.email_campaign_recipients.count} recipient(s). Review and send when ready."
     rescue ArgumentError => e
-      @email_campaign = EmailCampaign.new(subject: params.dig(:email_campaign, :subject), body_html: params.dig(:email_campaign, :body_html))
+      new_attrs = { subject: params.dig(:email_campaign, :subject), body_html: params.dig(:email_campaign, :body_html) }
+      new_attrs[:max_width] = params.dig(:email_campaign, :max_width) if params.dig(:email_campaign, :max_width).present?
+      new_attrs[:bg_color] = params.dig(:email_campaign, :bg_color) if params.dig(:email_campaign, :bg_color).present?
+      @email_campaign = EmailCampaign.new(new_attrs)
       @users = User.order(:email)
       flash.now[:alert] = e.message
       render :new, status: :unprocessable_entity
@@ -54,7 +59,9 @@ module Admin
       ActiveRecord::Base.transaction do
         @email_campaign.update!(
           subject: params[:email_campaign][:subject],
-          body_html: params[:email_campaign][:body_html]
+          body_html: params[:email_campaign][:body_html],
+          max_width: params[:email_campaign][:max_width],
+          bg_color: params[:email_campaign][:bg_color]
         )
         @email_campaign.email_campaign_recipients.where.not(user_id: recipient_ids).destroy_all
         existing_user_ids = @email_campaign.recipients.pluck(:id)

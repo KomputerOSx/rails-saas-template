@@ -3,8 +3,13 @@ class EmailCampaign < ApplicationRecord
   has_many :email_campaign_recipients, dependent: :destroy
   has_many :recipients, through: :email_campaign_recipients, source: :user
 
+  MAX_WIDTHS = { narrow: 480, standard: 600, wide: 720 }.freeze
+  HEX_COLOR_REGEX = /\A#[0-9a-fA-F]{6}\z/
+
   validates :subject, presence: true
   validates :body_html, presence: true
+  validates :max_width, inclusion: { in: MAX_WIDTHS.values }
+  validates :bg_color, format: { with: HEX_COLOR_REGEX }
 
   enum :status, { draft: "draft", sending: "sending", sent: "sent" }, default: "draft"
 
@@ -18,12 +23,16 @@ class EmailCampaign < ApplicationRecord
   BLOB_REDIRECT_URL_REGEX = %r{https?://[^\s"']*/rails/active_storage/blobs/redirect/([^/\s"']+)/[^\s"']*}
 
   # Snapshots recipients but sends nothing - sending is a deliberate separate step (see #deliver).
-  def self.create_draft!(subject:, body_html:, to:, created_by: nil)
+  def self.create_draft!(subject:, body_html:, to:, created_by: nil, max_width: nil, bg_color: nil)
     recipients = Array(to.respond_to?(:find_each) ? to.to_a : to).uniq
     raise ArgumentError, "no recipients given" if recipients.empty?
 
+    attrs = { subject: subject, body_html: body_html, created_by: created_by }
+    attrs[:max_width] = max_width if max_width.present?
+    attrs[:bg_color] = bg_color if bg_color.present?
+
     transaction do
-      campaign = create!(subject: subject, body_html: body_html, created_by: created_by)
+      campaign = create!(attrs)
       recipients.each { |user| campaign.email_campaign_recipients.create!(user: user) }
       campaign
     end

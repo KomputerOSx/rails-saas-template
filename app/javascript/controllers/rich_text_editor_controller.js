@@ -53,7 +53,8 @@ const IMAGE_WIDTHS = { small: "200", medium: "400", full: "600" }
 // Mirrors editor.getHTML() into a hidden field on every change, so the form posts the body like
 // any other plain field. Enabled marks/nodes must stay in sync with EmailCampaign::ALLOWED_TAGS.
 export default class extends Controller {
-  static targets = [ "editor", "hiddenField", "fileInput", "buttonColor", "buttonDialog", "buttonLabelInput", "buttonUrlInput" ]
+  static targets = [ "editor", "hiddenField", "fileInput", "buttonColor", "buttonDialog", "buttonLabelInput", "buttonUrlInput", "widthButton", "maxWidthField", "canvas", "bgColorField" ]
+  static values = { maxWidth: Number }
 
   connect() {
     this.editor = new Editor({
@@ -81,6 +82,8 @@ export default class extends Controller {
     this.editorTarget.addEventListener("click", (event) => {
       if (event.target === this.editorTarget) this.editor.commands.focus()
     })
+
+    this.applyEmailWidth(this.maxWidthValue)
   }
 
   disconnect() {
@@ -212,5 +215,27 @@ export default class extends Controller {
 
   unsetImageSize() {
     this.editor.chain().focus().updateAttributes("image", { width: null }).run()
+  }
+
+  setEmailWidth(event) {
+    this.applyEmailWidth(Number(event.currentTarget.dataset.width))
+  }
+
+  setBgColor(event) {
+    this.canvasTarget.style.backgroundColor = event.target.value
+    this.bgColorFieldTarget.value = event.target.value
+  }
+
+  applyEmailWidth(width) {
+    this.editorTarget.style.maxWidth = `${width}px`
+    this.editorTarget.style.marginLeft = "auto"
+    this.editorTarget.style.marginRight = "auto"
+    this.maxWidthFieldTarget.value = width
+
+    this.widthButtonTargets.forEach((button) => {
+      const active = Number(button.dataset.width) === width
+      button.classList.toggle("btn-primary", active)
+      button.classList.toggle("btn-ghost", !active)
+    })
   }
 }
