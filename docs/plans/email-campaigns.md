@@ -248,6 +248,28 @@ three values drive both the mailer's email-safe centered-table wrapper (`campaig
 `width` attribute + CSS `max-width` for Outlook/mobile, `bgcolor` + `background-color` for both
 table layers) and the admin `show.html.erb` preview, so all three surfaces agree.
 
+**Header and footer** are static ERB, not admin-editable — a deliberate departure from everything
+else on this page, which is either TipTap-authored (`body_html`) or a per-campaign field
+(width/colors). TipTap is block-based rich text; it has no good way to express a header/footer's
+more deliberate fixed layout (a centered wordmark, small-print legal text), and at the time this was
+built there was no logo file, company name/address, or existing mailer chrome anywhere in the app to
+make an admin-editable version worth the extra settings-model/UI surface. `app/views/
+email_campaign_mailer/_header.html.erb` and `_footer.html.erb` are plain `<tr>` partials rendered
+inside the same `fg_color` table as the body (`campaign.html.erb`) — header, body, and footer are one
+continuous rounded card, not a separate canvas/card split; only the header's top corners and the
+footer's bottom corners carry the `12px` radius, so the middle (body) row stays square. The same two
+partials are rendered again in `show.html.erb`'s preview (now table-based rather than `div`-based, to
+match the sent email's actual markup) so preview and send agree. Editing the copy or layout means
+editing these two files and deploying — there is no admin screen for it, by design (see "Editability"
+in the design discussion for this feature).
+
+The footer's "manage your email preferences" line is placeholder copy, not a working link — this app
+has no unsubscribe mechanism at all yet (see the roadmap item below). Deliberately left as plain text
+rather than a dead/fake-looking link. Also note: header/footer text colors are hardcoded static grays
+chosen against the common white/light `fg_color` default — if an admin picks a dark `fg_color`,
+legibility isn't guaranteed. Accepted given header/footer are static; revisit only if that becomes a
+real complaint.
+
 **Verification note:** this app's dev sandbox proxy blocks `esm.sh`/`cdn.jsdelivr.net` outbound
 (org egress policy — not a bug), so the CDN module resolution could not be live-verified from
 inside that environment. Verify in a real browser on first run: open `/admin/email_campaigns/new`,
