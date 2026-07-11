@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_11_214449) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_11_224438) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -71,12 +71,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_11_214449) do
   end
 
   create_table "email_campaigns", force: :cascade do |t|
-    t.string "bg_color", default: "#ffffff", null: false
     t.text "body_html", null: false
     t.string "category", default: "marketing", null: false
     t.datetime "created_at", null: false
     t.integer "created_by_id"
-    t.string "fg_color", default: "#ffffff", null: false
     t.integer "max_width", default: 600, null: false
     t.datetime "sent_at"
     t.string "status", default: "draft", null: false

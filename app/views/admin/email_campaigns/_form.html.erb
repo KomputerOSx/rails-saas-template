@@ -34,18 +34,6 @@
                         data-action="click->rich-text-editor#setEmailWidth"><%= label.to_s.capitalize %></button>
               <% end %>
             </div>
-            <div class="flex items-center gap-1">
-              <span class="mr-1 text-xs text-base-content/60">Background</span>
-              <input type="color" value="<%= @email_campaign.bg_color %>" title="Email background color"
-                      class="h-6 w-6 cursor-pointer rounded border border-base-300 bg-transparent p-0"
-                      data-action="input->rich-text-editor#setBgColor">
-            </div>
-            <div class="flex items-center gap-1">
-              <span class="mr-1 text-xs text-base-content/60">Foreground</span>
-              <input type="color" value="<%= @email_campaign.fg_color %>" title="Content background color"
-                      class="h-6 w-6 cursor-pointer rounded border border-base-300 bg-transparent p-0"
-                      data-action="input->rich-text-editor#setFgColor">
-            </div>
           </div>
         </div>
 
@@ -159,17 +147,11 @@
           </div>
         </div>
 
-        <div class="rounded-b-lg border border-t-0 border-base-300 p-4"
-              data-rich-text-editor-target="canvas" style="background-color: <%= @email_campaign.bg_color %>;">
-          <div class="tiptap-editor-area email-body-content min-h-48 w-full rounded-lg border border-base-300 px-3 py-2"
-                style="background-color: <%= @email_campaign.fg_color %>;"
-                data-rich-text-editor-target="editor"></div>
-        </div>
+        <div class="tiptap-editor-area email-body-content min-h-48 w-full rounded-b-lg border border-t-0 border-base-300 bg-base-100 px-3 py-2"
+              data-rich-text-editor-target="editor"></div>
 
         <%= hidden_field_tag "email_campaign[body_html]", @email_campaign.body_html, data: { rich_text_editor_target: "hiddenField" } %>
         <%= hidden_field_tag "email_campaign[max_width]", @email_campaign.max_width, data: { rich_text_editor_target: "maxWidthField" } %>
-        <%= hidden_field_tag "email_campaign[bg_color]", @email_campaign.bg_color, data: { rich_text_editor_target: "bgColorField" } %>
-        <%= hidden_field_tag "email_campaign[fg_color]", @email_campaign.fg_color, data: { rich_text_editor_target: "fgColorField" } %>
       </div>
     </div>
 

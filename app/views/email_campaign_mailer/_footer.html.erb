@@ -1,8 +1,44 @@
+<%#
+  Placeholder company info below (address, email, social/quick-link hrefs) - swap in the real
+  values before this goes out to real recipients. hello@windtunnel.example uses the .example TLD,
+  which is reserved by IANA specifically so placeholder addresses like this can never resolve to a
+  real inbox.
+%>
 <tr>
-  <td style="padding: 16px 24px 20px; border-radius: 0 0 12px 12px; border-top: 1px solid #e5e7eb; text-align: center; font-family: Arial, Helvetica, sans-serif; font-size: 12px; line-height: 18px; color: #9ca3af;">
+  <td bgcolor="<%= EmailCampaign::HEADER_FOOTER_BG %>" style="background-color: <%= EmailCampaign::HEADER_FOOTER_BG %>; padding: 32px 24px 8px; text-align: center; font-family: Arial, Helvetica, sans-serif;">
+    <a href="mailto:hello@windtunnel.example" style="display:inline-block;padding:10px 24px;background-color:#ffffff;color:<%= EmailCampaign::HEADER_FOOTER_BG %>;border-radius:6px;text-decoration:none;font-weight:600;font-size:14px;">Contact us</a>
+  </td>
+</tr>
+<tr>
+  <td bgcolor="<%= EmailCampaign::HEADER_FOOTER_BG %>" style="background-color: <%= EmailCampaign::HEADER_FOOTER_BG %>; padding: 16px 24px 0; text-align: center; font-family: Arial, Helvetica, sans-serif; font-size: 13px;">
+    <a href="#" style="color: #ffffff; text-decoration: underline;">Help Center</a>
+    <span style="color: #6cb98d;">&nbsp;&middot;&nbsp;</span>
+    <a href="#" style="color: #ffffff; text-decoration: underline;">Privacy Policy</a>
+    <span style="color: #6cb98d;">&nbsp;&middot;&nbsp;</span>
+    <a href="#" style="color: #ffffff; text-decoration: underline;">Terms of Service</a>
+  </td>
+</tr>
+<tr>
+  <td bgcolor="<%= EmailCampaign::HEADER_FOOTER_BG %>" style="background-color: <%= EmailCampaign::HEADER_FOOTER_BG %>; padding: 12px 24px 0; text-align: center; font-family: Arial, Helvetica, sans-serif; font-size: 13px;">
+    <a href="#" style="color: #ffffff; text-decoration: underline;">Twitter</a>
+    <span style="color: #6cb98d;">&nbsp;&middot;&nbsp;</span>
+    <a href="#" style="color: #ffffff; text-decoration: underline;">LinkedIn</a>
+    <span style="color: #6cb98d;">&nbsp;&middot;&nbsp;</span>
+    <a href="#" style="color: #ffffff; text-decoration: underline;">Instagram</a>
+  </td>
+</tr>
+<tr>
+  <td bgcolor="<%= EmailCampaign::HEADER_FOOTER_BG %>" style="background-color: <%= EmailCampaign::HEADER_FOOTER_BG %>; padding: 20px 24px 8px; text-align: center; font-family: Arial, Helvetica, sans-serif; font-size: 12px; line-height: 18px; color: #cdebd9;">
+    Windtunnel Inc.<br>
+    123 Example Street, Suite 400, London, EC1A 1BB, United Kingdom<br>
+    <a href="mailto:hello@windtunnel.example" style="color: #cdebd9;">hello@windtunnel.example</a>
+  </td>
+</tr>
+<tr>
+  <td bgcolor="<%= EmailCampaign::HEADER_FOOTER_BG %>" style="background-color: <%= EmailCampaign::HEADER_FOOTER_BG %>; padding: 8px 24px 28px; text-align: center; font-family: Arial, Helvetica, sans-serif; font-size: 11px; line-height: 16px; color: #a9d9bd; border-top: 1px solid #1a9350;">
     You're receiving this email because you have an account with Windtunnel.<br>
     <% if local_assigns.fetch(:unsubscribe_url, nil) %>
-      <a href="<%= unsubscribe_url %>" style="color: #9ca3af;">Manage your email preferences</a>
+      <a href="<%= unsubscribe_url %>" style="color: #a9d9bd;">Manage your email preferences</a>
     <% end %>
   </td>
 </tr>

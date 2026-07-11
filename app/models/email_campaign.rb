@@ -4,18 +4,22 @@ class EmailCampaign < ApplicationRecord
   has_many :recipients, through: :email_campaign_recipients, source: :user
 
   MAX_WIDTHS = { narrow: 480, standard: 600, wide: 720 }.freeze
-  HEX_COLOR_REGEX = /\A#[0-9a-fA-F]{6}\z/
 
   # Images are sent as inline (CID) attachments (see EmailCampaignMailer), so their raw bytes go
   # out with every recipient's copy. Budgeted well under the Azure SMTP relay's 10 MB message cap
   # to leave headroom for base64's ~33% inflation plus the HTML/MIME overhead around them.
   MAX_TOTAL_INLINE_IMAGE_BYTES = 6.megabytes
 
+  # Header/footer/body colors are hardcoded, not admin-configurable - see
+  # docs/plans/email-campaigns.md §6. Header/footer share the darker shade with white text; body
+  # gets the lighter tint so arbitrary (often default-black) typed text stays legible.
+  HEADER_FOOTER_BG = "#0d7a3d"
+  HEADER_FOOTER_TEXT = "#ffffff"
+  BODY_BG = "#e3f5e9"
+
   validates :subject, presence: true
   validates :body_html, presence: true
   validates :max_width, inclusion: { in: MAX_WIDTHS.values }
-  validates :bg_color, format: { with: HEX_COLOR_REGEX }
-  validates :fg_color, format: { with: HEX_COLOR_REGEX }
 
   enum :status, { draft: "draft", sending: "sending", sent: "sent" }, default: "draft"
   enum :category, { marketing: "marketing", product_updates: "product_updates", important: "important" },
@@ -35,14 +39,12 @@ class EmailCampaign < ApplicationRecord
   BLOB_REDIRECT_URL_REGEX = %r{https?://[^\s"']*/rails/active_storage/blobs/redirect/([^/\s"']+)/[^\s"']*}
 
   # Snapshots recipients but sends nothing - sending is a deliberate separate step (see #deliver).
-  def self.create_draft!(subject:, body_html:, to:, created_by: nil, max_width: nil, bg_color: nil, fg_color: nil, category: nil)
+  def self.create_draft!(subject:, body_html:, to:, created_by: nil, max_width: nil, category: nil)
     recipients = Array(to.respond_to?(:find_each) ? to.to_a : to).uniq
     raise ArgumentError, "no recipients given" if recipients.empty?
 
     attrs = { subject: subject, body_html: body_html, created_by: created_by }
     attrs[:max_width] = max_width if max_width.present?
-    attrs[:bg_color] = bg_color if bg_color.present?
-    attrs[:fg_color] = fg_color if fg_color.present?
     attrs[:category] = category if category.present?
 
     transaction do

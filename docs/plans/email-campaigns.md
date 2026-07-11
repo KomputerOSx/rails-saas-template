@@ -37,7 +37,7 @@ EmailCampaign ──< EmailCampaignRecipient >── User
 
 | Table | Purpose |
 |-------|---------|
-| `email_campaigns` | `subject`, `body_html` (sanitized), `status` (`draft`/`sending`/`sent`), `category` (`marketing`/`product_updates`/`important` — see §7), `max_width`/`bg_color`/`fg_color`, `created_by`, `sent_at` |
+| `email_campaigns` | `subject`, `body_html` (sanitized), `status` (`draft`/`sending`/`sent`), `category` (`marketing`/`product_updates`/`important` — see §7), `max_width`, `created_by`, `sent_at` |
 | `email_campaign_recipients` | Per-recipient delivery state: `sent_at`, `failed_at`, `skipped_at` (recipient had opted out of this campaign's category — see §7), `error_message` |
 | `users.email_preferences` | Not a separate table — a `json` column on `users`, keyed by category string. See §7. |
 
@@ -235,42 +235,53 @@ instead of `window.prompt()` — opening the dialog pre-fills the field with the
 if the selection is already a link, so it doubles as an edit flow. "Unlink" stays a direct one-click
 toolbar action outside the dialog, since removing a link needs no input.
 
-**Email width and colors** are three campaign-level (not per-node) controls in the "Body" card
-header, distinct from everything else in the toolbar: `EmailCampaign::MAX_WIDTHS` (narrow/standard/
-wide — 480/600/720px) picks the content column's width, and two native `<input type="color">`
-pickers set `bg_color` (the canvas behind the content column) and `fg_color` (the content column's
-own background, rounded `12px` at send time) — separately, so there's visible contrast between the
-two by default whenever an admin picks a non-white background. All three persist as plain columns
-on `email_campaigns` (`max_width` integer, `bg_color`/`fg_color` hex strings, validated against
-`EmailCampaign::MAX_WIDTHS.values` / `HEX_COLOR_REGEX`) rather than living inside `body_html` itself,
-since they apply to the email as a whole, not to any one node the sanitizer/editor schema governs.
-Picking a preset live-resizes/recolors the compose canvas (`rich-text-editor` Stimulus controller:
-`applyEmailWidth`, `setBgColor`, `setFgColor`) so composing previews the actual layout, and the same
-three values drive both the mailer's email-safe centered-table wrapper (`campaign.html.erb` — HTML
-`width` attribute + CSS `max-width` for Outlook/mobile, `bgcolor` + `background-color` for both
-table layers) and the admin `show.html.erb` preview, so all three surfaces agree.
+**Email width** is a campaign-level (not per-node) control in the "Body" card header, distinct from
+everything else in the toolbar: `EmailCampaign::MAX_WIDTHS` (narrow/standard/wide — 480/600/720px)
+picks the content column's width, persisted as a plain `max_width` integer column, validated against
+`EmailCampaign::MAX_WIDTHS.values`, rather than living inside `body_html` itself, since it applies to
+the email as a whole. Picking a preset live-resizes the compose canvas (`rich-text-editor` Stimulus
+controller's `applyEmailWidth`) so composing previews the actual layout, and the same value drives
+both the mailer's email-safe centered-table wrapper (`campaign.html.erb` — HTML `width` attribute +
+CSS `max-width` for Outlook/mobile) and the admin `show.html.erb` preview, so both surfaces agree.
 
-**Header and footer** are static ERB, not admin-editable — a deliberate departure from everything
-else on this page, which is either TipTap-authored (`body_html`) or a per-campaign field
-(width/colors). TipTap is block-based rich text; it has no good way to express a header/footer's
-more deliberate fixed layout (a centered wordmark, small-print legal text), and at the time this was
-built there was no logo file, company name/address, or existing mailer chrome anywhere in the app to
-make an admin-editable version worth the extra settings-model/UI surface. `app/views/
-email_campaign_mailer/_header.html.erb` and `_footer.html.erb` are plain `<tr>` partials rendered
-inside the same `fg_color` table as the body (`campaign.html.erb`) — header, body, and footer are one
-continuous rounded card, not a separate canvas/card split; only the header's top corners and the
-footer's bottom corners carry the `12px` radius, so the middle (body) row stays square. The same two
-partials are rendered again in `show.html.erb`'s preview (now table-based rather than `div`-based, to
-match the sent email's actual markup) so preview and send agree. Editing the copy or layout means
-editing these two files and deploying — there is no admin screen for it, by design (see "Editability"
-in the design discussion for this feature).
+Colors (header/footer background, body background, header/footer text) were originally a second pair
+of per-campaign `bg_color`/`fg_color` columns with their own color pickers, but were removed in
+favor of hardcoded constants — `EmailCampaign::HEADER_FOOTER_BG`, `HEADER_FOOTER_TEXT`, `BODY_BG`
+(`app/models/email_campaign.rb`) — once the layout below made per-campaign color choice pointless (a
+fixed brand look, not a customizable one). No migration-worthy state left behind: the columns were
+dropped, not just hidden from the UI.
 
-The footer's "manage your email preferences" line is placeholder copy, not a working link — this app
-has no unsubscribe mechanism at all yet (see the roadmap item below). Deliberately left as plain text
-rather than a dead/fake-looking link. Also note: header/footer text colors are hardcoded static grays
-chosen against the common white/light `fg_color` default — if an admin picks a dark `fg_color`,
-legibility isn't guaranteed. Accepted given header/footer are static; revisit only if that becomes a
-real complaint.
+**Header, body, and footer are three full-width bands, not a centered rounded card.** An earlier
+version wrapped everything in one canvas-color-behind-a-rounded-card layout (`bg_color` on the outer
+canvas, `fg_color` + `border-radius: 12px` on an inset card); that's been replaced with a flatter,
+edge-to-edge design: header and footer both render at `HEADER_FOOTER_BG` (a darker brand green) with
+white text, body renders at the lighter `BODY_BG` tint, and none of the three rows carry a
+`border-radius` — separation between sections comes purely from the color contrast between them, not
+from card-shaped insets. `campaign.html.erb`'s outer table (full page width, `#ffffff`, purely for
+horizontal centering) is unchanged; only the inner `max_width` column's per-row backgrounds changed.
+
+**Header and footer are static ERB, not admin-editable** — a deliberate departure from everything
+else on this page, which is either TipTap-authored (`body_html`) or a per-campaign field (width).
+TipTap is block-based rich text; it has no good way to express a header/footer's more deliberate
+fixed layout (a full-width band, a multi-line footer with several link rows), and there's still no
+logo file anywhere in the app to make an admin-editable version worth the extra settings-model/UI
+surface. `app/views/email_campaign_mailer/_header.html.erb` and `_footer.html.erb` are plain `<tr>`
+partials rendered inside the same outer `max_width` table as the body (`campaign.html.erb`). The same
+two partials are rendered again in `show.html.erb`'s preview (table-based, matching the sent email's
+actual markup) so preview and send agree. Editing the copy or layout means editing these two files
+and deploying — there is no admin screen for it, by design.
+
+The footer is a proper multi-row section, not a single disclaimer line: a "Contact us" button
+(`mailto:hello@windtunnel.example` — the `.example` TLD is IANA-reserved specifically so a
+placeholder address like this can never resolve to a real inbox), a quick-links row (Help Center /
+Privacy Policy / Terms of Service, all `href="#"` placeholders), a social-links row (Twitter /
+LinkedIn / Instagram, same placeholder `#` hrefs — plain text links, not icons, since this app has no
+vendored social-icon SVG set and inline SVG support in email clients is unreliable anyway), a fake
+company name/address block, and the existing "you're receiving this because..." + conditional
+"Manage your email preferences" line (unchanged logic - see §7; still governed by campaign `category`,
+still absent entirely for `important` campaigns). **All placeholder content (address, fake email,
+`#` hrefs) needs replacing with real values before this goes to real recipients** - flagged inline in
+the partial's own ERB comment too, not just here.
 
 **Verification note:** this app's dev sandbox proxy blocks `esm.sh`/`cdn.jsdelivr.net` outbound
 (org egress policy — not a bug), so the CDN module resolution could not be live-verified from

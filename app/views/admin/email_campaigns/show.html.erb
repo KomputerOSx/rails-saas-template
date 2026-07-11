@@ -45,14 +45,14 @@
   <div class="mt-8">
     <h2 class="text-lg font-semibold">Preview</h2>
     <div class="card mt-4 border border-base-300 overflow-hidden">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: <%= @email_campaign.bg_color %>;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff;">
         <tr>
-          <td align="center" style="padding: 24px 12px;">
+          <td align="center">
             <table role="presentation" width="<%= @email_campaign.max_width %>" cellpadding="0" cellspacing="0" border="0"
-                   style="width: 100%; max-width: <%= @email_campaign.max_width %>px; background-color: <%= @email_campaign.fg_color %>; border-radius: 12px;">
+                   style="width: 100%; max-width: <%= @email_campaign.max_width %>px;">
               <%= render "email_campaign_mailer/header" %>
               <tr>
-                <td class="email-body-content" style="padding: 12px 24px;">
+                <td class="email-body-content" style="background-color: <%= EmailCampaign::BODY_BG %>; padding: 24px;">
                   <%= raw @email_campaign.body_html %>
                 </td>
               </tr>

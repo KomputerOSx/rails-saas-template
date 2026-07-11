@@ -75,7 +75,7 @@ const IMAGE_WIDTHS = { small: "200", medium: "400", full: "600" }
 // Mirrors editor.getHTML() into a hidden field on every change, so the form posts the body like
 // any other plain field. Enabled marks/nodes must stay in sync with EmailCampaign::ALLOWED_TAGS.
 export default class extends Controller {
-  static targets = [ "editor", "hiddenField", "fileInput", "buttonColor", "buttonDialog", "buttonLabelInput", "buttonUrlInput", "widthButton", "maxWidthField", "canvas", "bgColorField", "fgColorField", "linkDialog", "linkUrlInput" ]
+  static targets = [ "editor", "hiddenField", "fileInput", "buttonColor", "buttonDialog", "buttonLabelInput", "buttonUrlInput", "widthButton", "maxWidthField", "linkDialog", "linkUrlInput" ]
   static values = { maxWidth: Number }
 
   connect() {
@@ -268,16 +268,6 @@ export default class extends Controller {
 
   setEmailWidth(event) {
     this.applyEmailWidth(Number(event.currentTarget.dataset.width))
-  }
-
-  setBgColor(event) {
-    this.canvasTarget.style.backgroundColor = event.target.value
-    this.bgColorFieldTarget.value = event.target.value
-  }
-
-  setFgColor(event) {
-    this.editorTarget.style.backgroundColor = event.target.value
-    this.fgColorFieldTarget.value = event.target.value
   }
 
   applyEmailWidth(width) {
