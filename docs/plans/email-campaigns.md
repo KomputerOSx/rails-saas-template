@@ -79,6 +79,41 @@ make the `draft → sending → sent` status transition awkward to track correct
 synchronously in the controller (blocks the request for N SMTP round-trips, no recovery on
 timeout).
 
+**Images are sent as inline (CID) attachments, not fetched URLs.** `body_html` stores
+`<img src="https://.../rails/active_storage/blobs/redirect/...">` (see §6), but a static URL means
+the recipient's mail client has to fetch it over the public internet when the email is opened —
+which fails outright whenever the app isn't reachable from wherever the recipient is (not just
+`localhost`; any non-public deployment, VPN-gated staging host, etc.). `EmailCampaignMailer`
+sidesteps this entirely using `ActionMailer`'s built-in `attachments.inline[...]` (from the `mail`
+gem, already a core dependency — no new gem needed):
+
+1. `EmailCampaign#referenced_image_blobs_by_signed_id` scans `body_html` for
+   `.../blobs/redirect/:signed_id/...` URLs and resolves each captured `signed_id` back to its
+   `ActiveStorage::Blob` via `ActiveStorage::Blob.find_signed` — only the blobs this campaign's
+   body actually references, not every image ever uploaded via the unattached-blob upload flow
+   (see §6). Keyed by signed_id (rather than by blob) because Rails' signed IDs can be
+   authenticated-encrypted, i.e. non-deterministic across calls — recomputing `blob.signed_id`
+   fresh in the mailer would not reliably match the exact string embedded in `body_html`.
+2. `EmailCampaignMailer#campaign` loops that hash, calling `attachments.inline[...] = blob.download`
+   for each (name-spaced with the blob id to avoid two different blobs with the same original
+   filename clobbering one attachment slot), and records each resulting `cid:...` reference keyed
+   by the same signed_id.
+3. The view (`campaign.html.erb`) calls `EmailCampaign#body_html_with_cid_images`, which does the
+   `src="https://.../blobs/redirect/:signed_id/..."` → `src="cid:..."` swap immediately before
+   rendering — the same regex, applied in reverse.
+
+The image travels inside the email's own `multipart/related` MIME payload; the recipient's client
+renders it from the message it already has, no fetch, no dependency on this app being deployed or
+reachable at send time (`localhost` is genuinely fine now). The admin-facing `show.html.erb` preview
+is unaffected by any of this — it keeps rendering `body_html`'s real HTTP URL as-is, since `cid:`
+only resolves inside an actual MIME email, not a browser tab.
+
+**Trade-off:** the image bytes are sent with *every* recipient's copy of the email (not served once
+and cached), so a large image on a large campaign multiplies SMTP payload size — a 500KB image ×
+1,000 recipients ≈ 500MB total through the SMTP relay for that one send. Reasonable for this app's
+current scale (internal broadcast tool, not a marketing list); revisit if campaigns start recurring
+at real marketing-list scale.
+
 ## 6. Editor
 
 The rich text editor is [TipTap](https://tiptap.dev) (ProseMirror-based), chosen over
@@ -122,15 +157,24 @@ periodic purge job is a roadmap item, not built.
 The returned URL is built from `Rails.application.config.action_mailer.default_url_options` — the
 same host every other mailer link in this app already uses — **not** `request.base_url`. This
 matters: the admin composing a campaign might be reaching the app via an internal IP, VPN host, or
-`localhost`, none of which mean anything to an external email recipient's mail client; anchoring to
-the app's one configured canonical host keeps the embedded image URL correct regardless of how the
-admin got there. (This was a real bug in an earlier version of this endpoint — worth knowing if a
-future image/link-generating endpoint is added here: always use `default_url_options`, never
-`request.base_url`, for anything that ends up inside an emailed `body_html`.) Also note
+`localhost`, none of which mean anything to an external email recipient's mail client. Also note
 `config.action_mailer.default_url_options` must actually be set to your real domain in
 `config/environments/production.rb` — Rails ships this as the placeholder `"example.com"`, which
 silently breaks *every* mailer link app-wide (password resets, invitations, confirmations too, not
 just campaign images) until it's changed.
+
+This URL is only ever used at compose/preview time (the editor inserts it, `show.html.erb`'s
+preview renders it). At *send* time it's resolved back to an `ActiveStorage::Blob` and swapped for
+an inline attachment — see §5 — so the sent email's rendering no longer depends on this host being
+reachable by the recipient at all.
+
+**Why not just fix the host and leave it a fetched URL?** Because "the recipient's mail client can
+reach this URL" is a fact about *deployment*, not about anything a gem or code change here controls.
+Testing against `localhost:3000` will never render externally no matter how correct the URL looks —
+there's no way to make a laptop's `localhost` reachable from an external mail server. Several earlier
+fixes to this feature (correcting the host, restricting to web-safe formats) were still hardening
+that fundamentally-external-fetch approach; §5 replaces it with inline (CID) attachments, which
+don't have this problem by construction.
 
 **Image sizing** extends `Image` with a `width` attribute (`ResizableImage` in the controller) set
 via toolbar presets (S/M/L/Reset, 200/400/600px) applied to whichever image node is currently
@@ -181,8 +225,17 @@ pin that locally instead, same as `turbo.min.js`/`stimulus.min.js`.
 - **No recipient pagination** — the `recipients` detail page loads every recipient at once; fine
   at this scale, would need pagination for campaigns with very large audiences.
 - **No CSS inlining** — `body_html` is rendered as-is inside the shared `mailer` layout, which has
-  no inlining step. Fine for the simple tag set the sanitizer allows today; would need
-  `premailer-rails` or similar if the allowed markup ever grows to include layout-heavy HTML.
+  no inlining step. Fine for the simple tag set the sanitizer allows today (the editor's sanitizer
+  only allows already-inline `style="..."` attributes — colors, CTA buttons — nothing relies on a
+  `<style>` block or CSS classes surviving); would need `premailer-rails` (hooks into
+  `ActionMailer` automatically, no per-mailer wiring) if the allowed markup ever grows to include
+  class-based or `<style>`-block styling, since most mail clients strip `<style>` blocks entirely.
+  A separate concern from image rendering — see §5 — not addressed by inlining images.
+- **Inline images multiply SMTP payload size per send** — see §5. Embedding images as CID
+  attachments means the image bytes travel with every recipient's copy rather than being served
+  once and cached; a large image on a large campaign multiplies total payload sent through the
+  relay accordingly. Reasonable at this app's current scale, worth revisiting only if campaigns
+  start recurring at real marketing-list scale.
 
 ## 8. Roadmap (not built yet)
 
