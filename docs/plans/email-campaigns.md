@@ -218,27 +218,14 @@ clients don't reliably support `oklch()`/CSS custom properties.
 
 **Text and image alignment** are separate controls because a per-node CSS `text-align` only affects
 inline content — TipTap's `Image` node is block-level, so aligning an image needs margin, not
-`text-align`, to actually move it. Both use the same hand-rolled `.extend()` pattern (a custom
-`align` attribute with matching `parseHTML`/`renderHTML`, in
-`app/javascript/controllers/rich_text_editor_controller.js`) rather than a separate third-party
-extension package — an initial version of text alignment used the official
-`@tiptap/extension-text-align`, pulled in as its own `esm.sh` CDN pin, but that never actually
-worked (buttons did nothing) while image alignment, built the hand-rolled way from the start, worked
-immediately. Most likely cause: a fresh CDN package with its own bundled `@tiptap/core` dependency is
-exactly the "ESM CDN failing to dedupe a shared peer dependency" risk this doc's own verification
-note already flagged for *any* new TipTap package added here — compounded by that specific package's
-documented behavior of omitting the `text-align` style entirely whenever the value matches its
-default alignment ("left"). Rather than chase either cause further, text alignment was rewritten to
-match images: `AlignedParagraph`/`AlignedHeading` (`Paragraph`/`Heading` extended with the same
-`align` attribute shape as `ResizableImage`'s, rendering `text-align:left/center/right;` instead of
-margin), pinned as standalone `@tiptap/extension-paragraph`/`@tiptap/extension-heading` packages and
-substituted in via `StarterKit.configure({ paragraph: false, heading: false })` (same
-disable-and-replace technique already used here for `codeBlock`/`code`/`horizontalRule`/`strike`).
-`style="text-align: ..."` was already inside `ALLOWED_ATTRIBUTES`, so no sanitizer change was needed
-either time. Image alignment itself is unchanged: a custom `align` attribute on `ResizableImage` that
+`text-align`, to actually move it. Left/Center/Right for paragraphs and headings uses the official
+`@tiptap/extension-text-align` (pinned via importmap like every other TipTap piece here, `types:
+['heading', 'paragraph']`), which renders a plain `style="text-align: ..."` — already inside
+`ALLOWED_ATTRIBUTES`, no sanitizer change needed. Left/Center/Right for images is a custom `align`
+attribute on `ResizableImage` (`app/javascript/controllers/rich_text_editor_controller.js`) that
 renders `display:block` plus `margin:0` / `margin:0 auto` / `margin-left:auto` respectively — the
 same `margin:auto` technique used broadly in HTML email because it (unlike `float`) holds up in
-Outlook desktop. Both `parseHTML`s recognize their own rendered style strings on load, so alignment
+Outlook desktop. Its `parseHTML` recognizes those same three style strings on load, so alignment
 round-trips correctly when reopening a saved campaign for editing. The image-align buttons sit
 inside the existing "Image" toolbar group, next to the S/M/L/Reset size buttons — same "applies to
 whichever image node is currently selected" behavior.

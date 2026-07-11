@@ -6,8 +6,7 @@ import Link from "@tiptap/extension-link"
 import TextStyle from "@tiptap/extension-text-style"
 import Color from "@tiptap/extension-color"
 import Image from "@tiptap/extension-image"
-import Paragraph from "@tiptap/extension-paragraph"
-import Heading from "@tiptap/extension-heading"
+import TextAlign from "@tiptap/extension-text-align"
 
 // Link's default schema drops any attribute it doesn't declare, so a bare `style` set via
 // insertButton() below would vanish on the next getHTML() - extend it to keep one.
@@ -21,38 +20,6 @@ const CampaignLink = Link.extend({
         renderHTML: attributes => attributes.style ? { style: attributes.style } : {}
       }
     }
-  }
-})
-
-const TEXT_ALIGN_STYLES = { left: "text-align:left;", center: "text-align:center;", right: "text-align:right;" }
-
-// Same align-attribute shape as ResizableImage below, applied to paragraphs/headings instead of
-// images. Hand-rolled rather than pulling in @tiptap/extension-text-align - a separate CDN
-// package that never got live-verified (see docs/plans/email-campaigns.md §6) - reusing the
-// .extend() pattern already proven for CampaignLink/ResizableImage in this exact setup instead.
-const alignAttribute = {
-  align: {
-    default: null,
-    parseHTML: element => {
-      const style = element.getAttribute("style") || ""
-      if (style.includes("text-align:center")) return "center"
-      if (style.includes("text-align:right")) return "right"
-      if (style.includes("text-align:left")) return "left"
-      return null
-    },
-    renderHTML: attributes => attributes.align ? { style: TEXT_ALIGN_STYLES[attributes.align] } : {}
-  }
-}
-
-const AlignedParagraph = Paragraph.extend({
-  addAttributes() {
-    return { ...this.parent(), ...alignAttribute }
-  }
-})
-
-const AlignedHeading = Heading.extend({
-  addAttributes() {
-    return { ...this.parent(), ...alignAttribute }
   }
 })
 
@@ -120,16 +87,14 @@ export default class extends Controller {
           code: false,
           horizontalRule: false,
           strike: false,
-          paragraph: false,
-          heading: false
+          heading: { levels: [ 1, 2, 3 ] }
         }),
-        AlignedParagraph,
-        AlignedHeading.configure({ levels: [ 1, 2, 3 ] }),
         Underline,
         CampaignLink.configure({ openOnClick: false }),
         TextStyle,
         Color,
-        ResizableImage
+        ResizableImage,
+        TextAlign.configure({ types: [ "heading", "paragraph" ] })
       ],
       content: this.hiddenFieldTarget.value || "",
       onUpdate: () => this.syncHiddenField()
@@ -188,18 +153,16 @@ export default class extends Controller {
     this.editor.chain().focus().toggleBlockquote().run()
   }
 
-  // updateAttributes is a no-op when the selection isn't inside that node type, so chaining both
-  // correctly applies to whichever one the cursor is actually in.
   setTextAlignLeft() {
-    this.editor.chain().focus().updateAttributes("paragraph", { align: "left" }).updateAttributes("heading", { align: "left" }).run()
+    this.editor.chain().focus().setTextAlign("left").run()
   }
 
   setTextAlignCenter() {
-    this.editor.chain().focus().updateAttributes("paragraph", { align: "center" }).updateAttributes("heading", { align: "center" }).run()
+    this.editor.chain().focus().setTextAlign("center").run()
   }
 
   setTextAlignRight() {
-    this.editor.chain().focus().updateAttributes("paragraph", { align: "right" }).updateAttributes("heading", { align: "right" }).run()
+    this.editor.chain().focus().setTextAlign("right").run()
   }
 
   openLinkDialog() {
