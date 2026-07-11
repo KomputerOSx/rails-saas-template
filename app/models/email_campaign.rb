@@ -15,9 +15,6 @@ class EmailCampaign < ApplicationRecord
   ALLOWED_TAGS = %w[p br strong em u a ul ol li h1 h2 h3 blockquote span img].freeze
   ALLOWED_ATTRIBUTES = %w[href style src alt width].freeze
 
-  # Matches the <img src="..."> shape EmailCampaignImagesController's rails_blob_url produces,
-  # capturing the signed_id - how the mailer finds which blobs to inline (see #referenced_image_blobs)
-  # and where to rewrite src="..." to a cid: reference (see #body_html_with_cid_images).
   BLOB_REDIRECT_URL_REGEX = %r{https?://[^\s"']*/rails/active_storage/blobs/redirect/([^/\s"']+)/[^\s"']*}
 
   # Snapshots recipients but sends nothing - sending is a deliberate separate step (see #deliver).
@@ -42,10 +39,6 @@ class EmailCampaign < ApplicationRecord
     { total: scope.count, sent: scope.sent.count, failed: scope.failed.count, pending: scope.pending.count }
   end
 
-  # Resolves body_html's <img src="...blobs/redirect/:signed_id/..."> references back to their
-  # ActiveStorage::Blob records, keyed by the signed_id substring embedded in each URL. This is what
-  # EmailCampaignMailer loops to build inline (CID) attachments - only the images a campaign actually
-  # uses, not every image ever uploaded via the unattached-blob upload flow.
   def referenced_image_blobs_by_signed_id
     body_html.to_s.scan(BLOB_REDIRECT_URL_REGEX).flatten.uniq.each_with_object({}) do |signed_id, blobs|
       blob = ActiveStorage::Blob.find_signed(signed_id)
@@ -57,9 +50,6 @@ class EmailCampaign < ApplicationRecord
     referenced_image_blobs_by_signed_id.values
   end
 
-  # Rewrites body_html's blob-redirect image URLs to the cid: references the mailer's inline
-  # attachments produced, keyed by the same signed_id BLOB_REDIRECT_URL_REGEX captures. Only
-  # meaningful inside an actual MIME email - the admin-facing `show` preview renders body_html as-is.
   def body_html_with_cid_images(cid_by_signed_id)
     body_html.to_s.gsub(BLOB_REDIRECT_URL_REGEX) { cid_by_signed_id[$1] || $& }
   end
