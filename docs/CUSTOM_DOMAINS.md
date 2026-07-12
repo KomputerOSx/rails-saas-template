@@ -159,10 +159,9 @@ accessories:
 
 [`config/Caddyfile`](../config/Caddyfile):
 
-- Global `on_demand_tls` with `ask http://127.0.0.1:3000/internal/domain_validations`
-- Primary host block → `reverse_proxy 127.0.0.1:3000`
-- `:443` with `tls { on_demand }` for customer domains
-- `:80` redirects to HTTPS
+- `http://` → permanent redirect to HTTPS (avoids CSRF Origin mismatch under `assume_ssl`)
+- Primary host (`https://{$APP_HOST}`) → managed cert + `reverse_proxy 127.0.0.1:3000`
+- Catch-all `https://` with `tls { on_demand }` for customer domains
 
 **Persist `caddy_data`.** If that volume is lost, Caddy re-issues every customer cert and
 can hit Let's Encrypt rate limits immediately.
