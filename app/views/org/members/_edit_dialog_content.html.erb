@@ -36,7 +36,7 @@
       </p>
 
       <%= form_with url: promote_to_owner_org_member_path(membership), method: :patch,
-            html: { class: "mt-3 space-y-3", data: { turbo_frame: "_top" } } do %>
+            html: { class: "mt-3 space-y-3", data: { turbo_frame: "_top", action: "turbo:submit-end->modal#closeOnSuccess" } } do %>
         <div class="form-control">
           <label class="label py-0"><span class="label-text text-xs">Type <%= membership.user.email %> to confirm</span></label>
           <input type="text" name="typed_confirmation" autocomplete="off"

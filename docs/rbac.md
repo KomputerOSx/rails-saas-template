@@ -113,6 +113,7 @@ permissions:
   app.members.remove: "Remove members from the organization"
   app.members.promote: "Promote/demote members between admin and user"
   app.members.promote_owner: "Promote a member to co-owner of the organization"
+  app.members.demote_owner: "Demote an owner to admin"
   app.organization.manage: "Manage organization settings"
   app.billing.manage: "Manage billing and subscription"
 ```
@@ -127,6 +128,7 @@ Permission keys must match `\A[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+\z` (dot-separa
 | `app.members.remove` | ✓ | ✓ | |
 | `app.members.promote` | ✓ | | |
 | `app.members.promote_owner` | ✓ | | |
+| `app.members.demote_owner` | ✓ | | |
 | `app.organization.manage` | ✓ | | |
 | `app.billing.manage` | ✓ | | |
 
@@ -305,6 +307,7 @@ Used for org rename (`Org::OrganizationsController#update`) and feature flags
 | `promote?` | `app.members.promote` |
 | `demote?` | `app.members.promote` |
 | `promote_to_owner?` | `app.members.promote_owner` |
+| `demote_owner?` | `app.members.demote_owner` |
 
 Pundit maps controller action names to policy methods automatically:
 
@@ -348,10 +351,11 @@ Both `show?` and `manage?` require `app.billing.manage` on the organization.
 | `Org::FeaturesController` | `OrganizationPolicy#update?` | `app.organization.manage` | Feature flags |
 | `Org::InvitationsController#create` | `OrganizationInvitationPolicy#create?` | `app.members.invite` | Always assigns `user` role |
 | `Org::InvitationsController#destroy` | `OrganizationInvitationPolicy#destroy?` | `app.members.invite` | Revoke pending invite |
-| `Org::MembersController#destroy` | `MembershipPolicy#destroy?` | `app.members.remove` | Remove another member |
-| `Org::MembersController#promote/demote` | `MembershipPolicy#promote?/demote?` | `app.members.promote` | Change admin ↔ user |
-| `Org::MembersController#promote_to_owner` | `MembershipPolicy#promote_to_owner?` | `app.members.promote_owner` | Add a co-owner; requires typed-email + emailed-code confirmation |
-| `Org::MembersController#leave` | — | — | `skip_authorization`; self-removal always allowed |
+| `Org::MembersController#destroy` | `MembershipPolicy#destroy?` | `app.members.remove` | Remove another member; always rejected if the target is an owner |
+| `Org::MembersController#promote/demote` | `MembershipPolicy#promote?/demote?` | `app.members.promote` | Change admin ↔ user; rejected if the target is an owner |
+| `Org::MembersController#promote_to_owner` | `MembershipPolicy#promote_to_owner?` | `app.members.promote_owner` | Add a co-owner; requires typed-email + emailed-code confirmation (code sent to the acting owner) |
+| `Org::MembersController#demote_owner` | `MembershipPolicy#demote_owner?` | `app.members.demote_owner` | Demote an owner to admin, self or peer-initiated; requires typed-email + emailed-code confirmation (code always sent to the owner being demoted) |
+| `Org::MembersController#leave` | — | — | `skip_authorization`; self-removal always allowed unless the member is an owner (must `#demote_owner` first) |
 | `BillingController` + nested | `BillingPolicy` | `app.billing.manage` | Show + all mutations |
 
 ### Admin controllers
@@ -459,29 +463,39 @@ Member limit is enforced at invite creation and again at acceptance (see `docs/B
 
 ## 11. Owner safeguards
 
-Several guards prevent an org from being left without an owner:
+Several guards prevent an org from being left without an owner, and ensure ownership can never
+change hands without the owner in question confirming it themselves:
 
 - **`MembershipRole#prevent_removing_last_owner`** — blocks destroying the last `owner`
-  `MembershipRole` in an org.
+  `MembershipRole` in an org. `Membership#revoke_role!`/`#destroy` both surface this as a
+  falsy return rather than raising, so callers (`#demote_owner`, `#destroy`, `#leave`) check the
+  result and report "can't demote/remove the organization's last owner."
 - **`Org::MembersController#reject_owner_target`** — blocks promote/demote (the admin ↔ user
-  toggle) on owners.
-- **`Org::MembersController#promote_to_owner`** — the only supported ownership change: adds a
-  co-owner (organizations can have multiple owners at once; this never demotes the original
-  owner). Gated by `app.members.promote_owner` and requires the acting owner to type the target
-  member's email and enter a 6-digit code emailed to their own address
-  (`OwnershipPromotionMailer`), mirroring the account-deletion confirmation flow.
-- **Member row UI** — edit/remove actions are hidden for members with the `owner` role
-  (`app/views/org/members/_membership_row.html.erb`), regardless of the current user's
-  permissions.
-- **Self-removal (`leave`)** — always allowed, but fails if the user is the sole owner.
+  toggle) **and** `destroy` (force-removal) on any membership holding the `owner` role, no
+  matter how many owners the org has. Owners can only lose ownership via `#demote_owner` below.
+- **`Org::MembersController#promote_to_owner`** — adds a co-owner (organizations can have
+  multiple owners at once; this never demotes the original owner). Gated by
+  `app.members.promote_owner` and requires the acting owner to type the target member's email
+  and enter a 6-digit code emailed to **their own** address (`OwnershipPromotionMailer`),
+  mirroring the account-deletion confirmation flow.
+- **`Org::MembersController#demote_owner`** — the only way to strip an owner's ownership
+  (self-initiated "step down," or another owner demoting a peer). Gated by
+  `app.members.demote_owner`. The confirmation code (`OwnerDemotionMailer`) is always emailed to
+  the **owner being demoted**, never the initiator — so a peer owner can start the request, but
+  it only completes once the target's own inbox confirms it. Still blocked by
+  `prevent_removing_last_owner` if the target is the sole owner.
+- **Member row UI** — owner rows only ever show the `#demote_owner` control (never edit/remove);
+  non-owner rows show edit/remove as before
+  (`app/views/org/members/_membership_row.html.erb`). Controller authorization is the real
+  boundary, not this UI gating.
+- **Self-removal (`leave`)** — blocked outright for any owner (must `#demote_owner` first, same
+  as force-removal); for non-owners, always allowed but fails if it would somehow leave the org
+  without an owner (defense in depth - shouldn't be reachable given the above).
 - **`ProfileController#destroy` (account deletion)** — a user who is the *sole* owner of an
   organization that still has other members is blocked from deleting their account until they
   promote a co-owner or remove those members. If they're the sole owner **and** the only
   remaining member, deleting their account also destroys the organization (see
   `ProfileController#sole_owner_with_other_members?`).
-
-Full transfer (demoting the original owner as part of promoting a new one) is documented as an
-unimplemented extension point in `app/models/membership_role.rb#prevent_removing_last_owner`.
 
 ---
 
@@ -629,12 +643,11 @@ Users without the required permission see the control but get redirected on subm
 |----------|--------------------|------------------------------------|
 | `org/invitations/_section.html.erb` | Table + invite form always visible | `app.members.invite` |
 | `org/invitations/_invitation_row.html.erb` | Revoke button always visible | `app.members.invite` |
-| `org/members/_membership_row.html.erb` | Edit/remove shown for non-owners | `app.members.remove`, `app.members.promote` |
 | `shared/_sidebar_nav.html.erb` — Billing link | Shown to all authenticated users | `app.billing.manage` (billing page) |
 
-Member row actions are gated by **target role** (hide for owners) and **self vs other**, not
-by whether the current user holds the relevant permission. Align these with the patterns in
-§9 when polishing the UX.
+`org/members/_membership_row.html.erb` is now gated correctly: each control (edit, remove,
+promote-to-owner, demote-owner) only renders when `current_user` holds the matching permission,
+in addition to the existing target-role/self-vs-other checks.
 
 **Security note:** Controller authorization is always enforced regardless of UI state. View
 gating is optional UX polish, not a security boundary.

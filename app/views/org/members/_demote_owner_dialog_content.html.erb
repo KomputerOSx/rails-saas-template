@@ -1,0 +1,52 @@
+<div class="modal-box">
+  <form method="dialog"><button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" data-action="click->modal#close">✕</button></form>
+
+  <h3 class="font-bold text-lg">
+    <%= membership.user == current_user ? "Step down as owner" : "Demote #{membership.user.email} to admin" %>
+  </h3>
+  <p class="mt-1 text-sm text-base-content/60">
+    A confirmation code will be emailed to <%= membership.user.email %><%= " (you)" if membership.user == current_user %>.
+    Owners can't be demoted while they're the organization's only owner.
+  </p>
+
+  <div class="mt-4" data-controller="deletion-confirm"
+       data-deletion-confirm-send-url-value="<%= send_owner_demotion_code_org_member_path(membership) %>"
+       data-deletion-confirm-expected-email-value="<%= membership.user.email %>">
+    <%= form_with url: demote_owner_org_member_path(membership), method: :patch,
+          html: { class: "space-y-3", data: { turbo_frame: "_top", action: "turbo:submit-end->modal#closeOnSuccess" } } do %>
+      <div class="form-control">
+        <label class="label py-0"><span class="label-text text-xs">Type <%= membership.user.email %> to confirm</span></label>
+        <input type="text" name="typed_confirmation" autocomplete="off"
+               placeholder="<%= membership.user.email %>"
+               data-deletion-confirm-target="emailInput"
+               data-action="input->deletion-confirm#validate"
+               class="input-field w-full">
+      </div>
+
+      <div class="form-control">
+        <div class="flex items-center justify-between mb-1">
+          <span class="label-text text-xs">Confirmation code (emailed to <%= membership.user.email %>)</span>
+          <button type="button"
+                  data-deletion-confirm-target="sendButton"
+                  data-action="click->deletion-confirm#sendCode"
+                  class="btn btn-ghost btn-xs">
+            Send code
+          </button>
+        </div>
+        <div data-controller="two-factor"
+             data-two-factor-autosubmit-value="false"
+             data-action="input->deletion-confirm#validate paste->deletion-confirm#validate">
+          <%= render "shared/otp_digits", autofocus: false %>
+        </div>
+        <p data-deletion-confirm-target="codeSentMessage" class="hidden mt-1.5 text-xs text-success">
+          Code sent. Check the inbox.
+        </p>
+      </div>
+
+      <button type="submit" disabled data-deletion-confirm-target="submitButton" class="btn btn-error btn-outline btn-sm w-full">
+        Demote to admin
+      </button>
+    <% end %>
+  </div>
+</div>
+<form method="dialog" class="modal-backdrop"><button>close</button></form>

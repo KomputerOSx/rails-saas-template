@@ -17,6 +17,10 @@ class MembershipPolicy < ApplicationPolicy
     permission?("app.members.promote_owner")
   end
 
+  def demote_owner?
+    permission?("app.members.demote_owner")
+  end
+
   private
 
   def permission?(key)

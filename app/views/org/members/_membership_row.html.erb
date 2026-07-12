@@ -3,37 +3,50 @@
 
   <%= render "org/members/role_badge", membership: membership %>
 
-  <% if show_actions && !membership.has_role?(Role::APP_OWNER, scope: :app) && membership.user != current_user %>
+  <% if show_actions %>
     <td>
       <div class="flex justify-end gap-1">
-        <% if can_promote_org_members? || can_promote_to_owner? %>
-          <div data-controller="modal">
-            <button type="button" data-action="click->modal#open" class="btn btn-ghost btn-xs btn-square" title="Edit member">
-              <span class="material-symbols-outlined" style="font-size:18px">edit</span>
-            </button>
+        <% if membership.has_role?(Role::APP_OWNER, scope: :app) %>
+          <% if can_demote_owner? %>
+            <div data-controller="modal">
+              <button type="button" data-action="click->modal#open" class="btn btn-ghost btn-xs btn-square"
+                      title="<%= membership.user == current_user ? "Step down as owner" : "Demote to admin" %>">
+                <span class="material-symbols-outlined" style="font-size:18px">remove_moderator</span>
+              </button>
 
-            <dialog id="<%= dom_id(membership, :dialog) %>" data-modal-target="dialog" class="modal">
-              <%= render "org/members/edit_dialog_content", membership: membership %>
-            </dialog>
-          </div>
-        <% end %>
+              <dialog id="<%= dom_id(membership, :dialog) %>" data-modal-target="dialog" class="modal">
+                <%= render "org/members/demote_owner_dialog_content", membership: membership %>
+              </dialog>
+            </div>
+          <% end %>
+        <% elsif membership.user != current_user %>
+          <% if can_promote_org_members? || can_promote_to_owner? %>
+            <div data-controller="modal">
+              <button type="button" data-action="click->modal#open" class="btn btn-ghost btn-xs btn-square" title="Edit member">
+                <span class="material-symbols-outlined" style="font-size:18px">edit</span>
+              </button>
 
-        <% if can_remove_org_members? %>
-          <%= button_to org_member_path(membership), method: :delete,
-                form: { data: { turbo_frame: "_top" } },
-                data: {
-                  controller: "confirm-modal",
-                  action: "click->confirm-modal#confirm",
-                  confirm_modal_message_value: "Remove #{membership.user.email} from #{Current.organization.name}?"
-                },
-                class: "btn btn-ghost btn-xs btn-square text-error",
-                title: "Remove member" do %>
-            <span class="material-symbols-outlined" style="font-size:18px">person_remove</span>
+              <dialog id="<%= dom_id(membership, :dialog) %>" data-modal-target="dialog" class="modal">
+                <%= render "org/members/edit_dialog_content", membership: membership %>
+              </dialog>
+            </div>
+          <% end %>
+
+          <% if can_remove_org_members? %>
+            <%= button_to org_member_path(membership), method: :delete,
+                  form: { data: { turbo_frame: "_top" } },
+                  data: {
+                    controller: "confirm-modal",
+                    action: "click->confirm-modal#confirm",
+                    confirm_modal_message_value: "Remove #{membership.user.email} from #{Current.organization.name}?"
+                  },
+                  class: "btn btn-ghost btn-xs btn-square text-error",
+                  title: "Remove member" do %>
+              <span class="material-symbols-outlined" style="font-size:18px">person_remove</span>
+            <% end %>
           <% end %>
         <% end %>
       </div>
     </td>
-  <% elsif show_actions %>
-    <td></td>
   <% end %>
 </tr>

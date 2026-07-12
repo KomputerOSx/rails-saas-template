@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_12_010001) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_12_020001) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -424,6 +424,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_12_010001) do
     t.datetime "locked_until"
     t.datetime "onboarding_completed_at"
     t.string "onboarding_step"
+    t.string "owner_demotion_code_digest"
+    t.datetime "owner_demotion_code_sent_at"
     t.string "ownership_promotion_code_digest"
     t.datetime "ownership_promotion_code_sent_at"
     t.string "password_digest", default: "", null: false

@@ -28,6 +28,7 @@ class User < ApplicationRecord
   TOTP_ISSUER = Rails.application.class.module_parent_name
   ACCOUNT_DELETION_CODE_EXPIRY = 30.minutes
   OWNERSHIP_PROMOTION_CODE_EXPIRY = 30.minutes
+  OWNER_DEMOTION_CODE_EXPIRY = 30.minutes
 
   normalizes :email, with: ->(email) { email.strip.downcase }
 
@@ -318,6 +319,27 @@ class User < ApplicationRecord
     ActiveSupport::SecurityUtils.secure_compare(
       self.class.digest_code(code.to_s),
       ownership_promotion_code_digest.to_s
+    )
+  end
+
+  # --- Owner demotion confirmation (6-digit code, always sent to the owner being demoted -
+  # whether they're stepping themselves down or another owner initiated it) ---
+
+  def request_owner_demotion_code!
+    code = self.class.generate_code
+    update_columns(
+      owner_demotion_code_digest: self.class.digest_code(code),
+      owner_demotion_code_sent_at: Time.current
+    )
+    code
+  end
+
+  def verify_owner_demotion_code!(code)
+    return false if owner_demotion_code_sent_at.nil?
+    return false if owner_demotion_code_sent_at < OWNER_DEMOTION_CODE_EXPIRY.ago
+    ActiveSupport::SecurityUtils.secure_compare(
+      self.class.digest_code(code.to_s),
+      owner_demotion_code_digest.to_s
     )
   end
 

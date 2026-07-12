@@ -40,7 +40,7 @@ module ApplicationHelper
   end
 
   def can_manage_org_members?
-    can_remove_org_members? || can_promote_org_members?
+    can_remove_org_members? || can_promote_org_members? || can_promote_to_owner? || can_demote_owner?
   end
 
   def can_remove_org_members?
@@ -53,5 +53,9 @@ module ApplicationHelper
 
   def can_promote_to_owner?
     current_user.has_permission?("app.members.promote_owner", organization: Current.organization)
+  end
+
+  def can_demote_owner?
+    current_user.has_permission?("app.members.demote_owner", organization: Current.organization)
   end
 end
