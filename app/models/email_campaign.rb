@@ -38,6 +38,10 @@ class EmailCampaign < ApplicationRecord
 
   BLOB_REDIRECT_URL_REGEX = %r{https?://[^\s"']*/rails/active_storage/blobs/redirect/([^/\s"']+)/[^\s"']*}
 
+  def self.sanitize_campaign_html(html)
+    ActionController::Base.helpers.sanitize(html.to_s, tags: ALLOWED_TAGS, attributes: ALLOWED_ATTRIBUTES)
+  end
+
   # Snapshots recipients but sends nothing - sending is a deliberate separate step (see #deliver).
   def self.create_draft!(subject:, body_html:, to:, created_by: nil, max_width: nil, category: nil)
     recipients = Array(to.respond_to?(:find_each) ? to.to_a : to).uniq
@@ -90,10 +94,8 @@ class EmailCampaign < ApplicationRecord
 
   private
 
-  # Single sanitization point - the mailer view renders body_html with `raw`, trusting this ran.
+  # Single sanitization point - views/mailers re-sanitize at render time for defense in depth.
   def sanitize_body_html
-    self.body_html = ActionController::Base.helpers.sanitize(
-      body_html, tags: ALLOWED_TAGS, attributes: ALLOWED_ATTRIBUTES
-    )
+    self.body_html = self.class.sanitize_campaign_html(body_html)
   end
 end

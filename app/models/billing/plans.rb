@@ -26,7 +26,7 @@ module Billing
 
       def all_stripe_price_ids
         Plans::SUPPORTED_CURRENCIES.flat_map { |currency|
-          [resolved_stripe_price_id(currency), *Plans.legacy_price_ids(key, currency)]
+          [ resolved_stripe_price_id(currency), *Plans.legacy_price_ids(key, currency) ]
         }.compact
       end
     end
@@ -59,7 +59,7 @@ module Billing
     def self.legacy_price_ids(plan_key, currency)
       legacy = {
         "growth" => {
-          "usd" => ["price_1TqhWqRwyC7yy0N3ZtkgQg5U"]
+          "usd" => [ "price_1TqhWqRwyC7yy0N3ZtkgQg5U" ]
         }
       }
       legacy.dig(plan_key.to_s, currency.to_s) || []
