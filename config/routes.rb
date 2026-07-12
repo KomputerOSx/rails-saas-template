@@ -115,6 +115,10 @@ Rails.application.routes.draw do
       member do
         patch :promote
         patch :demote
+        patch :promote_to_owner
+        post  :send_promotion_code
+        patch :demote_owner
+        post  :send_owner_demotion_code
       end
       collection do
         delete :leave

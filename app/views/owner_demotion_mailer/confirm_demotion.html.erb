@@ -1,0 +1,17 @@
+<p>Hello, <%= @target.email %>!</p>
+
+<% if @self_initiated %>
+  <p>You requested to step down from owner to admin in <strong><%= @organization.name %></strong>.</p>
+<% else %>
+  <p><strong><%= @initiator.email %></strong> requested to demote you from owner to admin in
+  <strong><%= @organization.name %></strong>.</p>
+<% end %>
+
+<p>Your confirmation code is:</p>
+
+<p style="font-size:28px;font-weight:bold;letter-spacing:4px"><%= @code %></p>
+
+<p>Enter this code to confirm the change. It expires in 30 minutes.</p>
+
+<p>If you didn't request this and don't want to be demoted, ignore this email - no change will
+be made unless the code is confirmed.</p>

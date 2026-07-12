@@ -138,6 +138,10 @@
                     <li>Cancel all pending invitations sent to you</li>
                     <li>Permanently delete your activity and audit history</li>
                   </ul>
+                  <p>
+                    If you're the only owner of an organization that still has other members,
+                    you'll need to promote a co-owner or remove those members first.
+                  </p>
                 </div>
 
                 <%= form_with url: profile_path, method: :delete, html: { class: "mt-6 space-y-4" } do |f| %>

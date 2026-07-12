@@ -7,6 +7,8 @@ permissions:
   app.members.invite: "Invite people to the organization"
   app.members.remove: "Remove members from the organization"
   app.members.promote: "Promote/demote members between admin and user"
+  app.members.promote_owner: "Promote a member to co-owner of the organization"
+  app.members.demote_owner: "Demote an owner to admin"
   app.organization.manage: "Manage organization settings"
   app.billing.manage: "Manage billing and subscription"
 
@@ -24,7 +26,7 @@ roles:
     owner:
       permanent: true
       description: "Organization owner - full control; cannot be removed while sole owner"
-      permissions: [app.members.invite, app.members.remove, app.members.promote, app.organization.manage, app.billing.manage]
+      permissions: [app.members.invite, app.members.remove, app.members.promote, app.members.promote_owner, app.members.demote_owner, app.organization.manage, app.billing.manage]
     admin:
       permanent: false
       description: "Organization admin - can invite and remove members"
