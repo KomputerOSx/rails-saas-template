@@ -7,16 +7,17 @@ image: windtunnel
 # Deploy to these servers.
 servers:
   web:
-    - 192.168.0.1
+    - 116.202.25.81
   # job:
   #   hosts:
-  #     - 192.168.0.1
+  #     - 116.202.25.81
   #   cmd: bin/jobs
 
 # Caddy terminates TLS (including on-demand certs for custom domains) on 80/443.
 # kamal-proxy stays for gapless deploys but binds to localhost only, without SSL.
 proxy:
   ssl: false
+  host: windtunnel.strixon.co.uk
   run:
     http_port: 3000
     https_port: 3001
@@ -29,11 +30,11 @@ registry:
   server: localhost:5555
 
   # Needed for authenticated registries.
-  # username: your-user
+  username: komputerosx
 
   # Always use an access token rather than real password when possible.
-  # password:
-  #   - KAMAL_REGISTRY_PASSWORD
+  password:
+    - KAMAL_REGISTRY_PASSWORD
 
 # Inject ENV variables into containers (secrets come from .kamal/secrets).
 env:
@@ -45,9 +46,9 @@ env:
     SOLID_QUEUE_IN_PUMA: true
 
     # Primary hostname used by AppHost and DNS instructions in org settings.
-    # APP_HOST: app.example.com
+    APP_HOST: windtunnel.strixon.co.uk
     # Public server IP shown for apex A-record DNS instructions.
-    # APP_SERVER_IP: 192.168.0.1
+    APP_SERVER_IP: 116.202.25.81
 
     # Set number of processes dedicated to Solid Queue (default: 1)
     # JOB_CONCURRENCY: 3
@@ -103,14 +104,12 @@ builder:
 accessories:
   caddy:
     image: caddy:2-alpine
-    host: 192.168.0.1
+    host: 116.202.25.81
     network: host
     env:
       clear:
-        # ACME account email for Let's Encrypt (required for production).
-        # ACME_EMAIL: admin@example.com
-        # Must match the primary host block / Rails APP_HOST.
-        # APP_HOST: app.example.com
+        ACME_EMAIL: admin@strixon.co.uk
+        APP_HOST: windtunnel.strixon.co.uk
     files:
       - config/Caddyfile:/etc/caddy/Caddyfile
     volumes:

@@ -35,4 +35,20 @@ class SitesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_match @organization.name, response.body
   end
+
+  test "health check is not swallowed by the custom domain catch-all" do
+    host! "shop.acme.test"
+
+    get "/up"
+
+    assert_response :success
+  end
+
+  test "health check works when kamal-proxy uses a non-primary host" do
+    host! "windtunnel-web-abc123"
+
+    get "/up"
+
+    assert_response :success
+  end
 end
