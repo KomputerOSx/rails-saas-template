@@ -463,6 +463,9 @@ Member limit is enforced at invite creation and again at acceptance (see `docs/B
 
 ## 11. Owner safeguards
 
+> Full walkthrough of every ownership flow (creation, promotion, demotion, removal, account
+> deletion), including the confirmation-code mechanics and UI: see `docs/OWNERSHIP.md`.
+
 Several guards prevent an org from being left without an owner, and ensure ownership can never
 change hands without the owner in question confirming it themselves:
 
