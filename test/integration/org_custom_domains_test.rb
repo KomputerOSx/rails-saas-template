@@ -53,6 +53,11 @@ class OrgCustomDomainsTest < ActionDispatch::IntegrationTest
       assert_response :success
       assert_match(/organization\[custom_domain\]/, response.body)
       assert_match(/DNS setup/, response.body)
+      assert_match(/>Type</, response.body)
+      assert_match(/>Name</, response.body)
+      assert_match(/Points to/, response.body)
+      assert_match(/\bCNAME\b/, response.body)
+      assert_match(/data-controller="clipboard"/, response.body)
     end
   end
 

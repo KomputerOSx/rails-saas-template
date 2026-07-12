@@ -1,0 +1,12 @@
+<%# locals: (value:) %>
+<div class="flex items-center gap-2">
+  <code class="min-w-0 truncate text-xs"><%= value %></code>
+  <button type="button"
+          class="btn btn-ghost btn-xs shrink-0"
+          data-controller="clipboard"
+          data-clipboard-text-value="<%= value %>"
+          data-action="clipboard#copy"
+          aria-label="Copy <%= value %>">
+    Copy
+  </button>
+</div>

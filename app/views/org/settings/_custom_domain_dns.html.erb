@@ -1,17 +1,51 @@
-<div class="rounded-lg bg-base-200/60 p-4 text-sm">
-  <p class="font-medium">DNS setup</p>
-  <ul class="mt-2 list-disc space-y-1.5 pl-5 text-base-content/70">
-    <li>
-      <span class="font-medium text-base-content">Subdomain</span>
-      (e.g. <code class="text-xs">app.example.com</code>): add a
-      <span class="font-medium text-base-content">CNAME</span> pointing to
-      <code class="text-xs"><%= AppHost.primary_host %></code>.
-    </li>
-    <li>
-      <span class="font-medium text-base-content">Apex / root domain</span>
-      (e.g. <code class="text-xs">example.com</code>): add an
-      <span class="font-medium text-base-content">A</span> record pointing to
-      <code class="text-xs"><%= AppHost.server_ip %></code>.
-    </li>
-  </ul>
+<%
+  primary_host = AppHost.primary_host
+  server_ip = AppHost.server_ip
+  configured = Current.organization.custom_domain.presence
+  cname_name = configured.presence || "app"
+%>
+
+<div class="overflow-x-auto rounded-lg border border-base-300">
+  <div class="border-b border-base-300 bg-base-200/60 px-4 py-3">
+    <p class="text-sm font-medium">DNS setup</p>
+    <p class="mt-0.5 text-xs text-base-content/60">
+      Add <span class="font-medium text-base-content">one</span> of these records — CNAME for a subdomain, A for an apex/root domain.
+    </p>
+  </div>
+
+  <table class="table table-sm">
+    <thead class="text-sm font-semibold text-base-content bg-base-200">
+      <tr class="border-b border-base-300">
+        <th class="w-24">Type</th>
+        <th>Name</th>
+        <th>Points to</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="border-b border-base-300">
+        <td class="align-middle">
+          <span class="font-mono text-xs font-semibold">CNAME</span>
+          <p class="mt-0.5 text-[11px] font-normal text-base-content/50">Subdomain</p>
+        </td>
+        <td class="align-middle">
+          <%= render "org/settings/copyable_value", value: cname_name %>
+        </td>
+        <td class="align-middle">
+          <%= render "org/settings/copyable_value", value: primary_host %>
+        </td>
+      </tr>
+      <tr>
+        <td class="align-middle">
+          <span class="font-mono text-xs font-semibold">A</span>
+          <p class="mt-0.5 text-[11px] font-normal text-base-content/50">Apex / root</p>
+        </td>
+        <td class="align-middle">
+          <%= render "org/settings/copyable_value", value: "@" %>
+        </td>
+        <td class="align-middle">
+          <%= render "org/settings/copyable_value", value: server_ip %>
+        </td>
+      </tr>
+    </tbody>
+  </table>
 </div>

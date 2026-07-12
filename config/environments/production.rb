@@ -80,9 +80,7 @@ Rails.application.configure do
   config.active_record.attributes_for_inspect = [ :id ]
 
   # Enable DNS rebinding protection while allowing Growth-plan custom domains.
-  config.hosts = ->(host) {
-    AppHost.primary?(host) || Organization.exists?(custom_domain: host.to_s.downcase)
-  }
+  config.hosts = ->(host) { AppHost.allowed_request_host?(host) }
   config.host_authorization = { exclude: ->(request) {
     request.path == "/up" || request.path.start_with?("/internal/")
   } }
