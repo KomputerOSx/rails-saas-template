@@ -2,23 +2,30 @@
 	email {$ACME_EMAIL}
 	on_demand_tls {
 		ask http://127.0.0.1:3000/internal/domain_validations
-		interval 2m
-		burst 5
 	}
 }
 
-# Primary application host (set APP_HOST in deploy env; replace placeholder before first boot).
-{$APP_HOST:localhost} {
-	reverse_proxy 127.0.0.1:3000
+# Never serve the app over plain HTTP — browsers must use HTTPS or CSRF
+# Origin (http) won't match Rails base_url (https) under assume_ssl.
+http:// {
+	redir https://{host}{uri} permanent
 }
 
-:443 {
+# Primary application host (managed Let's Encrypt cert).
+https://{$APP_HOST:localhost} {
+	reverse_proxy 127.0.0.1:3000 {
+		header_up X-Forwarded-Proto https
+		header_up X-Forwarded-Host {host}
+	}
+}
+
+# Customer custom domains — on-demand TLS (ask endpoint gates issuance).
+https:// {
 	tls {
 		on_demand
 	}
-	reverse_proxy 127.0.0.1:3000
-}
-
-:80 {
-	redir https://{host}{uri} permanent
+	reverse_proxy 127.0.0.1:3000 {
+		header_up X-Forwarded-Proto https
+		header_up X-Forwarded-Host {host}
+	}
 }
