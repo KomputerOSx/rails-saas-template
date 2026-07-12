@@ -62,15 +62,15 @@ Rails.application.configure do
 
   # Azure Communication Services SMTP relay - see config/credentials.example for the
   # azure_email credentials this reads.
-  # config.action_mailer.smtp_settings = {
-  #   address:              "smtp.azurecomm.net",
-  #   port:                 587,
-  #   domain:               "domain.com",
-  #   user_name:            Rails.application.credentials.dig(:azure_email, :smtp_username),
-  #   password:             Rails.application.credentials.dig(:azure_email, :smtp_password),
-  #   authentication:       :login,
-  #   enable_starttls_auto: true
-  # }
+  config.action_mailer.smtp_settings = {
+    address:              "smtp.azurecomm.net",
+    port:                 587,
+    domain:               "rxterminal.co.uk",
+    user_name:            Rails.application.credentials.dig(:azure_email, :smtp_username),
+    password:             Rails.application.credentials.dig(:azure_email, :smtp_password),
+    authentication:       :login,
+    enable_starttls_auto: true
+  }
 
   # Enable locale fallbacks for I18n (makes lookups for any locale fall back to
   # the I18n.default_locale when a translation cannot be found).
