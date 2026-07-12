@@ -1,4 +1,9 @@
 Rails.application.routes.draw do
+  # Health + internal endpoints must be outside the custom-domain catch-all.
+  # kamal-proxy probes /up with a non-APP_HOST Host header; if the catch-all
+  # wins first, SitesController returns 404 and the deploy never goes healthy.
+  get "up" => "rails/health#show", as: :rails_health_check
+
   # Caddy on-demand TLS ask endpoint (internal Docker / localhost only).
   namespace :internal do
     get "domain_validations", to: "domain_validations#show"
@@ -124,10 +129,6 @@ Rails.application.routes.draw do
     patch "features", to: "features#update"
     post "switch", to: "switches#create", as: :switch
   end
-
-  # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
-  # Can be used by load balancers and uptime monitors to verify that the app is live.
-  get "up" => "rails/health#show", as: :rails_health_check
 
   # Render dynamic PWA files from app/views/pwa/* (remember to link manifest in application.html.erb)
   # get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
