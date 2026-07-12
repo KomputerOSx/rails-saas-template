@@ -112,6 +112,7 @@ permissions:
   app.members.invite: "Invite people to the organization"
   app.members.remove: "Remove members from the organization"
   app.members.promote: "Promote/demote members between admin and user"
+  app.members.promote_owner: "Promote a member to co-owner of the organization"
   app.organization.manage: "Manage organization settings"
   app.billing.manage: "Manage billing and subscription"
 ```
@@ -125,6 +126,7 @@ Permission keys must match `\A[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+\z` (dot-separa
 | `app.members.invite` | ✓ | ✓ | |
 | `app.members.remove` | ✓ | ✓ | |
 | `app.members.promote` | ✓ | | |
+| `app.members.promote_owner` | ✓ | | |
 | `app.organization.manage` | ✓ | | |
 | `app.billing.manage` | ✓ | | |
 
@@ -302,6 +304,7 @@ Used for org rename (`Org::OrganizationsController#update`) and feature flags
 | `destroy?` | `app.members.remove` |
 | `promote?` | `app.members.promote` |
 | `demote?` | `app.members.promote` |
+| `promote_to_owner?` | `app.members.promote_owner` |
 
 Pundit maps controller action names to policy methods automatically:
 
@@ -347,6 +350,7 @@ Both `show?` and `manage?` require `app.billing.manage` on the organization.
 | `Org::InvitationsController#destroy` | `OrganizationInvitationPolicy#destroy?` | `app.members.invite` | Revoke pending invite |
 | `Org::MembersController#destroy` | `MembershipPolicy#destroy?` | `app.members.remove` | Remove another member |
 | `Org::MembersController#promote/demote` | `MembershipPolicy#promote?/demote?` | `app.members.promote` | Change admin ↔ user |
+| `Org::MembersController#promote_to_owner` | `MembershipPolicy#promote_to_owner?` | `app.members.promote_owner` | Add a co-owner; requires typed-email + emailed-code confirmation |
 | `Org::MembersController#leave` | — | — | `skip_authorization`; self-removal always allowed |
 | `BillingController` + nested | `BillingPolicy` | `app.billing.manage` | Show + all mutations |
 
@@ -459,15 +463,25 @@ Several guards prevent an org from being left without an owner:
 
 - **`MembershipRole#prevent_removing_last_owner`** — blocks destroying the last `owner`
   `MembershipRole` in an org.
-- **`Org::MembersController#reject_owner_target`** — blocks promote/demote on owners (ownership
-  transfer is not implemented in this template).
+- **`Org::MembersController#reject_owner_target`** — blocks promote/demote (the admin ↔ user
+  toggle) on owners.
+- **`Org::MembersController#promote_to_owner`** — the only supported ownership change: adds a
+  co-owner (organizations can have multiple owners at once; this never demotes the original
+  owner). Gated by `app.members.promote_owner` and requires the acting owner to type the target
+  member's email and enter a 6-digit code emailed to their own address
+  (`OwnershipPromotionMailer`), mirroring the account-deletion confirmation flow.
 - **Member row UI** — edit/remove actions are hidden for members with the `owner` role
   (`app/views/org/members/_membership_row.html.erb`), regardless of the current user's
   permissions.
 - **Self-removal (`leave`)** — always allowed, but fails if the user is the sole owner.
+- **`ProfileController#destroy` (account deletion)** — a user who is the *sole* owner of an
+  organization that still has other members is blocked from deleting their account until they
+  promote a co-owner or remove those members. If they're the sole owner **and** the only
+  remaining member, deleting their account also destroys the organization (see
+  `ProfileController#sole_owner_with_other_members?`).
 
-Extension point for ownership transfer is documented in
-`app/models/membership_role.rb#prevent_removing_last_owner`.
+Full transfer (demoting the original owner as part of promoting a new one) is documented as an
+unimplemented extension point in `app/models/membership_role.rb#prevent_removing_last_owner`.
 
 ---
 

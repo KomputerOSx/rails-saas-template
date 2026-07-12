@@ -56,6 +56,40 @@ class ProfileTest < ActionDispatch::IntegrationTest
     assert_not User.exists?(users(:one).id)
   end
 
+  test "destroy blocks a sole owner from deleting their account while the org has other members" do
+    organization = Organization.create_personal_for!(users(:one))
+    other_member = organization.memberships.create!(user: users(:two))
+    other_member.grant_role!(Role.find_or_create_by!(scope: :app, name: Role::APP_USER))
+
+    perform_enqueued_jobs { post profile_deletion_code_path }
+    code = ActionMailer::Base.deliveries.last.body.encoded[/(\d{6})/, 1]
+
+    delete profile_path, params: { typed_confirmation: users(:one).email, code: code.chars }
+
+    assert_redirected_to profile_path
+    assert User.exists?(users(:one).id)
+    assert Organization.exists?(organization.id)
+    assert Membership.exists?(other_member.id)
+    assert AuditLog.exists?(event_type: :account_deletion_blocked)
+  end
+
+  test "destroy allows a non-sole owner to delete their account, leaving the org and other members intact" do
+    organization = Organization.create_personal_for!(users(:one))
+    owner_role = Role.find_by!(scope: :app, name: Role::APP_OWNER)
+    second_owner = organization.memberships.create!(user: users(:two))
+    second_owner.grant_role!(owner_role)
+
+    perform_enqueued_jobs { post profile_deletion_code_path }
+    code = ActionMailer::Base.deliveries.last.body.encoded[/(\d{6})/, 1]
+
+    delete profile_path, params: { typed_confirmation: users(:one).email, code: code.chars }
+
+    assert_redirected_to root_path
+    assert_not User.exists?(users(:one).id)
+    assert Organization.exists?(organization.id)
+    assert Membership.exists?(second_owner.id)
+  end
+
   test "new_totp shows a QR code for setup" do
     get new_profile_totp_path
     assert_response :success

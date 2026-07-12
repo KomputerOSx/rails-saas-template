@@ -1,8 +1,10 @@
 module Org
   class MembersController < BaseController
-    before_action :set_membership, only: [ :destroy, :promote, :demote ]
+    before_action :set_membership, only: [ :destroy, :promote, :demote, :promote_to_owner, :send_promotion_code ]
     before_action :authorize_membership, only: [ :destroy, :promote, :demote ]
     before_action :reject_owner_target, only: [ :promote, :demote ]
+    before_action :authorize_promote_to_owner, only: [ :promote_to_owner, :send_promotion_code ]
+    before_action :reject_existing_owner_target, only: [ :promote_to_owner, :send_promotion_code ]
 
     def destroy
       membership_dom_id = dom_id(@membership)
@@ -80,6 +82,39 @@ module Org
       end
     end
 
+    def send_promotion_code
+      code = current_user.request_ownership_promotion_code!
+      OwnershipPromotionMailer.confirm_promotion(current_user, @membership, code).deliver_later
+      render json: { sent: true }
+    end
+
+    def promote_to_owner
+      typed = params[:typed_confirmation].to_s.strip.downcase
+      code  = Array(params[:code]).join.strip
+
+      unless typed == @membership.user.email.downcase
+        redirect_to org_settings_path, alert: "Email address did not match. Member not promoted." and return
+      end
+
+      unless current_user.verify_ownership_promotion_code!(code)
+        redirect_to org_settings_path, alert: "Invalid or expired confirmation code. Member not promoted." and return
+      end
+
+      @membership.grant_role!(Role.find_by!(scope: :app, name: Role::APP_OWNER), granted_by: current_user)
+      log_audit(:owner_promoted, resource: Current.organization, metadata: { membership_id: @membership.id, target_user_id: @membership.user_id })
+
+      respond_to do |format|
+        format.turbo_stream do
+          flash.now[:toast] = { message: "#{@membership.user.email} is now an owner.", type: "success" }
+          render turbo_stream: [
+            turbo_stream.replace(dom_id(@membership, :role_badge), partial: "org/members/role_badge", locals: { membership: @membership }),
+            turbo_stream.update("flash_messages", partial: "shared/flash")
+          ]
+        end
+        format.html { redirect_to org_settings_path, notice: "#{@membership.user.email} is now an owner." }
+      end
+    end
+
     private
 
     def set_membership
@@ -95,9 +130,19 @@ module Org
     def reject_owner_target
       return unless @membership.has_role?(Role::APP_OWNER, scope: :app)
 
-      # Ownership transfer isn't implemented in this template - see the extension-point
-      # comment in MembershipRole#prevent_removing_last_owner for how it would work.
-      redirect_to org_settings_path, alert: "Ownership changes aren't supported in this template."
+      # The admin/user promote-demote toggle doesn't apply to owners; see #promote_to_owner
+      # for the only supported ownership change (adding a co-owner).
+      redirect_to org_settings_path, alert: "Owners can't be promoted or demoted between admin and user."
+    end
+
+    def authorize_promote_to_owner
+      authorize @membership, :promote_to_owner?
+    end
+
+    def reject_existing_owner_target
+      return unless @membership.has_role?(Role::APP_OWNER, scope: :app)
+
+      redirect_to org_settings_path, alert: "#{@membership.user.email} is already an owner."
     end
   end
 end

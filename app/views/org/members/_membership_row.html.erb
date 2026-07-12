@@ -6,7 +6,7 @@
   <% if show_actions && !membership.has_role?(Role::APP_OWNER, scope: :app) && membership.user != current_user %>
     <td>
       <div class="flex justify-end gap-1">
-        <% if can_promote_org_members? %>
+        <% if can_promote_org_members? || can_promote_to_owner? %>
           <div data-controller="modal">
             <button type="button" data-action="click->modal#open" class="btn btn-ghost btn-xs btn-square" title="Edit member">
               <span class="material-symbols-outlined" style="font-size:18px">edit</span>

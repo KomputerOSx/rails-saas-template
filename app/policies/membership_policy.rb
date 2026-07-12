@@ -13,6 +13,10 @@ class MembershipPolicy < ApplicationPolicy
     permission?("app.members.promote")
   end
 
+  def promote_to_owner?
+    permission?("app.members.promote_owner")
+  end
+
   private
 
   def permission?(key)

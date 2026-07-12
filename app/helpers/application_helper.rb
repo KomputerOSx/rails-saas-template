@@ -50,4 +50,8 @@ module ApplicationHelper
   def can_promote_org_members?
     current_user.has_permission?("app.members.promote", organization: Current.organization)
   end
+
+  def can_promote_to_owner?
+    current_user.has_permission?("app.members.promote_owner", organization: Current.organization)
+  end
 end

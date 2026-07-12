@@ -36,6 +36,15 @@ class ProfileController < ApplicationController
   end
 
   def destroy
+    blocking_orgs = current_user.organizations.select { |org| sole_owner_with_other_members?(org) }
+    if blocking_orgs.any?
+      log_audit(:account_deletion_blocked, metadata: { organization_ids: blocking_orgs.map(&:id) })
+      flash[:toast] = { message: "You're the only owner of #{blocking_orgs.map(&:name).to_sentence}, " \
+        "which still has other members. Promote a co-owner or remove the other members before deleting your account.",
+        type: "error" }
+      redirect_to profile_path and return
+    end
+
     typed = params[:typed_confirmation].to_s.strip.downcase
     code  = Array(params[:code]).join.strip
 
@@ -53,7 +62,8 @@ class ProfileController < ApplicationController
 
     ActiveRecord::Base.transaction do
       # Destroy orgs where this user is the sole owner - the last-owner guard would
-      # otherwise abort the cascade when memberships are deleted.
+      # otherwise abort the cascade when memberships are deleted. The blocking_orgs check
+      # above guarantees any such org has no other members left to lose.
       # Orgs with other owners are left intact; the membership cascade handles removal.
       current_user.organizations.each do |org|
         other_owners = org.membership_roles
@@ -162,6 +172,17 @@ class ProfileController < ApplicationController
   end
 
   private
+
+  # True if `current_user` is the sole `owner` of `org` and other members are still in it -
+  # deleting the account in that state would otherwise silently kick everyone else out.
+  def sole_owner_with_other_members?(org)
+    is_sole_owner = org.membership_roles.joins(:role, :membership)
+      .where(roles: { scope: "app", name: Role::APP_OWNER })
+      .where.not(memberships: { user_id: current_user.id })
+      .none?
+
+    is_sole_owner && org.memberships.where.not(user_id: current_user.id).exists?
+  end
 
   def profile_params
     params.require(:user).permit(:first_name, :last_name)

@@ -27,6 +27,7 @@ class User < ApplicationRecord
   MAX_EMAIL_CHANGE_ATTEMPTS = 5
   TOTP_ISSUER = Rails.application.class.module_parent_name
   ACCOUNT_DELETION_CODE_EXPIRY = 30.minutes
+  OWNERSHIP_PROMOTION_CODE_EXPIRY = 30.minutes
 
   normalizes :email, with: ->(email) { email.strip.downcase }
 
@@ -297,6 +298,26 @@ class User < ApplicationRecord
     ActiveSupport::SecurityUtils.secure_compare(
       self.class.digest_code(code.to_s),
       account_deletion_code_digest.to_s
+    )
+  end
+
+  # --- Ownership promotion confirmation (6-digit code, sent to the acting owner) ---
+
+  def request_ownership_promotion_code!
+    code = self.class.generate_code
+    update_columns(
+      ownership_promotion_code_digest: self.class.digest_code(code),
+      ownership_promotion_code_sent_at: Time.current
+    )
+    code
+  end
+
+  def verify_ownership_promotion_code!(code)
+    return false if ownership_promotion_code_sent_at.nil?
+    return false if ownership_promotion_code_sent_at < OWNERSHIP_PROMOTION_CODE_EXPIRY.ago
+    ActiveSupport::SecurityUtils.secure_compare(
+      self.class.digest_code(code.to_s),
+      ownership_promotion_code_digest.to_s
     )
   end
 

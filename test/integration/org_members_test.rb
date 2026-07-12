@@ -1,6 +1,8 @@
 require "test_helper"
 
 class OrgMembersTest < ActionDispatch::IntegrationTest
+  include ActiveJob::TestHelper
+
   setup do
     @owner = users(:one)
     @organization = Organization.create_personal_for!(@owner)
@@ -65,5 +67,69 @@ class OrgMembersTest < ActionDispatch::IntegrationTest
 
     patch promote_org_member_path(admin_membership)
     assert_redirected_to root_path
+  end
+
+  test "an owner can promote another member to co-owner with valid confirmation" do
+    post login_path, params: { email: @owner.email, password: "password123" }
+
+    plain_member = @organization.memberships.create!(user: users(:two))
+    plain_member.grant_role!(Role.find_or_create_by!(scope: :app, name: Role::APP_USER))
+
+    code = nil
+    assert_enqueued_emails 1 do
+      post send_promotion_code_org_member_path(plain_member)
+      assert_response :success
+    end
+    perform_enqueued_jobs
+    code = ActionMailer::Base.deliveries.last.body.encoded[/(\d{6})/, 1]
+
+    patch promote_to_owner_org_member_path(plain_member), params: { typed_confirmation: users(:two).email, code: code.chars }
+
+    assert_redirected_to org_settings_path
+    assert plain_member.reload.has_role?(Role::APP_OWNER, scope: :app)
+    assert AuditLog.exists?(event_type: :owner_promoted)
+  end
+
+  test "promote_to_owner rejects a mismatched typed email" do
+    post login_path, params: { email: @owner.email, password: "password123" }
+
+    plain_member = @organization.memberships.create!(user: users(:two))
+    plain_member.grant_role!(Role.find_or_create_by!(scope: :app, name: Role::APP_USER))
+
+    perform_enqueued_jobs { post send_promotion_code_org_member_path(plain_member) }
+    code = ActionMailer::Base.deliveries.last.body.encoded[/(\d{6})/, 1]
+
+    patch promote_to_owner_org_member_path(plain_member), params: { typed_confirmation: "wrong@example.com", code: code.chars }
+
+    assert_redirected_to org_settings_path
+    assert_not plain_member.reload.has_role?(Role::APP_OWNER, scope: :app)
+  end
+
+  test "promote_to_owner rejects an invalid confirmation code" do
+    post login_path, params: { email: @owner.email, password: "password123" }
+
+    plain_member = @organization.memberships.create!(user: users(:two))
+    plain_member.grant_role!(Role.find_or_create_by!(scope: :app, name: Role::APP_USER))
+
+    patch promote_to_owner_org_member_path(plain_member), params: { typed_confirmation: users(:two).email, code: "000000".chars }
+
+    assert_redirected_to org_settings_path
+    assert_not plain_member.reload.has_role?(Role::APP_OWNER, scope: :app)
+  end
+
+  test "an admin cannot promote a member to owner" do
+    admin_role = Role.find_or_create_by!(scope: :app, name: Role::APP_ADMIN)
+    admin_membership = @organization.memberships.create!(user: users(:two))
+    admin_membership.grant_role!(admin_role)
+
+    third_user = User.create!(email: "third@example.com", password: "Xk92!vTqZmR7", confirmed_at: Time.current)
+    plain_member = @organization.memberships.create!(user: third_user)
+    plain_member.grant_role!(Role.find_or_create_by!(scope: :app, name: Role::APP_USER))
+
+    post login_path, params: { email: users(:two).email, password: "password123" }
+
+    patch promote_to_owner_org_member_path(plain_member), params: { typed_confirmation: third_user.email, code: "000000".chars }
+    assert_redirected_to root_path
+    assert_not plain_member.reload.has_role?(Role::APP_OWNER, scope: :app)
   end
 end

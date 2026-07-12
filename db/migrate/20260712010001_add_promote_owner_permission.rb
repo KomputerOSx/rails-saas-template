@@ -1,0 +1,28 @@
+class AddPromoteOwnerPermission < ActiveRecord::Migration[8.1]
+  class Permission < ActiveRecord::Base; end
+  class Role < ActiveRecord::Base; end
+  class RolePermission < ActiveRecord::Base; end
+
+  # RbacRegistry (app/models/rbac_registry.rb) only attaches baseline permissions to a role at
+  # the moment that role is first created - it never revisits existing roles. This new
+  # permission is added to config/rbac.yml's owner role for freshly created databases, but a
+  # database that already has an `owner` role needs it attached here explicitly (see
+  # docs/rbac.md #13-14).
+  def up
+    permission = Permission.find_or_create_by!(key: "app.members.promote_owner") do |p|
+      p.description = "Promote a member to co-owner of the organization"
+    end
+
+    Role.where(scope: "app", name: "owner").find_each do |owner_role|
+      RolePermission.find_or_create_by!(role_id: owner_role.id, permission_id: permission.id)
+    end
+  end
+
+  def down
+    permission = Permission.find_by(key: "app.members.promote_owner")
+    return unless permission
+
+    RolePermission.where(permission_id: permission.id).delete_all
+    permission.destroy
+  end
+end
