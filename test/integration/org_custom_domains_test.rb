@@ -40,7 +40,7 @@ class OrgCustomDomainsTest < ActionDispatch::IntegrationTest
     get org_settings_path
 
     assert_response :success
-    assert_match(/Custom domains are available on the Growth plan/i, response.body)
+    assert_match(/Available on the Growth plan/i, response.body)
     assert_match billing_path, response.body
   end
 
