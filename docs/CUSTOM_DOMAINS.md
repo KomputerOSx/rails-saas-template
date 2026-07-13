@@ -160,8 +160,10 @@ accessories:
 [`config/Caddyfile`](../config/Caddyfile):
 
 - `http://` → permanent redirect to HTTPS (avoids CSRF Origin mismatch under `assume_ssl`)
-- Primary host (`https://{$APP_HOST}`) → managed cert + `reverse_proxy 127.0.0.1:3000`
+- Local ask rewriter on `127.0.0.1:9090` sets `Host: APP_HOST` so kamal-proxy routes the TLS check
+- Primary host (`https://{$APP_HOST}`) → managed cert + reverse proxy to `127.0.0.1:3000`
 - Catch-all `https://` with `tls { on_demand }` for customer domains
+- App upstream sends `Host: APP_HOST` (for Kamal routing) and `X-Forwarded-Host: {host}` (so Rails sees the custom domain)
 
 **Persist `caddy_data`.** If that volume is lost, Caddy re-issues every customer cert and
 can hit Let's Encrypt rate limits immediately.
