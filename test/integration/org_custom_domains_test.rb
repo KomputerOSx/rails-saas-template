@@ -52,13 +52,13 @@ class OrgCustomDomainsTest < ActionDispatch::IntegrationTest
 
       assert_response :success
       assert_match(/organization\[custom_domain\]/, response.body)
-      assert_match(/DNS setup/, response.body)
       assert_match(/>Type</, response.body)
       assert_match(/>Name</, response.body)
       assert_match(/Points to/, response.body)
       assert_match(/\bCNAME\b/, response.body)
       assert_match(/data-controller="clipboard"/, response.body)
       assert_match(/content_copy/, response.body)
+      assert_match(/card border border-base-300/, response.body)
     end
   end
 
@@ -90,7 +90,7 @@ class OrgCustomDomainsTest < ActionDispatch::IntegrationTest
       assert_response :success
       assert_match(/data-controller="custom-domain-status"/, response.body)
       assert_match(%r{data-custom-domain-status-url-value="[^"]*custom_domain/status"}, response.body)
-      assert_match(/bg-pink-500/, response.body)
+      assert_match(/badge-warning/, response.body)
     end
   end
 

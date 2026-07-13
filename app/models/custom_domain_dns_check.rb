@@ -23,12 +23,12 @@ class CustomDomainDnsCheck
     return Result.new(status: :pending, message: "No domain configured.") if @domain.blank?
 
     if cname_points_to_primary? || addresses_match_expected?
-      Result.new(status: :ready, message: "DNS looks good. SSL will issue on the first HTTPS visit.")
+      Result.new(status: :ready, message: "DNS looks good.")
     else
-      Result.new(status: :pending, message: "Waiting for DNS — add the CNAME or A record below, then wait for it to propagate.")
+      Result.new(status: :pending, message: "Waiting for DNS.")
     end
-  rescue Resolv::ResolvError, Errno::ECONNREFUSED, SocketError => e
-    Result.new(status: :pending, message: "Could not resolve DNS yet (#{e.class.name}).")
+  rescue Resolv::ResolvError, Errno::ECONNREFUSED, SocketError
+    Result.new(status: :pending, message: "Waiting for DNS.")
   end
 
   private
@@ -58,7 +58,7 @@ class CustomDomainDnsCheck
     begin
       addresses.concat(Resolv.getaddresses(AppHost.primary_host)) if AppHost.primary_host.present?
     rescue Resolv::ResolvError, SocketError
-      # Primary host may not resolve in test/dev — fall through to APP_SERVER_IP.
+      # Primary host may not resolve in test/dev - fall through to APP_SERVER_IP.
     end
 
     server_ip = AppHost.server_ip

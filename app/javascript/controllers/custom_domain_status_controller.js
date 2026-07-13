@@ -7,7 +7,7 @@ export default class extends Controller {
     interval: { type: Number, default: 15000 },
   }
 
-  static targets = ["badge", "label", "message"]
+  static targets = ["badge"]
 
   connect() {
     this.check()
@@ -29,29 +29,20 @@ export default class extends Controller {
       if (!response.ok) return
 
       const data = await response.json()
-      this.#render(data)
+      this.#render(data.status)
       if (data.status === "ready") clearInterval(this._timer)
     } catch {
       // Keep the last UI state on transient network errors.
     }
   }
 
-  #render({ status, message }) {
+  #render(status) {
+    if (!this.hasBadgeTarget) return
+
     const ready = status === "ready"
-
-    if (this.hasBadgeTarget) {
-      this.badgeTarget.className = ready
-        ? "badge badge-sm border-0 bg-success/15 text-success"
-        : "badge badge-sm border-0 bg-pink-500/15 text-pink-600 dark:text-pink-400"
-      this.badgeTarget.textContent = ready ? "Ready" : "Pending"
-    }
-
-    if (this.hasLabelTarget) {
-      this.labelTarget.textContent = ready ? "Ready" : "Pending"
-    }
-
-    if (this.hasMessageTarget && message) {
-      this.messageTarget.textContent = message
-    }
+    this.badgeTarget.className = ready
+      ? "badge badge-success badge-sm"
+      : "badge badge-warning badge-sm"
+    this.badgeTarget.textContent = ready ? "Ready" : "Pending"
   }
 }

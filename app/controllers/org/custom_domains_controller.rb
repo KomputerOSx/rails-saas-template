@@ -11,7 +11,7 @@ module Org
 
       if Current.organization.update(custom_domain: custom_domain_param)
         log_audit(:custom_domain_updated, resource: Current.organization, metadata: { custom_domain: Current.organization.custom_domain })
-        redirect_to org_settings_path, notice: "Custom domain saved. Point DNS at this server to enable SSL."
+        redirect_to org_settings_path, notice: "Custom domain saved. Add a DNS record to finish setup."
       else
         redirect_to org_settings_path, alert: Current.organization.errors.full_messages.to_sentence
       end
@@ -26,7 +26,7 @@ module Org
     end
 
     def status
-      skip_authorization # same visibility as org settings — any org member
+      skip_authorization # same visibility as org settings - any org member
 
       unless Current.organization.custom_domain.present?
         return render json: { status: "pending", message: "No domain configured." }
