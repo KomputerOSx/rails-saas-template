@@ -1,11 +1,12 @@
 import { Controller } from "@hotwired/stimulus"
 
-// Copies a string to the clipboard and briefly flips the button label to "Copied".
+// Copies a string to the clipboard and briefly swaps the icon to a checkmark.
 export default class extends Controller {
   static values = {
     text: String,
-    successLabel: { type: String, default: "Copied" },
   }
+
+  static targets = ["icon"]
 
   async copy(event) {
     event.preventDefault()
@@ -35,13 +36,16 @@ export default class extends Controller {
   }
 
   #flashSuccess() {
-    const original = this.element.textContent
-    this.element.textContent = this.successLabelValue
+    if (!this.hasIconTarget) return
+
+    const icon = this.iconTarget
+    const original = icon.textContent
+    icon.textContent = "check"
     this.element.disabled = true
 
     clearTimeout(this._resetTimer)
     this._resetTimer = setTimeout(() => {
-      this.element.textContent = original
+      icon.textContent = original
       this.element.disabled = false
     }, 1500)
   }

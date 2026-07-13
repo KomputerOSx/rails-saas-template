@@ -126,7 +126,9 @@ Rails.application.routes.draw do
   # --- Org-facing members/invitations management (distinct from the system-scope Admin:: namespace) ---
   namespace :org do
     resource :organization, only: [ :update ], controller: "organizations"
-    resource :custom_domain, only: [ :create, :destroy ], controller: "custom_domains"
+    resource :custom_domain, only: [ :create, :destroy ], controller: "custom_domains" do
+      get :status
+    end
     get "settings", to: "settings#index", as: :settings
     resources :members, only: [ :destroy ] do
       member do

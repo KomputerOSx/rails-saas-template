@@ -32,6 +32,8 @@
 
 # Ignore key files for decrypting credentials and more.
 /config/*.key
+/config/production.key
+
 
 
 /app/assets/builds/*
@@ -41,6 +43,3 @@ node_modules
 .gem_rbs_collection
 CUsersramya**
 .idea
-# Ignore key files for decrypting credentials and more.
-/config/credentials/*.key
-

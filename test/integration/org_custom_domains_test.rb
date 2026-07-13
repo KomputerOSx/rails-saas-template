@@ -58,6 +58,39 @@ class OrgCustomDomainsTest < ActionDispatch::IntegrationTest
       assert_match(/Points to/, response.body)
       assert_match(/\bCNAME\b/, response.body)
       assert_match(/data-controller="clipboard"/, response.body)
+      assert_match(/content_copy/, response.body)
+    end
+  end
+
+  test "status endpoint reports DNS check JSON" do
+    post login_path, params: { email: @owner.email, password: "password123" }
+
+    with_active_subscription(@organization, Billing::Plans::GROWTH) do
+      @organization.update!(custom_domain: "shop.acme.test")
+
+      CustomDomainDnsCheck.stub(:call, CustomDomainDnsCheck::Result.new(status: :ready, message: "DNS looks good.")) do
+        get status_org_custom_domain_path, as: :json
+
+        assert_response :success
+        body = JSON.parse(response.body)
+        assert_equal "ready", body["status"]
+        assert_match(/DNS looks good/i, body["message"])
+      end
+    end
+  end
+
+  test "settings page polls DNS status when a domain is set" do
+    post login_path, params: { email: @owner.email, password: "password123" }
+
+    with_active_subscription(@organization, Billing::Plans::GROWTH) do
+      @organization.update!(custom_domain: "shop.acme.test")
+
+      get org_settings_path
+
+      assert_response :success
+      assert_match(/data-controller="custom-domain-status"/, response.body)
+      assert_match(%r{data-custom-domain-status-url-value="[^"]*custom_domain/status"}, response.body)
+      assert_match(/bg-pink-500/, response.body)
     end
   end
 

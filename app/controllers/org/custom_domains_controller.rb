@@ -25,6 +25,17 @@ module Org
       redirect_to org_settings_path, notice: "Custom domain removed."
     end
 
+    def status
+      skip_authorization # same visibility as org settings — any org member
+
+      unless Current.organization.custom_domain.present?
+        return render json: { status: "pending", message: "No domain configured." }
+      end
+
+      result = CustomDomainDnsCheck.call(Current.organization.custom_domain)
+      render json: result
+    end
+
     private
 
     def custom_domain_param

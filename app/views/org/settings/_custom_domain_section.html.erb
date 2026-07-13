@@ -1,11 +1,11 @@
 <div class="mt-10">
   <h2 class="text-lg font-semibold">Custom domain</h2>
   <p class="mt-0.5 text-sm text-base-content/60">
-    Serve a public site for this organization on your own domain. Growth plan only — one domain per organization.
+    Serve a public site for this organization on your own domain. One domain per organization.
   </p>
 
-  <div class="card mt-4 border border-base-300">
-    <div class="card-body gap-4">
+  <div class="mt-4">
+    <div class="gap-4">
       <% if Current.organization.custom_domain_allowed? %>
         <% if Current.organization.custom_domain.present? %>
           <div>
@@ -34,9 +34,9 @@
                 <span class="label-text">Domain</span>
               </label>
               <input type="text" name="organization[custom_domain]" id="organization_custom_domain"
-                     placeholder="app.yourpharmacy.com" class="input-field w-full max-w-md"
+                     placeholder="app.yourdomain.com" class="input-field w-full max-w-md"
                      autocomplete="off" spellcheck="false">
-              <p class="mt-1.5 text-xs text-base-content/50">Use a hostname only — no https:// or path.</p>
+              <p class="mt-1.5 text-xs text-base-content/50">Use a hostname only, no https:// or path.</p>
             </div>
 
             <%= render "org/settings/custom_domain_dns" %>
